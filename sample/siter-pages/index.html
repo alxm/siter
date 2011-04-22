@@ -1,4 +1,8 @@
 title = Home
+a(text1, text2) = <p><i>${text1}<b>${text2}</b></i></p>
+b(text) = <p>${text}</p>
 
 <h1>Welcome</h1>
-<p>This is the index page.</p>
+
+${a(This is a /// macro call!)}
+${b(And so is this - we are on page "${title}".)}

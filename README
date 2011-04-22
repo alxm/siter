@@ -4,9 +4,10 @@ Email: artraid@gmail.com
 
 Siter is a very simple static website generator written in Python.
 
-Content pages from site/siter-pages are fitted in site/siter-template.html.
-Pages can define variables that the template can call. Variables are declared
-one per line, with a blank line before the page's content begins.
+Content pages from ~/site/siter-pages are fitted in ~/site/siter-template.html.
+Pages can define variables and simple macros that the template and page content
+can call. These are declared one per line, with a blank line before the page's
+content begins.
 
 Call "siter.py PathToSite" to generate a site. Check out the included sample dir
 for a small example - ./siter.py sample
