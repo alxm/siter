@@ -17,33 +17,87 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os, re, string, sys
+import copy, os, re, sys
 
 def siter_error(error):
     print "Siter Error: " + error
     sys.exit(1)
 
-def siter_replace(text, bindings, functions):
-    for b in bindings:
-        text = string.replace(text, "${" + b + "}", bindings[b])
+def siter_replace(text, variables, functions):
+    for v in variables:
+        text = text.replace("{{" + v + "}}", variables[v])
 
-    for f in functions:
+    queue = []
+    start_looking = 0
+
+    while start_looking != -1:
+        call_start = text.find("{{", start_looking)
+
+        if call_start == -1:
+            break
+
+        args_start = text.find(":", call_start)
+
+        if args_start == -1:
+            break
+
+        function = text[call_start + 2 : args_start]
+
+        if function not in functions:
+            start_looking = call_start + 2
+            continue
+
+        count = 1
+
+        last_open = False
+        last_close = False
+
+        for i in range(args_start + 1, len(text)):
+            if text[i] == "{":
+                if last_open:
+                    count += 1
+                    last_open = False
+                else:
+                    last_open = True
+            else:
+                last_open = False
+
+            if text[i] == "}":
+                if last_close:
+                    count -= 1
+                    last_close = False
+                else:
+                    last_close = True
+            else:
+                last_close = False
+
+            if count == 0:
+                call = text[call_start : i + 1]
+                inside = text[args_start + 1 : i - 1]
+
+                queue.append((call, function, inside))
+                start_looking = i + 1
+
+                break
+
+    for (call, f, inside) in queue:
         (params, body) = functions[f]
-        calls = re.finditer("\$\{" + f + "\((.+)\)\}", text)
 
-        for call in calls:
-            whole = call.group(0).strip()
-            args = call.group(1).split("///")
+        functions2 = copy.copy(functions)
+        del functions2[f]
 
-            if len(args) != len(params):
-                siter_error("Wrong number of arguments")
+        args = siter_replace(inside, variables, functions2).split("///")
 
-            body2 = body
+        if len(args) != len(params):
+            siter_error("Wrong number of arguments in " + f)
 
-            for i in range(0, len(args)):
-                body2 = string.replace(body2, "${" + params[i] + "}", args[i])
+        evaluated = body
 
-            text = string.replace(text, whole, body2)
+        for i in range(0, len(args)):
+            evaluated = evaluated.replace("{{" + params[i] + "}}", args[i].strip())
+
+        evaluated = siter_replace(evaluated, variables, functions2)
+        text = text.replace(call, evaluated)
 
     return text
 
@@ -62,8 +116,8 @@ def siter(siter_dir):
     with open(siter_template, "r") as f:
         template = f.read()
 
-    siter_re_define = re.compile("(.+?)=(.*)")      # id = value
-    siter_re_function = re.compile("(.+?)\((.+)\)") # func(args)
+    re_define = re.compile("(.+?)=(.*)")      # id = value
+    re_function = re.compile("(.+?)\((.*)\)") # func(args)
 
     for page_file in os.listdir(siter_pages):
         read_file = siter_pages + "/" + page_file
@@ -72,21 +126,21 @@ def siter(siter_dir):
         with open(read_file, "r") as r:
             doing_bindings = True
 
-            bindings = {}
+            variables = {}
             functions = {}
             page = ""
 
             for line in r:
                 if doing_bindings:
                     # scan for id = value
-                    match = siter_re_define.search(line)
+                    match = re_define.search(line)
 
                     if match:
                         name = match.group(1).strip()
                         value = match.group(2).strip()
 
                         # scan for func(args), originally func(args) = value
-                        match = siter_re_function.search(name)
+                        match = re_function.search(name)
 
                         if match:
                             name = match.group(1).strip()
@@ -94,18 +148,17 @@ def siter(siter_dir):
 
                             functions[name] = (params.split(", "), value)
                         else:
-                            bindings[name] = value
+                            variables[name] = value
                     else:
                         doing_bindings = False
                         page = page + line
                 else:
                     page = page + line
 
-            # replace variables inside page content
-            bindings["page"] = siter_replace(page, bindings, functions)
+            variables["page"] = page
 
-            # replace variables inside template
-            page = siter_replace(template, bindings, functions)
+            # replace variables and functions
+            page = siter_replace(template, variables, functions)
 
             with open(write_file, "w") as w:
                 print "Writing " + write_file

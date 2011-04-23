@@ -1,0 +1,4 @@
+syntax: regexp
+
+^sample/about\.html$
+^sample/index\.html$

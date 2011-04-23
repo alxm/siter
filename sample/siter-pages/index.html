@@ -1,8 +1,9 @@
 title = Home
-a(text1, text2) = <p><i>${text1}<b>${text2}</b></i></p>
-b(text) = <p>${text}</p>
+underline(x) = <u>{{x}}</u>
+item(title, description) = <b>{{title}}:</b> <i>{{description}}</i><br>
 
 <h1>Welcome</h1>
 
-${a(This is a /// macro call!)}
-${b(And so is this - we are on page "${title}".)}
+{{item: Macros /// Example 1}}
+{{item: {{underline: Macros}} /// Example 2}}
+{{underline: {{item: Macros /// Example 3}}}}
