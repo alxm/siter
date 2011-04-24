@@ -129,8 +129,9 @@ def siter(siter_dir):
         if os.path.isfile(write_file):
             read_date = os.stat(read_file)[8]
             write_date = os.stat(write_file)[8]
+            template_date = os.stat(siter_template)[8]
 
-            if read_date < write_date:
+            if read_date < write_date and template_date < write_date:
                 print "[ Up to date ] " + write_file
                 continue
 
