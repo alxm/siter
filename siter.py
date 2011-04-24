@@ -23,7 +23,7 @@ def siter_error(error):
     print "Siter Error: " + error
     sys.exit(1)
 
-def siter_replace(text, variables, functions):
+def siter_evaluate(text, variables, functions):
     for v in variables:
         text = text.replace("{{" + v + "}}", variables[v])
 
@@ -86,7 +86,7 @@ def siter_replace(text, variables, functions):
         functions2 = copy.copy(functions)
         del functions2[f]
 
-        args = siter_replace(inside, variables, functions2).split("///")
+        args = siter_evaluate(inside, variables, functions2).split(",,")
 
         if len(args) != len(params):
             siter_error("Wrong number of arguments in " + f)
@@ -96,7 +96,7 @@ def siter_replace(text, variables, functions):
         for i in range(0, len(args)):
             evaluated = evaluated.replace("{{" + params[i] + "}}", args[i].strip())
 
-        evaluated = siter_replace(evaluated, variables, functions2)
+        evaluated = siter_evaluate(evaluated, variables, functions2)
         text = text.replace(call, evaluated)
 
     return text
@@ -161,7 +161,7 @@ def siter(siter_dir):
             variables["page"] = page
 
             # replace variables and functions
-            page = siter_replace(template, variables, functions)
+            page = siter_evaluate(template, variables, functions)
 
             with open(write_file, "w") as w:
                 print "Writing " + write_file
