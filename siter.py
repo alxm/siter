@@ -131,10 +131,10 @@ def siter(siter_dir):
             write_date = os.stat(write_file)[8]
 
             if read_date < write_date:
-                print write_file + ": already up to date"
+                print "[ Up to date ] " + write_file
                 continue
 
-        print write_file + ": updating..."
+        print "[  Updating  ] " + write_file
 
         with open(read_file, "r") as r:
             doing_bindings = True

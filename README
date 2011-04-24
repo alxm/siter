@@ -9,5 +9,4 @@ Pages can define variables and simple macros that the template and page content
 can call. These are declared one per line, with a blank line before the page's
 content begins.
 
-Call "siter.py PathToSite" to generate a site. Check out the included sample dir
-for a small example - ./siter.py sample
+Check out the included sample dir for a small example: ./siter.py sample
