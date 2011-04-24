@@ -126,6 +126,16 @@ def siter(siter_dir):
         read_file = siter_pages + "/" + page_file
         write_file = siter_dir + "/" + page_file
 
+        if os.path.isfile(write_file):
+            read_date = os.stat(read_file)[8]
+            write_date = os.stat(write_file)[8]
+
+            if read_date < write_date:
+                print write_file + ": already up to date"
+                continue
+
+        print write_file + ": updating..."
+
         with open(read_file, "r") as r:
             doing_bindings = True
 
@@ -164,7 +174,6 @@ def siter(siter_dir):
             page = siter_evaluate(template, variables, functions)
 
             with open(write_file, "w") as w:
-                print "Writing " + write_file
                 w.write(page)
 
 if __name__ == "__main__":
