@@ -102,6 +102,9 @@ def siter_replace(text, variables, functions):
     return text
 
 def siter(siter_dir):
+    if not os.path.isdir(siter_dir):
+        siter_error("Can't find dir: " + siter_dir)
+
     siter_pages = siter_dir + "/siter-pages"
     siter_template = siter_dir + "/siter-template.html"
 
@@ -165,12 +168,7 @@ def siter(siter_dir):
                 w.write(page)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        siter_error("Usage: " + sys.argv[0] + " PathToSite")
-
-    siter_dir = sys.argv[1]
-
-    if not os.path.isdir(siter_dir):
-        siter_error("Can't find dir: " + siter_dir)
-
-    siter(siter_dir)
+    if len(sys.argv) >= 2:
+        siter(sys.argv[1])
+    else:
+        siter(".")
