@@ -107,15 +107,16 @@ def siter_evaluate(text, bindings):
         function = block.function(bindings)
 
         if variable:
-            text = text.replace(block.whole, bindings[variable][2], 1)
+            (_, value) = bindings[variable]
+            text = text.replace(block.whole, value, 1)
         elif function:
-            (fname, fargs) = function
-            (name, params, body) = bindings[fname]
+            (name, args) = function
+            (params, body) = bindings[name]
 
             bindings2 = copy.copy(bindings)
-            del bindings2[fname]
+            del bindings2[name]
 
-            args = siter_evaluate(fargs, bindings2)
+            args = siter_evaluate(args, bindings2)
             args = [a.strip() for a in args.split(",,")]
 
             if len(args) != len(params):
@@ -200,17 +201,17 @@ def siter(siter_dir):
 
             if m_var:
                 name = m_var.group(1)
-                bindings[name] = (name, [], block.contents)
+                bindings[name] = (None, block.contents)
             elif m_fun:
                 name = m_fun.group(1)
                 params = [p.strip() for p in m_fun.group(2).split(",")]
-                bindings[name] = (name, params, block.contents)
+                bindings[name] = (params, block.contents)
             else:
                 siter_error("Syntax error\n" + lhs)
 
             start = block.index + len(block.whole)
 
-        bindings["page"] = ("page", [], siter_evaluate(content, bindings))
+        bindings["page"] = (None, siter_evaluate(content, bindings))
         page = siter_evaluate(template, bindings)
 
         with open(write_file, "w") as w:
