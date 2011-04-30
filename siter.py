@@ -20,13 +20,16 @@
 import copy, os, re, sys
 
 class Block:
+    re_variable = re.compile("(\w+)$")
+    re_function = re.compile("(\w+)\s*\:(.*)$", re.DOTALL)
+
     def __init__(self, index, text):
         self.index = index
         self.whole = text
         self.contents = text[2 : -2].strip()
 
     def variable(self, bindings):
-        match = re.match("(\w+)$", self.contents)
+        match = Block.re_variable.match(self.contents)
 
         if match:
             variable = match.group()
@@ -37,7 +40,7 @@ class Block:
         return None
 
     def function(self, bindings):
-        match = re.match("(\w+)\s*\:(.*)$", self.contents, re.DOTALL)
+        match = Block.re_function.match(self.contents)
 
         if match:
             function = match.group(1)
@@ -49,7 +52,7 @@ class Block:
         return None
 
 def siter_error(error):
-    print "Siter Error: " + error
+    print "[   Error!   ] " + error
     sys.exit(1)
 
 def siter_get_blocks(text):
@@ -116,7 +119,7 @@ def siter_evaluate(text, bindings):
             args = [a.strip() for a in args.split(",,")]
 
             if len(args) != len(params):
-                siter_error("Wrong number of arguments")
+                siter_error("Wrong number of arguments\n" + block.whole)
 
             for i in range(len(args)):
                 for m in re.finditer("\{\{\s*" + params[i] + "\s*\}\}", body, re.DOTALL):
@@ -129,16 +132,16 @@ def siter_evaluate(text, bindings):
 
 def siter(siter_dir):
     if not os.path.isdir(siter_dir):
-        siter_error("Can't find dir: " + siter_dir)
+        siter_error("Can't find dir " + siter_dir)
 
     siter_pages = siter_dir + "/siter-pages"
     siter_template = siter_dir + "/siter-template.html"
 
     if not os.path.isdir(siter_pages):
-        siter_error("Can't find siter-pages dir: " + siter_pages)
+        siter_error("Can't find dir " + siter_pages)
 
     if not os.path.isfile(siter_template):
-        siter_error("Can't find siter-template.html: " + siter_template)
+        siter_error("Can't find file " + siter_template)
 
     template = None
 
@@ -177,7 +180,6 @@ def siter(siter_dir):
                     content += line
 
         start = 0
-
         bindings = {}
 
         match_asg = re.compile("(.*)=\s*$", re.DOTALL)
@@ -188,7 +190,8 @@ def siter(siter_dir):
             m_asg = match_asg.match(header[start : block.index].strip())
 
             if not m_asg:
-                siter_error("Syntax error")
+                siter_error("Missing assignment\n"
+                    + header[start : block.index + len(block.whole)].strip())
 
             lhs = m_asg.group(1).strip()
 
@@ -203,7 +206,7 @@ def siter(siter_dir):
                 params = [p.strip() for p in m_fun.group(2).split(",")]
                 bindings[name] = (name, params, block.contents)
             else:
-                siter_error("Syntax error")
+                siter_error("Syntax error\n" + lhs)
 
             start = block.index + len(block.whole)
 
@@ -214,7 +217,4 @@ def siter(siter_dir):
             w.write(page)
 
 if __name__ == "__main__":
-    if len(sys.argv) >= 2:
-        siter(sys.argv[1])
-    else:
-        siter(".")
+    siter("." if len(sys.argv) < 2 else sys.argv[1])
