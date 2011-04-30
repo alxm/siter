@@ -1,9 +1,14 @@
-title = Home
-underline(x) = <u>{{x}}</u>
-item(title, description) = <b>{{title}}:</b> <i>{{description}}</i><br>
+title = {{ Home }}
+underline(x) = {{ <u>{{x}}</u> }}
+item(title, description) = {{
+    <b>{{title}}:</b>
+    <i>{{description}}</i><br>
+}}
 
-<h1>Welcome {{title}}</h1>
+<h1>Welcome {{ title }}</h1>
 
 {{item: Macros ,, Example 1}}
 {{item: {{underline: Macros}} ,, Example 2}}
-{{underline: {{item: Macros ,, Example 3}}}}
+{{underline:
+    {{ item: Macros ,, Example 3 }}
+}}

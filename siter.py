@@ -19,40 +19,55 @@
 
 import copy, os, re, sys
 
+class Block:
+    def __init__(self, index, text):
+        self.index = index
+        self.whole = text
+        self.contents = text[2 : -2].strip()
+
+    def variable(self, bindings):
+        match = re.match("(\w+)$", self.contents)
+
+        if match:
+            variable = match.group()
+
+            if variable in bindings:
+                return variable
+
+        return None
+
+    def function(self, bindings):
+        match = re.match("(\w+)\s*\:(.*)$", self.contents, re.DOTALL)
+
+        if match:
+            function = match.group(1)
+            arguments = match.group(2)
+
+            if function in bindings:
+                return (function, arguments)
+
+        return None
+
 def siter_error(error):
     print "Siter Error: " + error
     sys.exit(1)
 
-def siter_evaluate(text, variables, functions):
-    for v in variables:
-        text = text.replace("{{" + v + "}}", variables[v])
+def siter_get_blocks(text):
+    blocks = []
+    start = 0
 
-    queue = []
-    start_looking = 0
+    while True:
+        index = text.find("{{", start)
 
-    while start_looking != -1:
-        call_start = text.find("{{", start_looking)
-
-        if call_start == -1:
+        if index == -1:
             break
-
-        args_start = text.find(":", call_start)
-
-        if args_start == -1:
-            break
-
-        function = text[call_start + 2 : args_start]
-
-        if function not in functions:
-            start_looking = call_start + 2
-            continue
 
         count = 1
 
         last_open = False
         last_close = False
 
-        for i in range(args_start + 1, len(text)):
+        for i in range(index + 2, len(text)):
             if text[i] == "{":
                 if last_open:
                     count += 1
@@ -72,32 +87,43 @@ def siter_evaluate(text, variables, functions):
                 last_close = False
 
             if count == 0:
-                call = text[call_start : i + 1]
-                inside = text[args_start + 1 : i - 1]
-
-                queue.append((call, function, inside))
-                start_looking = i + 1
-
+                start = i + 1
+                blocks.append(Block(index, text[index : start]))
                 break
 
-    for (call, f, inside) in queue:
-        (params, body) = functions[f]
+        if count != 0:
+            break
 
-        functions2 = copy.copy(functions)
-        del functions2[f]
+    return blocks
 
-        args = siter_evaluate(inside, variables, functions2).split(",,")
+def siter_evaluate(text, bindings):
+    blocks = siter_get_blocks(text)
 
-        if len(args) != len(params):
-            siter_error("Wrong number of arguments in " + f)
+    for block in blocks:
+        variable = block.variable(bindings)
+        function = block.function(bindings)
 
-        evaluated = body
+        if variable:
+            text = text.replace(block.whole, bindings[variable][2], 1)
+        elif function:
+            (fname, fargs) = function
+            (name, params, body) = bindings[fname]
 
-        for i in range(0, len(args)):
-            evaluated = evaluated.replace("{{" + params[i] + "}}", args[i].strip())
+            bindings2 = copy.copy(bindings)
+            del bindings2[fname]
 
-        evaluated = siter_evaluate(evaluated, variables, functions2)
-        text = text.replace(call, evaluated)
+            args = siter_evaluate(fargs, bindings2)
+            args = [a.strip() for a in args.split(",,")]
+
+            if len(args) != len(params):
+                siter_error("Wrong number of arguments")
+
+            for i in range(len(args)):
+                for m in re.finditer("\{\{\s*" + params[i] + "\s*\}\}", body, re.DOTALL):
+                    body = body.replace(m.group(), args[i], 1)
+
+            body = siter_evaluate(body, bindings2)
+            text = text.replace(block.whole, body, 1)
 
     return text
 
@@ -119,9 +145,6 @@ def siter(siter_dir):
     with open(siter_template, "r") as f:
         template = f.read()
 
-    re_define = re.compile("(.+?)=(.*)")      # id = value
-    re_function = re.compile("(.+?)\((.*)\)") # func(args)
-
     for page_file in os.listdir(siter_pages):
         read_file = siter_pages + "/" + page_file
         write_file = siter_dir + "/" + page_file
@@ -137,45 +160,58 @@ def siter(siter_dir):
 
         print "[  Updating  ] " + write_file
 
-        with open(read_file, "r") as r:
-            doing_bindings = True
+        header = ""
+        content = ""
 
-            variables = {}
-            functions = {}
-            page = ""
+        with open(read_file, "r") as r:
+            in_header = True
 
             for line in r:
-                if doing_bindings:
-                    # scan for id = value
-                    match = re_define.search(line)
+                if in_header and line.strip() == "":
+                    in_header = False
+                    continue
 
-                    if match:
-                        name = match.group(1).strip()
-                        value = match.group(2).strip()
-
-                        # scan for func(args), originally func(args) = value
-                        match = re_function.search(name)
-
-                        if match:
-                            name = match.group(1).strip()
-                            params = match.group(2).strip()
-
-                            functions[name] = (params.split(", "), value)
-                        else:
-                            variables[name] = value
-                    else:
-                        doing_bindings = False
-                        page = page + line
+                if in_header:
+                    header += line
                 else:
-                    page = page + line
+                    content += line
 
-            variables["page"] = page
+        start = 0
 
-            # replace variables and functions
-            page = siter_evaluate(template, variables, functions)
+        bindings = {}
 
-            with open(write_file, "w") as w:
-                w.write(page)
+        match_asg = re.compile("(.*)=\s*$", re.DOTALL)
+        match_var = re.compile("(\w+)$", re.DOTALL)
+        match_fun = re.compile("(\w+)\s*\((.*)\)$", re.DOTALL)
+
+        for block in siter_get_blocks(header):
+            m_asg = match_asg.match(header[start : block.index].strip())
+
+            if not m_asg:
+                siter_error("Syntax error")
+
+            lhs = m_asg.group(1).strip()
+
+            m_var = match_var.match(lhs)
+            m_fun = match_fun.match(lhs)
+
+            if m_var:
+                name = m_var.group(1)
+                bindings[name] = (name, [], block.contents)
+            elif m_fun:
+                name = m_fun.group(1)
+                params = [p.strip() for p in m_fun.group(2).split(",")]
+                bindings[name] = (name, params, block.contents)
+            else:
+                siter_error("Syntax error")
+
+            start = block.index + len(block.whole)
+
+        bindings["page"] = ("page", [], siter_evaluate(content, bindings))
+        page = siter_evaluate(template, bindings)
+
+        with open(write_file, "w") as w:
+            w.write(page)
 
 if __name__ == "__main__":
     if len(sys.argv) >= 2:
