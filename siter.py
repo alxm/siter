@@ -20,36 +20,27 @@
 import copy, os, re, sys
 
 class Block:
-    re_variable = re.compile("(\w+)$")
-    re_function = re.compile("(\w+)\s*\:(.*)$", re.DOTALL)
+    re_call = re.compile("(\w+)\s*(.*)$", re.DOTALL)
 
     def __init__(self, index, text):
         self.index = index
         self.whole = text
         self.contents = text[2 : -2].strip()
 
-    def variable(self, bindings):
-        match = Block.re_variable.match(self.contents)
+        match = Block.re_call.match(self.contents)
 
         if match:
-            variable = match.group()
+            self.name = match.group(1)
+            self.args = match.group(2)
+        else:
+            self.name = None
+            self.args = None
 
-            if variable in bindings:
-                return variable
-
-        return None
-
-    def function(self, bindings):
-        match = Block.re_function.match(self.contents)
-
-        if match:
-            function = match.group(1)
-            arguments = match.group(2)
-
-            if function in bindings:
-                return (function, arguments)
-
-        return None
+    def get_call(self, bindings):
+        if self.name in bindings:
+            return (self.name, self.args)
+        else:
+            return None
 
 def siter_error(error):
     print "[   Error!   ] " + error
@@ -103,19 +94,18 @@ def siter_evaluate(text, bindings):
     blocks = siter_get_blocks(text)
 
     for block in blocks:
-        variable = block.variable(bindings)
-        function = block.function(bindings)
+        call = block.get_call(bindings)
 
-        if variable:
-            (_, value) = bindings[variable]
-            text = text.replace(block.whole, value, 1)
-        elif function:
-            (name, args) = function
-            (params, body) = bindings[name]
+        if not call:
+            continue
 
-            bindings2 = copy.copy(bindings)
-            del bindings2[name]
+        (name, args) = call
+        (params, body) = bindings[name]
 
+        bindings2 = copy.copy(bindings)
+        del bindings2[name]
+
+        if len(params) > 0:
             args = siter_evaluate(args, bindings2)
             args = [a.strip() for a in args.split(",,")]
 
@@ -126,8 +116,8 @@ def siter_evaluate(text, bindings):
                 for m in re.finditer("\{\{\s*" + params[i] + "\s*\}\}", body, re.DOTALL):
                     body = body.replace(m.group(), args[i], 1)
 
-            body = siter_evaluate(body, bindings2)
-            text = text.replace(block.whole, body, 1)
+        body = siter_evaluate(body, bindings2)
+        text = text.replace(block.whole, body, 1)
 
     return text
 
@@ -185,7 +175,7 @@ def siter(siter_dir):
 
         match_asg = re.compile("(.*)=\s*$", re.DOTALL)
         match_var = re.compile("(\w+)$", re.DOTALL)
-        match_fun = re.compile("(\w+)\s*\((.*)\)$", re.DOTALL)
+        match_fun = re.compile("(\w+)\s+(.*)$", re.DOTALL)
 
         for block in siter_get_blocks(header):
             m_asg = match_asg.match(header[start : block.index].strip())
@@ -201,17 +191,17 @@ def siter(siter_dir):
 
             if m_var:
                 name = m_var.group(1)
-                bindings[name] = (None, block.contents)
+                bindings[name] = ([], block.contents)
             elif m_fun:
                 name = m_fun.group(1)
-                params = [p.strip() for p in m_fun.group(2).split(",")]
+                params = [p for p in re.split("\s+", m_fun.group(2).strip())]
                 bindings[name] = (params, block.contents)
             else:
                 siter_error("Syntax error\n" + lhs)
 
             start = block.index + len(block.whole)
 
-        bindings["page"] = (None, siter_evaluate(content, bindings))
+        bindings["page"] = ([], siter_evaluate(content, bindings))
         page = siter_evaluate(template, bindings)
 
         with open(write_file, "w") as w:
