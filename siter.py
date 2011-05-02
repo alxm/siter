@@ -126,7 +126,7 @@ def siter(siter_dir):
         siter_error("Can't find dir " + siter_dir)
 
     siter_pages = siter_dir + "/siter-pages"
-    siter_template = siter_dir + "/siter-template.html"
+    siter_template = siter_dir + "/siter-template/siter-template.html"
 
     if not os.path.isdir(siter_pages):
         siter_error("Can't find dir " + siter_pages)
@@ -138,6 +138,8 @@ def siter(siter_dir):
 
     with open(siter_template, "r") as f:
         template = f.read()
+
+    template = template.replace('="./', '="siter-template/')
 
     for page_file in os.listdir(siter_pages):
         read_file = siter_pages + "/" + page_file
@@ -201,7 +203,7 @@ def siter(siter_dir):
 
             start = block.index + len(block.whole)
 
-        bindings["page"] = ([], siter_evaluate(content, bindings))
+        bindings["siter_page"] = ([], siter_evaluate(content, bindings))
         page = siter_evaluate(template, bindings)
 
         with open(write_file, "w") as w:
