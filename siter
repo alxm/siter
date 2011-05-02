@@ -1,0 +1,211 @@
+#!/usr/bin/python
+
+"""
+    Copyright 2011 Alex Margarit
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+import copy, os, re, sys
+
+class Block:
+    re_call = re.compile("(\w+)\s*(.*)$", re.DOTALL)
+
+    def __init__(self, index, text):
+        self.index = index
+        self.whole = text
+        self.contents = text[2 : -2].strip()
+
+        match = Block.re_call.match(self.contents)
+
+        if match:
+            self.name = match.group(1)
+            self.args = match.group(2)
+        else:
+            self.name = None
+            self.args = None
+
+    def get_call(self, bindings):
+        return (self.name, self.args) if self.name in bindings else None
+
+    @staticmethod
+    def get_all(text):
+        blocks = []
+        start = 0
+
+        while True:
+            index = text.find("{{", start)
+
+            if index == -1:
+                break
+
+            count = 1
+
+            last_open = False
+            last_close = False
+
+            for i in range(index + 2, len(text)):
+                if text[i] == "{":
+                    if last_open:
+                        count += 1
+                        last_open = False
+                    else:
+                        last_open = True
+                else:
+                    last_open = False
+
+                if text[i] == "}":
+                    if last_close:
+                        count -= 1
+                        last_close = False
+                    else:
+                        last_close = True
+                else:
+                    last_close = False
+
+                if count == 0:
+                    start = i + 1
+                    blocks.append(Block(index, text[index : start]))
+                    break
+
+            if count != 0:
+                break
+
+        return blocks
+
+class Siter:
+    def __init__(self, dir):
+        self.siter_dir = dir + "/"
+        self.pages_dir = self.siter_dir + "/siter-pages/"
+        self.template_dir = self.siter_dir + "/siter-template/"
+        self.template_file = self.template_dir + "siter-template.html"
+
+        for d in [self.siter_dir, self.pages_dir, self.template_dir]:
+            if not os.path.isdir(d):
+                self.error("Can't find dir " + d)
+
+        if not os.path.isfile(self.template_file):
+            self.error("Can't find file " + self.template_file)
+
+    def error(self, error):
+        print "[   Error!   ] " + error
+        sys.exit(1)
+
+    def evaluate(self, text, bindings):
+        for block in Block.get_all(text):
+            call = block.get_call(bindings)
+
+            if not call:
+                continue
+
+            (name, args) = call
+            (params, body) = bindings[name]
+
+            bindings2 = copy.copy(bindings)
+            del bindings2[name]
+
+            if len(params) > 0:
+                args = self.evaluate(args, bindings2)
+                args = [a.strip() for a in args.split(",,")]
+
+                if len(args) != len(params):
+                    self.error("Wrong number of arguments\n" + block.whole)
+
+                for i in range(len(args)):
+                    for m in re.finditer("\{\{\s*" + params[i] + "\s*\}\}", body, re.DOTALL):
+                        body = body.replace(m.group(), args[i], 1)
+
+            body = self.evaluate(body, bindings2)
+            text = text.replace(block.whole, body, 1)
+
+        return text
+
+    def run(self):
+        template = None
+
+        with open(self.template_file, "r") as f:
+            template = f.read()
+
+        template = template.replace('="./', '="siter-template/')
+
+        for page_file in os.listdir(self.pages_dir):
+            read_file = self.pages_dir + page_file
+            write_file = self.siter_dir + page_file
+
+            if os.path.isfile(write_file):
+                read_date = os.stat(read_file)[8]
+                write_date = os.stat(write_file)[8]
+                template_date = os.stat(self.template_file)[8]
+
+                if read_date < write_date and template_date < write_date:
+                    print "[ Up to date ] " + write_file
+                    continue
+
+            print "[  Updating  ] " + write_file
+
+            header = ""
+            content = ""
+
+            with open(read_file, "r") as r:
+                in_header = True
+
+                for line in r:
+                    if in_header and line.strip() == "":
+                        in_header = False
+                        continue
+
+                    if in_header:
+                        header += line
+                    else:
+                        content += line
+
+            start = 0
+            bindings = {}
+
+            match_asg = re.compile("(.*)=\s*$", re.DOTALL)
+            match_var = re.compile("(\w+)$", re.DOTALL)
+            match_fun = re.compile("(\w+)\s+(.*)$", re.DOTALL)
+
+            for block in Block.get_all(header):
+                m_asg = match_asg.match(header[start : block.index].strip())
+
+                if not m_asg:
+                    self.error("Missing assignment\n"
+                        + header[start : block.index + len(block.whole)].strip())
+
+                lhs = m_asg.group(1).strip()
+
+                m_var = match_var.match(lhs)
+                m_fun = match_fun.match(lhs)
+
+                if m_var:
+                    name = m_var.group(1)
+                    bindings[name] = ([], block.contents)
+                elif m_fun:
+                    name = m_fun.group(1)
+                    params = [p for p in re.split("\s+", m_fun.group(2).strip())]
+                    bindings[name] = (params, block.contents)
+                else:
+                    self.error("Syntax error\n" + lhs)
+
+                start = block.index + len(block.whole)
+
+            bindings["siter_page"] = ([], self.evaluate(content, bindings))
+            page = self.evaluate(template, bindings)
+
+            with open(write_file, "w") as w:
+                w.write(page)
+
+if __name__ == "__main__":
+    Siter("." if len(sys.argv) < 2 else sys.argv[1]).run()
