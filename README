@@ -8,4 +8,8 @@ Content pages from siter-pages are fitted in siter-template/siter-template.html.
 Pages can define variables and simple macros that the template and page content
 can call. The first blank line in the file signals the content's beginning.
 
-Check out the included sample dir for a small example: ./siter sample
+Check out the included sample dir for a small example:
+
+cd sample
+siter       # generate
+siter force # regenerate all files, even up-to-date ones

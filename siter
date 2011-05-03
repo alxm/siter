@@ -85,10 +85,12 @@ class Block:
         return blocks
 
 class Siter:
-    def __init__(self, dir):
-        self.siter_dir = dir + "/"
-        self.pages_dir = self.siter_dir + "/siter-pages/"
-        self.template_dir = self.siter_dir + "/siter-template/"
+    def __init__(self, arg):
+        self.arg_force = arg == "force"
+
+        self.siter_dir = "./"
+        self.pages_dir = self.siter_dir + "siter-pages/"
+        self.template_dir = self.siter_dir + "siter-template/"
         self.template_file = self.template_dir + "siter-template.html"
 
         for d in [self.siter_dir, self.pages_dir, self.template_dir]:
@@ -143,7 +145,7 @@ class Siter:
             read_file = self.pages_dir + page_file
             write_file = self.siter_dir + page_file
 
-            if os.path.isfile(write_file):
+            if not self.arg_force and os.path.isfile(write_file):
                 read_date = os.stat(read_file)[8]
                 write_date = os.stat(write_file)[8]
                 template_date = os.stat(self.template_file)[8]
@@ -208,4 +210,4 @@ class Siter:
                 w.write(page)
 
 if __name__ == "__main__":
-    Siter("." if len(sys.argv) < 2 else sys.argv[1]).run()
+    Siter(sys.argv[1] if len(sys.argv) > 1 else None).run()
