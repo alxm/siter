@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import copy, os, re, sys
+import os, re, sys
 
 class Block:
     re_call = re.compile("(\w+)\s*(.*)$", re.DOTALL)
@@ -88,17 +88,14 @@ class Siter:
     def __init__(self, arg):
         self.arg_force = arg == "force"
 
-        self.siter_dir = "./"
-        self.pages_dir = self.siter_dir + "siter-pages/"
-        self.template_dir = self.siter_dir + "siter-template/"
-        self.template_file = self.template_dir + "siter-template.html"
+        self.pages_dir = "siter-pages/"
+        self.template_dir = "siter-template/"
 
-        for d in [self.siter_dir, self.pages_dir, self.template_dir]:
+        for d in [self.pages_dir, self.template_dir]:
             if not os.path.isdir(d):
                 self.error("Can't find dir " + d)
 
-        if not os.path.isfile(self.template_file):
-            self.error("Can't find file " + self.template_file)
+        self.bindings = {}
 
     def error(self, error):
         print "[   Error!   ] " + error
@@ -114,7 +111,7 @@ class Siter:
             (name, args) = call
             (params, body) = bindings[name]
 
-            bindings2 = copy.copy(bindings)
+            bindings2 = dict(bindings)
             del bindings2[name]
 
             if len(params) > 0:
@@ -133,36 +130,52 @@ class Siter:
 
         return text
 
-    def run(self):
-        template = None
+    def apply_template(self, name, bindings):
+        template_file = self.template_dir + name
 
-        with open(self.template_file, "r") as f:
+        if not os.path.isfile(template_file):
+            return None
+
+        with open(template_file, "r") as f:
             template = f.read()
 
         template = template.replace('="./', '="siter-template/')
 
-        for page_file in os.listdir(self.pages_dir):
-            read_file = self.pages_dir + page_file
-            write_file = self.siter_dir + page_file
+        return self.evaluate(template, bindings)
 
-            if not self.arg_force and os.path.isfile(write_file):
-                read_date = os.stat(read_file)[8]
-                write_date = os.stat(write_file)[8]
-                template_date = os.stat(self.template_file)[8]
+    def up_to_date(self, read_file, write_file):
+        if not self.arg_force and os.path.isfile(write_file):
+            read_date = os.stat(read_file)[8]
+            write_date = os.stat(write_file)[8]
 
-                if read_date < write_date and template_date < write_date:
-                    print "[ Up to date ] " + write_file
-                    continue
+            return read_date < write_date
+        else:
+            return False
+
+    def pages(self):
+        re_asg = re.compile("(.*)=\s*$", re.DOTALL)
+        re_var = re.compile("(\w+)$", re.DOTALL)
+        re_fun = re.compile("(\w+)\s+(.*)$", re.DOTALL)
+
+        for p in os.listdir(self.pages_dir):
+            read_file = self.pages_dir + p
+            write_file = p
+
+            if self.up_to_date(read_file, write_file):
+                print "[ Up to date ] " + write_file
+                continue
 
             print "[  Updating  ] " + write_file
+
+            bindings = dict(self.bindings)
 
             header = ""
             content = ""
 
-            with open(read_file, "r") as r:
+            with open(read_file, "r") as f:
                 in_header = True
 
-                for line in r:
+                for line in f:
                     if in_header and line.strip() == "":
                         in_header = False
                         continue
@@ -173,41 +186,39 @@ class Siter:
                         content += line
 
             start = 0
-            bindings = {}
-
-            match_asg = re.compile("(.*)=\s*$", re.DOTALL)
-            match_var = re.compile("(\w+)$", re.DOTALL)
-            match_fun = re.compile("(\w+)\s+(.*)$", re.DOTALL)
 
             for block in Block.get_all(header):
-                m_asg = match_asg.match(header[start : block.index].strip())
+                asg = re_asg.match(header[start : block.index].strip())
 
-                if not m_asg:
+                if not asg:
                     self.error("Missing assignment\n"
                         + header[start : block.index + len(block.whole)].strip())
 
-                lhs = m_asg.group(1).strip()
+                lhs = asg.group(1).strip()
+                var = re_var.match(lhs)
+                fun = re_fun.match(lhs)
 
-                m_var = match_var.match(lhs)
-                m_fun = match_fun.match(lhs)
-
-                if m_var:
-                    name = m_var.group(1)
+                if var:
+                    name = var.group(1)
                     bindings[name] = ([], block.contents)
-                elif m_fun:
-                    name = m_fun.group(1)
-                    params = [p for p in re.split("\s+", m_fun.group(2).strip())]
+                elif fun:
+                    name = fun.group(1)
+                    params = [p for p in re.split("\s+", fun.group(2).strip())]
                     bindings[name] = (params, block.contents)
                 else:
-                    self.error("Syntax error\n" + lhs)
+                    self.error("Assignment syntax error\n" + lhs)
 
                 start = block.index + len(block.whole)
 
             bindings["siter_page"] = ([], self.evaluate(content, bindings))
-            page = self.evaluate(template, bindings)
+            page = self.apply_template("page.html", bindings)
 
-            with open(write_file, "w") as w:
-                w.write(page)
+            if page:
+                with open(write_file, "w") as f:
+                    f.write(page)
+            else:
+                self.error("Can't find page template")
 
 if __name__ == "__main__":
-    Siter(sys.argv[1] if len(sys.argv) > 1 else None).run()
+    siter = Siter(sys.argv[1] if len(sys.argv) > 1 else None)
+    siter.pages()
