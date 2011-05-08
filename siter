@@ -20,14 +20,12 @@
 import os, re, sys
 
 class Block:
-    re_call = re.compile("(\w+)\s*(.*)$", re.DOTALL)
-
     def __init__(self, index, text):
         self.index = index
         self.whole = text
         self.contents = text[2 : -2].strip()
 
-        match = Block.re_call.match(self.contents)
+        match = re.match("(\w+)\s*(.*)$", self.contents, re.DOTALL)
 
         if match:
             self.name = match.group(1)
@@ -89,6 +87,7 @@ class Siter:
         self.arg_force = arg == "force"
 
         self.pages_dir = "siter-pages/"
+        self.posts_dir = "siter-posts/"
         self.template_dir = "siter-template/"
 
         for d in [self.pages_dir, self.template_dir]:
@@ -130,6 +129,42 @@ class Siter:
 
         return text
 
+    def get_bindings(self, read_file):
+        re_asg = re.compile("(.*)=\s*$", re.DOTALL)
+        re_var = re.compile("(\w+)$", re.DOTALL)
+        re_fun = re.compile("(\w+)\s+(.*)$", re.DOTALL)
+
+        with open(read_file, "r") as f:
+            text = f.read()
+
+        start = 0
+        bindings = {}
+
+        for block in Block.get_all(text):
+            asg = re_asg.match(text[start : block.index].strip())
+
+            if not asg:
+                self.error("Missing assignment\n"
+                    + text[start : block.index + len(block.whole)].strip())
+
+            lhs = asg.group(1).strip()
+            var = re_var.match(lhs)
+            fun = re_fun.match(lhs)
+
+            if var:
+                name = var.group(1)
+                bindings[name] = ([], block.contents)
+            elif fun:
+                name = fun.group(1)
+                params = [p for p in re.split("\s+", fun.group(2).strip())]
+                bindings[name] = (params, block.contents)
+            else:
+                self.error("Assignment syntax error\n" + lhs)
+
+            start = block.index + len(block.whole)
+
+        return bindings
+
     def apply_template(self, name, bindings):
         template_file = self.template_dir + name
 
@@ -152,12 +187,58 @@ class Siter:
         else:
             return False
 
-    def pages(self):
-        re_asg = re.compile("(.*)=\s*$", re.DOTALL)
-        re_var = re.compile("(\w+)$", re.DOTALL)
-        re_fun = re.compile("(\w+)\s+(.*)$", re.DOTALL)
+    def run_posts(self):
+        if not os.path.isdir(self.posts_dir):
+            return
 
-        for p in os.listdir(self.pages_dir):
+        posts_list = ""
+
+        posts = os.listdir(self.posts_dir)
+        posts.sort(key = lambda p: p)
+
+        re_date = re.compile("(\d\d\d\d-\d\d-\d\d)\.html$")
+
+        for p in posts:
+            m_date = re_date.match(p)
+
+            if not m_date:
+                continue
+
+            read_file = self.posts_dir + p
+            write_file = "post-" + p
+
+            bindings = self.get_bindings(read_file)
+            bindings["siter_link"] = ([], write_file)
+
+            post = self.apply_template("post-stub.html", bindings)
+
+            if post:
+                posts_list = "<li>" + post + "</li>" + posts_list
+            else:
+                self.error("Can't find post stub template")
+
+            if self.up_to_date(read_file, write_file):
+                print "[ Up to date ] " + write_file
+                continue
+
+            print "[  Updating  ] " + write_file
+
+            page = self.apply_template("post.html", bindings)
+
+            if page:
+                with open(write_file, "w") as f:
+                    f.write(page)
+            else:
+                self.error("Can't find post template")
+
+        posts_list = '<ul class="siter_posts_list">' + posts_list + '</ul>'
+        self.bindings["siter_posts"] = ([], posts_list)
+
+    def run_pages(self):
+        pages = os.listdir(self.pages_dir)
+        pages.sort(key = lambda p: p)
+
+        for p in pages:
             read_file = self.pages_dir + p
             write_file = p
 
@@ -167,50 +248,9 @@ class Siter:
 
             print "[  Updating  ] " + write_file
 
-            bindings = dict(self.bindings)
+            bindings = dict(self.bindings, **self.get_bindings(read_file))
+            bindings["siter_link"] = ([], write_file)
 
-            header = ""
-            content = ""
-
-            with open(read_file, "r") as f:
-                in_header = True
-
-                for line in f:
-                    if in_header and line.strip() == "":
-                        in_header = False
-                        continue
-
-                    if in_header:
-                        header += line
-                    else:
-                        content += line
-
-            start = 0
-
-            for block in Block.get_all(header):
-                asg = re_asg.match(header[start : block.index].strip())
-
-                if not asg:
-                    self.error("Missing assignment\n"
-                        + header[start : block.index + len(block.whole)].strip())
-
-                lhs = asg.group(1).strip()
-                var = re_var.match(lhs)
-                fun = re_fun.match(lhs)
-
-                if var:
-                    name = var.group(1)
-                    bindings[name] = ([], block.contents)
-                elif fun:
-                    name = fun.group(1)
-                    params = [p for p in re.split("\s+", fun.group(2).strip())]
-                    bindings[name] = (params, block.contents)
-                else:
-                    self.error("Assignment syntax error\n" + lhs)
-
-                start = block.index + len(block.whole)
-
-            bindings["siter_page"] = ([], self.evaluate(content, bindings))
             page = self.apply_template("page.html", bindings)
 
             if page:
@@ -221,4 +261,5 @@ class Siter:
 
 if __name__ == "__main__":
     siter = Siter(sys.argv[1] if len(sys.argv) > 1 else None)
-    siter.pages()
+    siter.run_posts()
+    siter.run_pages()
