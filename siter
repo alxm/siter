@@ -95,6 +95,7 @@ class Siter:
                 self.error("Can't find dir " + d)
 
         self.bindings = {}
+        self.posts = []
 
     def error(self, error):
         print "[   Error!   ] " + error
@@ -108,21 +109,28 @@ class Siter:
                 continue
 
             (name, args) = call
-            (params, body) = bindings[name]
+            (params, body, handler) = bindings[name]
 
             bindings2 = dict(bindings)
             del bindings2[name]
 
-            if len(params) > 0:
+            if handler or len(params) > 0:
                 args = self.evaluate(args, bindings2)
                 args = [a.strip() for a in args.split(",,")]
 
                 if len(args) != len(params):
                     self.error("Wrong number of arguments\n" + block.whole)
 
-                for i in range(len(args)):
-                    for m in re.finditer("\{\{\s*" + params[i] + "\s*\}\}", body, re.DOTALL):
-                        body = body.replace(m.group(), args[i], 1)
+                if handler:
+                    body = handler(args)
+                else:
+                    if len(args) != len(params):
+                        self.error("Wrong number of arguments\n" + block.whole)
+
+                    if not handler:
+                        for i in range(len(args)):
+                            for m in re.finditer("\{\{\s*" + params[i] + "\s*\}\}", body, re.DOTALL):
+                                body = body.replace(m.group(), args[i], 1)
 
             body = self.evaluate(body, bindings2)
             text = text.replace(block.whole, body, 1)
@@ -153,11 +161,11 @@ class Siter:
 
             if var:
                 name = var.group(1)
-                bindings[name] = ([], block.contents)
+                bindings[name] = ([], block.contents, None)
             elif fun:
                 name = fun.group(1)
                 params = [p for p in re.split("\s+", fun.group(2).strip())]
-                bindings[name] = (params, block.contents)
+                bindings[name] = (params, block.contents, None)
             else:
                 self.error("Assignment syntax error\n" + lhs)
 
@@ -191,10 +199,9 @@ class Siter:
         if not os.path.isdir(self.posts_dir):
             return
 
-        posts_list = ""
-
         posts = os.listdir(self.posts_dir)
         posts.sort(key = lambda p: p)
+        posts.reverse()
 
         re_date = re.compile("(\d\d\d\d-\d\d-\d\d)\.html$")
 
@@ -208,14 +215,9 @@ class Siter:
             write_file = "post-" + p
 
             bindings = self.get_bindings(read_file)
-            bindings["siter_link"] = ([], write_file)
+            bindings["siter_post_link"] = ([], write_file, None) # [!]
 
-            post = self.apply_template("post-stub.html", bindings)
-
-            if post:
-                posts_list = "<li>" + post + "</li>" + posts_list
-            else:
-                self.error("Can't find post stub template")
+            self.posts.append(bindings)
 
             if self.up_to_date(read_file, write_file):
                 print "[ Up to date ] " + write_file
@@ -231,8 +233,41 @@ class Siter:
             else:
                 self.error("Can't find post template")
 
-        posts_list = '<ul class="siter_posts_list">' + posts_list + '</ul>'
-        self.bindings["siter_posts"] = ([], posts_list)
+        def single_post(args):
+            try:
+                p = int(args[0])
+            except ValueError:
+                self.error("Bad argument")
+
+            post = self.apply_template("post-full.html", self.posts[p])
+
+            if not post:
+                self.error("Can't find full post template")
+
+            return post
+
+        def posts_list(args):
+            try:
+                start = int(args[0])
+            except ValueError:
+                self.error("Bad argument")
+
+            posts = ""
+
+            for p in self.posts[start :]:
+                post = self.apply_template("post-stub.html", p)
+
+                if post:
+                    posts = posts + "<li>" + post + "</li>"
+                else:
+                    self.error("Can't find post stub template")
+
+            posts = '<ul class="siter_posts_list">' + posts + '</ul>'
+
+            return posts
+
+        self.bindings["siter_post"] = ([None], None, single_post) # [!]
+        self.bindings["siter_posts"] = ([None], None, posts_list) # [!]
 
     def run_pages(self):
         pages = os.listdir(self.pages_dir)
@@ -249,7 +284,7 @@ class Siter:
             print "[  Updating  ] " + write_file
 
             bindings = dict(self.bindings, **self.get_bindings(read_file))
-            bindings["siter_link"] = ([], write_file)
+            bindings["siter_link"] = ([], write_file, None)
 
             page = self.apply_template("page.html", bindings)
 
