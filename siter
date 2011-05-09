@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os, re, sys
+import os, re, sys, time
 
 class Block:
     def __init__(self, index, text):
@@ -188,8 +188,8 @@ class Siter:
 
     def up_to_date(self, read_file, write_file):
         if not self.arg_force and os.path.isfile(write_file):
-            read_date = os.stat(read_file)[8]
-            write_date = os.stat(write_file)[8]
+            read_date = os.stat(read_file).st_mtime
+            write_date = os.stat(write_file).st_mtime
 
             return read_date < write_date
         else:
@@ -215,7 +215,8 @@ class Siter:
             write_file = "post-" + p
 
             bindings = self.get_bindings(read_file)
-            bindings["siter_post_link"] = ([], write_file, None) # [!]
+            bindings["siter_post_link"] = ([], write_file, None)
+            bindings["siter_modified"] = ([], time.strftime("%a, %d %b %Y"), None)
 
             self.posts.append(bindings)
 
@@ -266,8 +267,8 @@ class Siter:
 
             return posts
 
-        self.bindings["siter_post"] = ([None], None, single_post) # [!]
-        self.bindings["siter_posts"] = ([None], None, posts_list) # [!]
+        self.bindings["siter_post"] = ([None], None, single_post)
+        self.bindings["siter_posts"] = ([None], None, posts_list)
 
     def run_pages(self):
         pages = os.listdir(self.pages_dir)
@@ -284,7 +285,7 @@ class Siter:
             print "[  Updating  ] " + write_file
 
             bindings = dict(self.bindings, **self.get_bindings(read_file))
-            bindings["siter_link"] = ([], write_file, None)
+            bindings["siter_modified"] = ([], time.strftime("%a, %d %b %Y"), None)
 
             page = self.apply_template("page.html", bindings)
 
