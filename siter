@@ -115,24 +115,31 @@ class Siter:
             del bindings2[name]
 
             if handler or len(params) > 0:
-                args = self.evaluate(args, bindings2)
-                args = [a.strip() for a in args.split(",,")]
+                arg = ""
+                arguments = []
 
-                if len(args) != len(params):
-                    self.error("Wrong number of arguments\n" + block.whole)
+                args = self.evaluate(args, bindings2).split("\n")
+                args = [a.strip() for a in args]
+
+                for a in args:
+                    if a[-1] == "\\":
+                        arg += a[: -1]
+                    else:
+                        arguments.append(arg + a)
+                        arg = ""
+
+                if len(arguments) != len(params):
+                    self.error("Wrong number of arguments: {0} instead of {1}\n{2}"
+                            .format(len(arguments), len(params), block.whole))
 
                 if handler:
-                    body = handler(args)
+                    body = handler(arguments)
                 else:
-                    if len(args) != len(params):
-                        self.error("Wrong number of arguments\n" + block.whole)
+                    for i in range(len(arguments)):
+                        for m in re.finditer("\{\{\s*" + params[i] + "\s*\}\}", body, re.DOTALL):
+                            body = body.replace(m.group(), arguments[i], 1)
 
-                    if not handler:
-                        for i in range(len(args)):
-                            for m in re.finditer("\{\{\s*" + params[i] + "\s*\}\}", body, re.DOTALL):
-                                body = body.replace(m.group(), args[i], 1)
-
-            body = self.evaluate(body, bindings2)
+            body = self.evaluate(body, bindings2).replace("\n", "")
             text = text.replace(block.whole, body, 1)
 
         return text
@@ -142,7 +149,7 @@ class Siter:
         re_var = re.compile("(\w+)$", re.DOTALL)
         re_fun = re.compile("(\w+)\s+(.*)$", re.DOTALL)
 
-        with open(read_file, "r") as f:
+        with open(read_file, "rU") as f:
             text = f.read()
 
         start = 0
@@ -179,7 +186,7 @@ class Siter:
         if not os.path.isfile(template_file):
             return None
 
-        with open(template_file, "r") as f:
+        with open(template_file, "rU") as f:
             template = f.read()
 
         template = template.replace('="./', '="siter-template/')
@@ -203,7 +210,7 @@ class Siter:
         posts.sort(key = lambda p: p)
         posts.reverse()
 
-        re_date = re.compile("(\d\d\d\d-\d\d-\d\d)\.html$")
+        re_date = re.compile("(\d{4}-\d{2}-\d{2})\.html$")
 
         for p in posts:
             m_date = re_date.match(p)
@@ -238,7 +245,7 @@ class Siter:
             try:
                 p = int(args[0])
             except ValueError:
-                self.error("Bad argument")
+                self.error("single_post: Bad argument")
 
             post = self.apply_template("post-full.html", self.posts[p])
 
@@ -251,7 +258,7 @@ class Siter:
             try:
                 start = int(args[0])
             except ValueError:
-                self.error("Bad argument")
+                self.error("posts_list: Bad argument")
 
             posts = ""
 
