@@ -210,16 +210,9 @@ class Siter:
         posts.sort(key = lambda p: p)
         posts.reverse()
 
-        re_date = re.compile("(\d{4}-\d{2}-\d{2})\.html$")
-
         for p in posts:
-            m_date = re_date.match(p)
-
-            if not m_date:
-                continue
-
             read_file = self.posts_dir + p
-            write_file = "post-" + p
+            write_file = p
 
             bindings = self.get_bindings(read_file)
             bindings["siter_post_link"] = ([], write_file, None)
