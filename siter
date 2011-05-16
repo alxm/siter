@@ -234,10 +234,10 @@ class Siter:
             else:
                 self.error("Can't find post template")
 
-        def single_post(args):
+        def siter_post(args):
             try:
                 p = int(args[0])
-            except ValueError:
+            except:
                 self.error("single_post: Bad argument")
 
             post = self.apply_template("post-full.html", self.posts[p])
@@ -247,16 +247,17 @@ class Siter:
 
             return post
 
-        def posts_list(args):
+        def siter_posts(args):
             try:
-                start = int(args[0])
-            except ValueError:
-                self.error("posts_list: Bad argument")
+                (start, end) = (int(args[0]), args[1])
+                end = None if end == "end" else int(end)
+            except:
+                self.error("posts_list: Bad arguments")
 
             posts = ""
             counter = 0
 
-            for p in self.posts[start :]:
+            for p in self.posts[start : end]:
                 post = self.apply_template("post-stub.html", p)
 
                 if post:
@@ -272,8 +273,8 @@ class Siter:
 
             return posts
 
-        self.bindings["siter_post"] = ([None], None, single_post)
-        self.bindings["siter_posts"] = ([None], None, posts_list)
+        self.bindings["siter_post"] = ([None], None, siter_post)
+        self.bindings["siter_posts"] = ([None, None], None, siter_posts)
 
     def run_pages(self):
         pages = os.listdir(self.pages_dir)
