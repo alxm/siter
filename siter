@@ -254,16 +254,21 @@ class Siter:
                 self.error("posts_list: Bad argument")
 
             posts = ""
+            counter = 0
 
             for p in self.posts[start :]:
                 post = self.apply_template("post-stub.html", p)
 
                 if post:
                     posts = posts + "<li>" + post + "</li>"
+                    counter += 1
                 else:
                     self.error("Can't find post stub template")
 
-            posts = '<ul class="siter_posts_list">' + posts + '</ul>'
+            if counter > 0:
+                posts = '<ul class="siter_posts_list">' + posts + '</ul>'
+            else:
+                posts = '<div class="siter_posts_list_empty">No posts found.</div>'
 
             return posts
 

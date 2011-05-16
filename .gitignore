@@ -1,5 +1,3 @@
-syntax: glob
-
-.git/
+.hg/
 sample/about.html
 sample/index.html
