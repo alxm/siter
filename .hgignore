@@ -1,5 +1,0 @@
-syntax: glob
-
-.git/
-sample/about.html
-sample/index.html

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 """
     Copyright 2011 Alex Margarit
@@ -237,8 +237,14 @@ class Siter:
         def siter_post(args):
             try:
                 p = int(args[0])
+
+                if p < 0:
+                    raise
             except:
                 self.error("single_post: Bad argument")
+
+            if p >= len(self.posts):
+                return ""
 
             post = self.apply_template("post-full.html", self.posts[p])
 
