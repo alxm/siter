@@ -99,7 +99,7 @@ class Siter:
         print "[   Error!   ] " + error
         sys.exit(1)
 
-    def evaluate(self, text, bindings):
+    def evaluate(self, text, bindings, depth):
         for block in Block.get_all(text):
             call = block.get_call(bindings)
 
@@ -116,7 +116,7 @@ class Siter:
                 arg = ""
                 arguments = []
 
-                args = self.evaluate(args, bindings2).split("\n")
+                args = self.evaluate(args, bindings2, True).split("\n")
                 args = [a.strip() for a in args]
 
                 for a in args:
@@ -134,7 +134,12 @@ class Siter:
                     for m in re.finditer("\{\{\s*" + params[i] + "\s*\}\}", body, re.DOTALL):
                         body = body.replace(m.group(), arguments[i], 1)
 
-            body = self.evaluate(body, bindings2).replace("\n", "")
+            body = self.evaluate(body, bindings2, True)
+
+            if depth:
+                body = body.replace("\n", "")
+                body = re.sub("\s\s+", " ", body)
+
             text = text.replace(block.whole, body, 1)
 
         return text
@@ -186,7 +191,7 @@ class Siter:
 
         template = template.replace('="./', '="siter-template/')
 
-        return self.evaluate(template, bindings)
+        return self.evaluate(template, bindings, False)
 
     def up_to_date(self, read_file, write_file):
         if not self.arg_force and os.path.isfile(write_file):
