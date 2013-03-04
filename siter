@@ -155,6 +155,8 @@ class Siter:
         start = 0
         bindings = {}
 
+        bindings["siter_modified"] = ([], time.strftime("%a, %d %b %Y", time.localtime(os.stat(read_file).st_mtime)))
+
         for block in Block.get_all(text):
             asg = re_asg.match(text[start : block.index].strip())
 
@@ -217,7 +219,7 @@ class Siter:
             print "[  Updating  ] " + write_file
 
             bindings = dict(self.bindings, **self.get_bindings(read_file))
-            bindings["siter_modified"] = ([], time.strftime("%a, %d %b %Y"))
+            bindings["siter_generated"] = ([], time.strftime("%a, %d %b %Y"))
 
             page = self.apply_template("page.html", bindings)
 
