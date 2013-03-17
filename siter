@@ -210,6 +210,10 @@ class Siter:
             read_file = self.pages_dir + p
             write_file = p
 
+            if os.path.isdir(read_file):
+                print "[  Skip dir  ] " + p
+                continue
+
             if self.up_to_date(read_file, write_file):
                 print "[ Up to date ] " + write_file
                 continue
