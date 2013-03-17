@@ -25,7 +25,7 @@ class Block:
         self.whole = text
         self.contents = text[2 : -2].strip()
 
-        match = re.match("(\w+)\s*(.*)$", self.contents, re.DOTALL)
+        match = re.match("([\w\.\-]+)\s*(.*)$", self.contents, re.DOTALL)
 
         if match:
             self.name = match.group(1)
@@ -146,16 +146,14 @@ class Siter:
 
     def get_bindings(self, read_file):
         re_asg = re.compile("(.*)=\s*$", re.DOTALL)
-        re_var = re.compile("(\w+)$", re.DOTALL)
-        re_fun = re.compile("(\w+)\s+(.*)$", re.DOTALL)
+        re_var = re.compile("([\w\.\-]+)$", re.DOTALL)
+        re_fun = re.compile("([\w\.\-]+)\s+(.*)$", re.DOTALL)
 
         with open(read_file, "rU") as f:
             text = f.read()
 
         start = 0
         bindings = {}
-
-        bindings["siter_modified"] = ([], time.strftime("%a, %d %b %Y", time.localtime(os.stat(read_file).st_mtime)))
 
         for block in Block.get_all(text):
             asg = re_asg.match(text[start : block.index].strip())
@@ -219,7 +217,8 @@ class Siter:
             print "[  Updating  ] " + write_file
 
             bindings = dict(self.bindings, **self.get_bindings(read_file))
-            bindings["siter_generated"] = ([], time.strftime("%a, %d %b %Y"))
+            bindings["siter.modified"] = ([], time.strftime("%Y.%m.%d", time.localtime(os.stat(read_file).st_mtime)))
+            bindings["siter.generated"] = ([], time.strftime("%Y.%m.%d"))
 
             page = self.apply_template("page.html", bindings)
 
