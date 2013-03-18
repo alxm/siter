@@ -21,29 +21,20 @@ import os, re, sys, time
 
 class Block:
     def __init__(self, index, text):
-        self.index = index
+        # Block including (( and ))
         self.whole = text
-        self.contents = text[2 : -2].strip()
 
-        match = re.match("([\w\.\-]+)\s*(.*)$", self.contents, re.DOTALL)
-
-        if match:
-            self.name = match.group(1)
-            self.args = match.group(2)
-        else:
-            self.name = None
-            self.args = None
-
-    def get_call(self, bindings):
-        return (self.name, self.args) if self.name in bindings else None
+        # Just the inside of (( * ))
+        self.content = text[2 : -2].strip()
 
     @staticmethod
-    def get_all(text):
+    def extract_blocks(text):
+        # A block is a root-level ((something))
         blocks = []
         start = 0
 
         while True:
-            index = text.find("{{", start)
+            index = text.find("((", start)
 
             if index == -1:
                 break
@@ -54,7 +45,7 @@ class Block:
             last_close = False
 
             for i in range(index + 2, len(text)):
-                if text[i] == "{":
+                if text[i] == "(":
                     if last_open:
                         count += 1
                         last_open = False
@@ -63,7 +54,7 @@ class Block:
                 else:
                     last_open = False
 
-                if text[i] == "}":
+                if text[i] == ")":
                     if last_close:
                         count -= 1
                         last_close = False
@@ -77,6 +68,7 @@ class Block:
                     blocks.append(Block(index, text[index : start]))
                     break
 
+            # Mis-matched number of blocks
             if count != 0:
                 break
 
@@ -91,92 +83,88 @@ class Siter:
 
         for d in [self.pages_dir, self.template_dir]:
             if not os.path.isdir(d):
-                self.error("Can't find dir " + d)
+                self.error("Can't find dir {0}".format(d))
 
-        self.bindings = {}
-
-    def error(self, error):
-        print "[   Error!   ] " + error
+    def error(self, e):
+        print "[   Error!   ] {0}".format(e)
         sys.exit(1)
 
-    def evaluate(self, text, bindings, depth):
-        for block in Block.get_all(text):
-            call = block.get_call(bindings)
+    def evaluate_text(self, text, bindings):
+        re_use = re.compile("s\.use\s+([\w\.\-]+)\s*(.*)$", re.DOTALL)
 
-            if not call:
+        for block in Block.extract_blocks(text):
+            use = re_use.match(block.content)
+
+            if use:
+                name = use.group(1)
+                args = use.group(2)
+            else:
                 continue
 
-            (name, args) = call
+            if not name in bindings:
+                text = text.replace(block.whole, "", 1)
+                print "[ Can't find ] {0}".format(name)
+                continue
+
             (params, body) = bindings[name]
 
             bindings2 = dict(bindings)
+
+            # Avoid infinite recursion
             del bindings2[name]
 
             if len(params) > 0:
-                arg = ""
+                arg_blocks = Block.extract_blocks(args)
+
+                if len(arg_blocks) != len(params):
+                    self.error("{0} expects {1} arguments, got {2}"
+                        .format(name, len(params), len(arg_blocks)))
+
                 arguments = []
 
-                args = self.evaluate(args, bindings2, True).split("\n")
-                args = [a.strip() for a in args]
+                # Evaluate each argument
+                for arg_block in arg_blocks:
+                    arg = self.evaluate_text(arg_block.content, bindings2)
+                    arguments.append(arg)
 
-                for a in args:
-                    if len(a) > 0 and a[-1] == "\\":
-                        arg += a[: -1]
-                    else:
-                        arguments.append(arg + a)
-                        arg = ""
-
-                if len(arguments) != len(params):
-                    self.error("Wrong number of arguments: {0} instead of {1}\n{2}"
-                            .format(len(arguments), len(params), block.whole))
-
+                # Replace every instance of a parameter with the supplied argument
                 for i in range(len(arguments)):
-                    for m in re.finditer("\{\{\s*" + params[i] + "\s*\}\}", body, re.DOTALL):
+                    for m in re.finditer("\(\(s\.use\s+" + params[i] + "\s*\)\)", body, re.DOTALL):
                         body = body.replace(m.group(), arguments[i], 1)
 
-            body = self.evaluate(body, bindings2, True)
-
-            if depth:
-                body = body.replace("\n", "")
-                body = re.sub("\s\s+", " ", body)
-
+            # Evaluate the body itself, then replace the ((block)) with it
+            body = self.evaluate_text(body, bindings2)
             text = text.replace(block.whole, body, 1)
 
         return text
 
     def get_bindings(self, read_file):
-        re_asg = re.compile("(.*)=\s*$", re.DOTALL)
-        re_var = re.compile("([\w\.\-]+)$", re.DOTALL)
-        re_fun = re.compile("([\w\.\-]+)\s+(.*)$", re.DOTALL)
+        re_var = re.compile("s\.var\s+([\w\.\-]+)\s*\(\((.*)\)\)$", re.DOTALL)
+        re_fun = re.compile("s\.fun\s+([\w\.\-]+)\s*\(\((.*)\)\)\s*\(\((.*)\)\)$", re.DOTALL)
 
         with open(read_file, "rU") as f:
             text = f.read()
 
         start = 0
+
+        # "name" -> ([params], body)
         bindings = {}
 
-        for block in Block.get_all(text):
-            asg = re_asg.match(text[start : block.index].strip())
-
-            if not asg:
-                self.error("Missing assignment\n"
-                    + text[start : block.index + len(block.whole)].strip())
-
-            lhs = asg.group(1).strip()
-            var = re_var.match(lhs)
-            fun = re_fun.match(lhs)
+        for block in Block.extract_blocks(text):
+            var = re_var.match(block.content)
+            fun = re_fun.match(block.content)
 
             if var:
                 name = var.group(1)
-                bindings[name] = ([], block.contents)
+                bindings[name] = ([], var.group(2))
             elif fun:
                 name = fun.group(1)
                 params = [p for p in re.split("\s+", fun.group(2).strip())]
-                bindings[name] = (params, block.contents)
+                body = fun.group(3)
+                bindings[name] = (params, body)
             else:
-                self.error("Assignment syntax error\n" + lhs)
-
-            start = block.index + len(block.whole)
+                self.error("Block is neither variable nor function\n{0}"
+                    .format(block.whole))
 
         return bindings
 
@@ -184,14 +172,15 @@ class Siter:
         template_file = self.template_dir + name
 
         if not os.path.isfile(template_file):
-            return None
+            self.error("Can't find page template {0}".format(template_file))
 
         with open(template_file, "rU") as f:
             template = f.read()
 
+        # This way paths work in both the template dir and in generated pages
         template = template.replace('="./', '="siter-template/')
 
-        return self.evaluate(template, bindings, False)
+        return self.evaluate_text(template, bindings)
 
     def up_to_date(self, read_file, write_file):
         if not self.arg_force and os.path.isfile(write_file):
@@ -202,7 +191,7 @@ class Siter:
         else:
             return False
 
-    def run_pages(self):
+    def run(self):
         pages = os.listdir(self.pages_dir)
         pages.sort(key = lambda p: p)
 
@@ -220,18 +209,19 @@ class Siter:
 
             print "[  Updating  ] " + write_file
 
-            bindings = dict(self.bindings, **self.get_bindings(read_file))
-            bindings["siter.modified"] = ([], time.strftime("%Y.%m.%d", time.localtime(os.stat(read_file).st_mtime)))
-            bindings["siter.generated"] = ([], time.strftime("%Y.%m.%d"))
+            # Go through page file and extract s.var and s.fun bindings
+            bindings = self.get_bindings(read_file)
 
+            # Built-in bindings - "name" -> ([params], body)
+            bindings["s.modified"] = ([], time.strftime("%Y.%m.%d", time.localtime(os.stat(read_file).st_mtime)))
+            bindings["s.generated"] = ([], time.strftime("%Y.%m.%d"))
+
+            # Load template and replace s.use instances with bindings
             page = self.apply_template("page.html", bindings)
 
-            if page:
-                with open(write_file, "w") as f:
-                    f.write(page)
-            else:
-                self.error("Can't find page template")
+            with open(write_file, "w") as f:
+                f.write(page)
 
 if __name__ == "__main__":
     siter = Siter(sys.argv[1] if len(sys.argv) > 1 else None)
-    siter.run_pages()
+    siter.run()
