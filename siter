@@ -89,6 +89,9 @@ class Siter:
         print "[   Error!   ] {0}".format(e)
         sys.exit(1)
 
+    def warning(self, w):
+        print "[  Warning!  ] {0}".format(w)
+
     def evaluate_text(self, text, bindings):
         re_use = re.compile("s\.use\s+([\w\.\-]+)\s*(.*)$", re.DOTALL)
 
@@ -117,8 +120,9 @@ class Siter:
                 arg_blocks = Block.extract_blocks(args)
 
                 if len(arg_blocks) != len(params):
-                    self.error("{0} expects {1} arguments, got {2}"
+                    self.warning("{0} expects {1} arguments, got {2}"
                         .format(name, len(params), len(arg_blocks)))
+                    continue
 
                 arguments = []
 
