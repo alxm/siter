@@ -38,6 +38,10 @@ class Block:
 
             if index == -1:
                 break
+            elif index > 0 and text[index - 1] == "\\":
+                # Found escape char, skip past the two (('s
+                start = index + 2
+                continue
 
             count = 1
 
@@ -45,6 +49,12 @@ class Block:
             last_close = False
 
             for i in range(index + 2, len(text)):
+                if text[i - 1] == "\\":
+                    # Found escape char, discard any consecutive (('s
+                    last_open = False
+                    last_close = False
+                    continue
+
                 if text[i] == "(":
                     if last_open:
                         count += 1
@@ -116,6 +126,7 @@ class Siter:
             # Avoid infinite recursion
             del bindings2[name]
 
+            # If this is a function
             if len(params) > 0:
                 arg_blocks = Block.extract_blocks(args)
 
@@ -144,7 +155,7 @@ class Siter:
 
     def get_bindings(self, read_file):
         re_var = re.compile("s\.var\s+([\w\.\-]+)\s*\(\((.*)\)\)$", re.DOTALL)
-        re_fun = re.compile("s\.fun\s+([\w\.\-]+)\s*\(\((.*)\)\)\s*\(\((.*)\)\)$", re.DOTALL)
+        re_fun = re.compile("s\.fun\s+([\w\.\-]+)\s*\(\((.*?)\)\)\s*\(\((.*)\)\)$", re.DOTALL)
 
         with open(read_file, "rU") as f:
             text = f.read()
@@ -184,7 +195,12 @@ class Siter:
         # This way paths work in both the template dir and in generated pages
         template = template.replace('="./', '="siter-template/')
 
-        return self.evaluate_text(template, bindings)
+        template = self.evaluate_text(template, bindings)
+
+        # Strip escape chars
+        template = re.sub(r'\\(.)', r'\1', template)
+
+        return template
 
     def up_to_date(self, read_file, write_file):
         if not self.arg_force and os.path.isfile(write_file):
