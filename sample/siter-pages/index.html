@@ -1,27 +1,33 @@
-title = {{ Home }}
+((s.var title ((Home))))
 
-underline x = {{ <u>{{ x }}</u> }}
+((s.fun underline ((x))
+    ((
+        <u>((s.use x))</u>
+    ))
+))
 
-item title description = {{
-    <b>{{ title }}:</b>
-    <i>{{ description }}</i><br>
-}}
+((s.fun section ((title content))
+    ((
+        <h2>((s.use underline
+            ((
+                ((s.use title))
+            ))
+        ))</h2>
+        ((s.use content))
+        <br>
+    ))
+))
 
-page = {{
+((s.var page ((
 
-<h1>Welcome {{ title }}</h1>
+((s.use section
+    ((Hello World))
+    ((Example text.))
+))
 
-{{item
-    Macros
-    Example 1}}
+((s.use section
+    ((Another Section))
+    ((And the text that goes with it.))
+))
 
-{{item
-    {{underline Macros}}
-    Example 2}}
-
-{{underline
-    {{item
-        Macros
-        Example 3}}}}
-
-}}
+))))
