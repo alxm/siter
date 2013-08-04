@@ -37,8 +37,19 @@ class Block:
         index = 0
 
         while index < len(text):
-            index_open = text.find("((", index)
-            index_close = text.find("))", index)
+            def find_tag(tag, text, index):
+                while True:
+                    i = text.find(tag, index)
+
+                    # Ignore escaped tag
+                    if i > 0 and text[i - 1] == "\\":
+                        index = i + 2
+                        continue
+                    else:
+                        return i
+
+            index_open = find_tag("((", text, index)
+            index_close = find_tag("))", text, index)
 
             if index_open == -1 and index_close == -1:
                 # No more tags found
@@ -46,7 +57,7 @@ class Block:
 
             if (index_open < index_close and index_open != -1) or index_close == -1:
                 if count == 0:
-                    # current block starts here
+                    # Current block starts here
                     start = index_open
 
                 count += 1
