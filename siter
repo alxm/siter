@@ -31,56 +31,32 @@ class Block:
     def extract_blocks(text):
         # A block is a root-level ((something))
         blocks = []
+
+        count = 0
         start = 0
+        index = 0
 
-        while True:
-            index = text.find("((", start)
+        while index < len(text):
+            index_open = text.find("((", index)
+            index_close = text.find("))", index)
 
-            if index == -1:
+            if index_open == -1 and index_close == -1:
+                # No more tags found
                 break
-            elif index > 0 and text[index - 1] == "\\":
-                # Found escape char, skip past the two (('s
-                start = index + 2
-                continue
 
-            count = 1
-
-            last_open = False
-            last_close = False
-
-            for i in range(index + 2, len(text)):
-                if text[i - 1] == "\\":
-                    # Found escape char, discard any consecutive (('s
-                    last_open = False
-                    last_close = False
-                    continue
-
-                if text[i] == "(":
-                    if last_open:
-                        count += 1
-                        last_open = False
-                    else:
-                        last_open = True
-                else:
-                    last_open = False
-
-                if text[i] == ")":
-                    if last_close:
-                        count -= 1
-                        last_close = False
-                    else:
-                        last_close = True
-                else:
-                    last_close = False
-
+            if (index_open < index_close and index_open != -1) or index_close == -1:
                 if count == 0:
-                    start = i + 1
-                    blocks.append(Block(text[index : start]))
-                    break
+                    # current block starts here
+                    start = index_open
 
-            # Mis-matched number of blocks
-            if count != 0:
-                break
+                count += 1
+                index = index_open + 2
+            elif (index_close < index_open and index_close != -1) or index_open == -1:
+                count -= 1
+                index = index_close + 2
+
+            if count == 0:
+                blocks.append(Block(text[start : index_close + 2]))
 
         return blocks
 
