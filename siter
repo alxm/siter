@@ -20,7 +20,7 @@
 import os, re, sys, time
 
 class Block:
-    def __init__(self, index, text):
+    def __init__(self, text):
         # Block including (( and ))
         self.whole = text
 
@@ -75,7 +75,7 @@ class Block:
 
                 if count == 0:
                     start = i + 1
-                    blocks.append(Block(index, text[index : start]))
+                    blocks.append(Block(text[index : start]))
                     break
 
             # Mis-matched number of blocks
