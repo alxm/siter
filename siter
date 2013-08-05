@@ -20,12 +20,15 @@
 import os, re, sys, time
 
 class Block:
+    TAG_OPEN = "(("
+    TAG_CLOSE = "))"
+
     def __init__(self, text):
-        # Block including (( and ))
+        # Block including TAG_OPEN and TAG_CLOSE
         self.whole = text
 
-        # Just the inside of (( * ))
-        self.content = text[2 : -2].strip()
+        # Just the inside of TAG_OPEN ... TAG_CLOSE
+        self.content = text[len(Block.TAG_OPEN) : -len(Block.TAG_CLOSE)].strip()
 
     @staticmethod
     def extract_blocks(text):
@@ -43,13 +46,13 @@ class Block:
 
                     # Ignore escaped tag
                     if i > 0 and text[i - 1] == "\\":
-                        index = i + 2
+                        index = i + len(tag)
                         continue
                     else:
                         return i
 
-            index_open = find_tag("((", text, index)
-            index_close = find_tag("))", text, index)
+            index_open = find_tag(Block.TAG_OPEN, text, index)
+            index_close = find_tag(Block.TAG_CLOSE, text, index)
 
             if index_open == -1 and index_close == -1:
                 # No more tags found
@@ -61,13 +64,13 @@ class Block:
                     start = index_open
 
                 count += 1
-                index = index_open + 2
+                index = index_open + len(Block.TAG_OPEN)
             elif (index_close < index_open and index_close != -1) or index_open == -1:
                 count -= 1
-                index = index_close + 2
+                index = index_close + len(Block.TAG_CLOSE)
 
             if count == 0:
-                blocks.append(Block(text[start : index_close + 2]))
+                blocks.append(Block(text[start : index_close + len(Block.TAG_CLOSE)]))
 
         return blocks
 
