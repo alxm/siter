@@ -23,6 +23,9 @@ class Block:
     TAG_OPEN = "(("
     TAG_CLOSE = "))"
 
+    TAG_OPEN_E = re.escape(TAG_OPEN)
+    TAG_CLOSE_E = re.escape(TAG_CLOSE)
+
     def __init__(self, text):
         # Block including TAG_OPEN and TAG_CLOSE
         self.whole = text
@@ -134,7 +137,10 @@ class Siter:
 
                 # Replace every instance of a parameter with the supplied argument
                 for i in range(len(arguments)):
-                    for m in re.finditer("\(\(s\.use\s+" + params[i] + "\s*\)\)", body, re.DOTALL):
+                    for m in re.finditer(Block.TAG_OPEN_E
+                                         + "s\.use\s+" + params[i] + "\s*"
+                                         + Block.TAG_CLOSE_E,
+                                         body, re.DOTALL):
                         body = body.replace(m.group(), arguments[i], 1)
 
             # Evaluate the body itself, then replace the ((block)) with it
@@ -144,8 +150,22 @@ class Siter:
         return text
 
     def get_bindings(self, read_file):
-        re_var = re.compile("s\.var\s+([\w\.\-]+)\s*\(\((.*)\)\)$", re.DOTALL)
-        re_fun = re.compile("s\.fun\s+([\w\.\-]+)\s*\(\((.*?)\)\)\s*\(\((.*)\)\)$", re.DOTALL)
+        re_var = re.compile("s\.var\s+([\w\.\-]+)\s*"
+                            + Block.TAG_OPEN_E
+                            + "(.*)"
+                            + Block.TAG_CLOSE_E
+                            + "$",
+                            re.DOTALL)
+        re_fun = re.compile("s\.fun\s+([\w\.\-]+)\s*"
+                            + Block.TAG_OPEN_E
+                            + "(.*?)"
+                            + Block.TAG_CLOSE_E
+                            + "\s*"
+                            + Block.TAG_OPEN_E
+                            + "(.*)"
+                            + Block.TAG_CLOSE_E
+                            + "$",
+                            re.DOTALL)
 
         with open(read_file, "rU") as f:
             text = f.read()
