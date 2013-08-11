@@ -20,8 +20,8 @@
 import os, re, sys, time
 
 class Block:
-    TAG_OPEN = "(("
-    TAG_CLOSE = "))"
+    TAG_OPEN = "{{"
+    TAG_CLOSE = "}}"
 
     TAG_OPEN_E = re.escape(TAG_OPEN)
     TAG_CLOSE_E = re.escape(TAG_CLOSE)
@@ -88,12 +88,34 @@ class Siter:
             if not os.path.isdir(d):
                 self.error("Can't find dir {0}".format(d))
 
+        # Check for custom block tags
+        tags_file = "siter-config/tags"
+
+        if os.path.isfile(tags_file):
+            with open(tags_file, "rU") as f:
+                tag_open = f.readline().strip()
+                tag_close = f.readline().strip()
+
+                if len(tag_open) == 0:
+                    self.error("Custom open tag is an empty string")
+                elif len(tag_close) == 0:
+                    self.error("Custom close tag is an empty string")
+                else:
+                    self.info("Using {0} and {1} as tags".format(tag_open, tag_close))
+                    Block.TAG_OPEN = tag_open
+                    Block.TAG_CLOSE = tag_close
+                    Block.TAG_OPEN_E = re.escape(tag_open)
+                    Block.TAG_CLOSE_E = re.escape(tag_close)
+
     def error(self, e):
         print "[   Error!   ] {0}".format(e)
         sys.exit(1)
 
     def warning(self, w):
         print "[  Warning!  ] {0}".format(w)
+
+    def info(self, m):
+        print "[    Info    ] {0}".format(m)
 
     def evaluate_text(self, text, bindings):
         re_use = re.compile("s\.use\s+([\w\.\-]+)\s*(.*)$", re.DOTALL)
