@@ -134,7 +134,7 @@ class Siter:
                 print "[ Can't find ] {0}".format(name)
                 continue
 
-            (params, body) = bindings[name]
+            (params, body, builtin_func) = bindings[name]
 
             bindings2 = dict(bindings)
 
@@ -157,13 +157,17 @@ class Siter:
                     arg = self.evaluate_text(arg_block.content, bindings2)
                     arguments.append(arg)
 
-                # Replace every instance of a parameter with the supplied argument
-                for i in range(len(arguments)):
-                    for m in re.finditer(Block.TAG_OPEN_E
-                                         + "s\.use\s+" + params[i] + "\s*"
-                                         + Block.TAG_CLOSE_E,
-                                         body, re.DOTALL):
-                        body = body.replace(m.group(), arguments[i], 1)
+                if builtin_func is not None:
+                    # Built-in functions have their own logic
+                    body = builtin_func(arguments)
+                else:
+                    # Replace every instance of a parameter with the supplied argument
+                    for i in range(len(arguments)):
+                        for m in re.finditer(Block.TAG_OPEN_E
+                                             + "s\.use\s+" + params[i] + "\s*"
+                                             + Block.TAG_CLOSE_E,
+                                             body, re.DOTALL):
+                            body = body.replace(m.group(), arguments[i], 1)
 
             # Evaluate the body itself, then replace the ((block)) with it
             body = self.evaluate_text(body, bindings2)
@@ -194,7 +198,7 @@ class Siter:
 
         start = 0
 
-        # "name" -> ([params], body)
+        # "name" -> ([params], body, lambda)
         bindings = {}
 
         for block in Block.extract_blocks(text):
@@ -203,12 +207,12 @@ class Siter:
 
             if var:
                 name = var.group(1)
-                bindings[name] = ([], var.group(2))
+                bindings[name] = ([], var.group(2), None)
             elif fun:
                 name = fun.group(1)
                 params = [p for p in re.split("\s+", fun.group(2).strip())]
                 body = fun.group(3)
-                bindings[name] = (params, body)
+                bindings[name] = (params, body, None)
             else:
                 self.error("Block is neither variable nor function\n{0}"
                     .format(block.whole))
@@ -264,9 +268,10 @@ class Siter:
             # Go through page file and extract s.var and s.fun bindings
             bindings = self.get_bindings(read_file)
 
-            # Built-in bindings - "name" -> ([params], body)
-            bindings["s.modified"] = ([], time.strftime("%Y.%m.%d", time.localtime(os.stat(read_file).st_mtime)))
-            bindings["s.generated"] = ([], time.strftime("%Y.%m.%d"))
+            # Built-in bindings
+            # "name" -> ([params], body, lambda)
+            bindings["s.modified"] = (["fmt"], None, lambda args: time.strftime(args[0], time.localtime(os.stat(read_file).st_mtime)))
+            bindings["s.generated"] = (["fmt"], None, lambda args: time.strftime(args[0]))
 
             # Load template and replace s.use instances with bindings
             page = self.apply_template("page.html", bindings)
