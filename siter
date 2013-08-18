@@ -35,24 +35,25 @@ class Block:
 
     @staticmethod
     def extract_blocks(text):
-        # A block is a root-level ((something))
+        # A block is a "{{something}}" that may contain other "{{somethings}}"
         blocks = []
 
         count = 0
         start = 0
         index = 0
 
-        while index < len(text):
-            def find_tag(tag, text, index):
-                while True:
-                    i = text.find(tag, index)
+        def find_tag(tag, text, index):
+            while True:
+                i = text.find(tag, index)
 
-                    # Ignore escaped tag
-                    if i > 0 and text[i - 1] == "\\":
-                        index = i + len(tag)
-                        continue
-                    else:
-                        return i
+                # Ignore escaped tag
+                if i > 0 and text[i - 1] == "\\":
+                    index = i + len(tag)
+                    continue
+                else:
+                    return i
+
+        while index < len(text):
 
             index_open = find_tag(Block.TAG_OPEN, text, index)
             index_close = find_tag(Block.TAG_CLOSE, text, index)
@@ -118,6 +119,7 @@ class Siter:
         print "[    Info    ] {0}".format(m)
 
     def evaluate_text(self, text, bindings):
+        # "s.use <name> <arguments>"
         re_use = re.compile("s\.use\s+([\w\.\-]+)\s*(.*)$", re.DOTALL)
 
         for block in Block.extract_blocks(text):
@@ -130,6 +132,7 @@ class Siter:
                 continue
 
             if not name in bindings:
+                # If name is not a known variable or function, discard
                 text = text.replace(block.whole, "", 1)
                 print "[ Can't find ] {0}".format(name)
                 continue
@@ -176,20 +179,18 @@ class Siter:
         return text
 
     def get_bindings(self, read_file):
+        # "s.var <name> <contents>"
         re_var = re.compile("s\.var\s+([\w\.\-]+)\s*"
-                            + Block.TAG_OPEN_E
                             + "(.*)"
-                            + Block.TAG_CLOSE_E
                             + "$",
                             re.DOTALL)
+        # "s.fun <name> {{parameters}} <body>"
         re_fun = re.compile("s\.fun\s+([\w\.\-]+)\s*"
                             + Block.TAG_OPEN_E
                             + "(.*?)"
                             + Block.TAG_CLOSE_E
                             + "\s*"
-                            + Block.TAG_OPEN_E
                             + "(.*)"
-                            + Block.TAG_CLOSE_E
                             + "$",
                             re.DOTALL)
 

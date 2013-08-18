@@ -44,20 +44,16 @@ These are content pages that are fitted into a template file before site generat
 
 #### index.html
 
-    {{s.var title {{Home page}} }}
+    {{s.var title Home page}}
     {{s.var content
-        {{
-            Hello world!
-        }}
+        Hello world!
     }}
 
 #### about.html
 
-    {{s.var title {{About}} }}
+    {{s.var title About}}
     {{s.var content
-        {{
-            <p>This is a very simple website.</p>
-        }}
+        <p>This is a very simple website.</p>
     }}
 
 ### siter-template
