@@ -80,20 +80,31 @@ class Block:
 
 class Siter:
     def __init__(self, arg):
-        self.arg_force = arg == "force"
+        self.args = {
+            "force": arg == "force"
+        }
 
-        self.pages_dir = "siter-pages/"
-        self.template_dir = "siter-template/"
+        self.dirs = {
+            "pages": ("siter-pages", True),
+            "template": ("siter-template", True),
+            "config": ("siter-config", False)
+        }
 
-        for d in [self.pages_dir, self.template_dir]:
-            if not os.path.isdir(d):
-                self.error("Can't find dir {0}".format(d))
+        self.files = {
+            "template": (self.getdir("template") + "/" + "page.html", True),
+            "tags": (self.getdir("config") + "/" + "tags", False)
+        }
 
-        # Check for custom block tags
-        tags_file = "siter-config/tags"
+        for label, (path, required) in self.dirs.iteritems():
+            if required and not os.path.isdir(path):
+                self.error("Can't find {0} dir".format(path))
 
-        if os.path.isfile(tags_file):
-            with open(tags_file, "rU") as f:
+        for label, (path, required) in self.files.iteritems():
+            if required and not os.path.isfile(path):
+                self.error("Can't find {0} file".format(path))
+
+        if os.path.isfile(self.getfile("tags")):
+            with open(self.getfile("tags"), "rU") as f:
                 tag_open = f.readline().strip()
                 tag_close = f.readline().strip()
 
@@ -107,6 +118,12 @@ class Siter:
                     Block.TAG_CLOSE = tag_close
                     Block.TAG_OPEN_E = re.escape(tag_open)
                     Block.TAG_CLOSE_E = re.escape(tag_close)
+
+    def getdir(self, name):
+        return self.dirs[name][0]
+
+    def getfile(self, name):
+        return self.files[name][0]
 
     def error(self, e):
         print "[   Error!   ] {0}".format(e)
@@ -221,12 +238,7 @@ class Siter:
         return bindings
 
     def apply_template(self, name, bindings):
-        template_file = self.template_dir + name
-
-        if not os.path.isfile(template_file):
-            self.error("Can't find page template {0}".format(template_file))
-
-        with open(template_file, "rU") as f:
+        with open(self.getfile("template"), "rU") as f:
             template = f.read()
 
         # This way paths work in both the template dir and in generated pages
@@ -240,7 +252,7 @@ class Siter:
         return template
 
     def up_to_date(self, read_file, write_file):
-        if not self.arg_force and os.path.isfile(write_file):
+        if not self.args["force"] and os.path.isfile(write_file):
             read_date = os.stat(read_file).st_mtime
             write_date = os.stat(write_file).st_mtime
 
@@ -249,11 +261,11 @@ class Siter:
             return False
 
     def run(self):
-        pages = os.listdir(self.pages_dir)
+        pages = os.listdir(self.getdir("pages"))
         pages.sort(key = lambda p: p)
 
         for p in pages:
-            read_file = self.pages_dir + p
+            read_file = self.getdir("pages") + "/" + p
             write_file = p
 
             if os.path.isdir(read_file):
