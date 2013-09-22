@@ -119,6 +119,28 @@ class Siter:
                     Block.TAG_OPEN_E = re.escape(tag_open)
                     Block.TAG_CLOSE_E = re.escape(tag_close)
 
+        # s.use <name> <arguments>
+        self.re_use = re.compile("s\.use\s+([\w\.\-]+)\s*"
+                                 + "(.*)"
+                                 + "$",
+                                 re.DOTALL)
+
+        # s.var <name> <contents>
+        self.re_var = re.compile("s\.var\s+([\w\.\-]+)\s*"
+                                 + "(.*)"
+                                 + "$",
+                                 re.DOTALL)
+
+        # s.fun <name> {{parameters}} <body>
+        self.re_fun = re.compile("s\.fun\s+([\w\.\-]+)\s*"
+                                 + Block.TAG_OPEN_E
+                                 + "(.*?)"
+                                 + Block.TAG_CLOSE_E
+                                 + "\s*"
+                                 + "(.*)"
+                                 + "$",
+                                 re.DOTALL)
+
     def getdir(self, name):
         return self.dirs[name][0]
 
@@ -136,11 +158,8 @@ class Siter:
         print "[    Info    ] {0}".format(m)
 
     def evaluate_text(self, text, bindings):
-        # "s.use <name> <arguments>"
-        re_use = re.compile("s\.use\s+([\w\.\-]+)\s*(.*)$", re.DOTALL)
-
         for block in Block.extract_blocks(text):
-            use = re_use.match(block.content)
+            use = self.re_use.match(block.content)
 
             if use:
                 name = use.group(1)
@@ -196,21 +215,6 @@ class Siter:
         return text
 
     def get_bindings(self, read_file):
-        # "s.var <name> <contents>"
-        re_var = re.compile("s\.var\s+([\w\.\-]+)\s*"
-                            + "(.*)"
-                            + "$",
-                            re.DOTALL)
-        # "s.fun <name> {{parameters}} <body>"
-        re_fun = re.compile("s\.fun\s+([\w\.\-]+)\s*"
-                            + Block.TAG_OPEN_E
-                            + "(.*?)"
-                            + Block.TAG_CLOSE_E
-                            + "\s*"
-                            + "(.*)"
-                            + "$",
-                            re.DOTALL)
-
         with open(read_file, "rU") as f:
             text = f.read()
 
@@ -220,8 +224,8 @@ class Siter:
         bindings = {}
 
         for block in Block.extract_blocks(text):
-            var = re_var.match(block.content)
-            fun = re_fun.match(block.content)
+            var = self.re_var.match(block.content)
+            fun = self.re_fun.match(block.content)
 
             if var:
                 name = var.group(1)
