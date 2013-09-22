@@ -85,14 +85,15 @@ class Siter:
         }
 
         self.dirs = {
+            "config": ("siter-config", False),
             "pages": ("siter-pages", True),
             "template": ("siter-template", True),
-            "config": ("siter-config", False)
         }
 
         self.files = {
+            "defs": (self.getdir("config") + "/" + "defs", False),
+            "tags": (self.getdir("config") + "/" + "tags", False),
             "template": (self.getdir("template") + "/" + "page.html", True),
-            "tags": (self.getdir("config") + "/" + "tags", False)
         }
 
         for label, (path, required) in self.dirs.iteritems():
@@ -140,6 +141,9 @@ class Siter:
                                  + "(.*)"
                                  + "$",
                                  re.DOTALL)
+
+        # Global function and variable bindings
+        self.bindings = self.get_bindings(self.getfile("defs"))
 
     def getdir(self, name):
         return self.dirs[name][0]
@@ -215,6 +219,9 @@ class Siter:
         return text
 
     def get_bindings(self, read_file):
+        if not os.path.isfile(read_file):
+            return {}
+
         with open(read_file, "rU") as f:
             text = f.read()
 
@@ -283,7 +290,7 @@ class Siter:
             print "[  Updating  ] " + write_file
 
             # Go through page file and extract s.var and s.fun bindings
-            bindings = self.get_bindings(read_file)
+            bindings = dict(self.bindings.items() + self.get_bindings(read_file).items())
 
             # Built-in bindings
             # "name" -> ([params], body, lambda)
