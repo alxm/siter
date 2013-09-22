@@ -242,10 +242,10 @@ class Siter:
         return bindings
 
     def apply_template(self, name, bindings):
-        with open(self.getfile("template"), "rU") as f:
+        with open(self.getfile(name), "rU") as f:
             template = f.read()
 
-        # This way paths work in both the template dir and in generated pages
+        # This way CSS/image paths work in both the template dir and in generated pages
         template = template.replace('="./', '="siter-template/')
 
         template = self.evaluate_text(template, bindings)
@@ -291,7 +291,7 @@ class Siter:
             bindings["s.generated"] = (["fmt"], None, lambda args: time.strftime(args[0]))
 
             # Load template and replace s.use instances with bindings
-            page = self.apply_template("page.html", bindings)
+            page = self.apply_template("template", bindings)
 
             with open(write_file, "w") as f:
                 f.write(page)
