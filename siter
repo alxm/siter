@@ -271,16 +271,16 @@ class Siter:
         else:
             return False
 
-    def run(self):
-        pages = os.listdir(self.getdir("pages"))
+    def run(self, subdir):
+        pages = os.listdir(self.getdir("pages") + "/" + subdir)
         pages.sort(key = lambda p: p)
 
         for p in pages:
-            read_file = self.getdir("pages") + "/" + p
-            write_file = p
+            read_file = self.getdir("pages") + "/" + subdir + "/" + p
+            write_file = subdir + "/" + p
 
             if os.path.isdir(read_file):
-                print "[  Skip dir  ] " + p
+                self.run(subdir + "/" + p)
                 continue
 
             if self.up_to_date(read_file, write_file):
@@ -300,9 +300,12 @@ class Siter:
             # Load template and replace s.use instances with bindings
             page = self.apply_template("template", bindings)
 
+            if not os.path.isdir(subdir):
+                os.makedirs(subdir)
+
             with open(write_file, "w") as f:
                 f.write(page)
 
 if __name__ == "__main__":
     siter = Siter(sys.argv[1] if len(sys.argv) > 1 else None)
-    siter.run()
+    siter.run(".")
