@@ -274,6 +274,14 @@ class Siter:
         relpath = os.path.relpath(self.args["outdir"], self.args["outdir"] + "/" + subdir)
         template = template.replace("template-files/", "{0}/template-files/".format(relpath))
 
+        # Built-in bindings
+        # "name" -> ([params], body, lambda)
+        bindings["s.root"] = (
+            [],
+            relpath,
+            None
+        )
+
         # Fill in template
         template = self.evaluate_text(template, bindings)
 
@@ -314,8 +322,16 @@ class Siter:
 
             # Built-in bindings
             # "name" -> ([params], body, lambda)
-            bindings["s.modified"] = (["fmt"], None, lambda args: time.strftime(args[0], time.localtime(os.stat(read_file).st_mtime)))
-            bindings["s.generated"] = (["fmt"], None, lambda args: time.strftime(args[0]))
+            bindings["s.modified"] = (
+                ["fmt"],
+                None,
+                lambda args: time.strftime(args[0], time.localtime(os.stat(read_file).st_mtime))
+            )
+            bindings["s.generated"] = (
+                ["fmt"],
+                None,
+                lambda args: time.strftime(args[0])
+            )
 
             # Load template and replace s.use instances with bindings
             page = self.apply_template("template", bindings, subdir)
