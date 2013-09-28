@@ -80,18 +80,24 @@ class Block:
 
 class Siter:
     def __init__(self, arg):
+        # "label" -> value
         self.args = {
-            "force": arg == "force"
+            "force": arg == "force",
+            "outdir": "siter-out",
         }
 
+        # "label" -> (path, required)
         self.dirs = {
             "config": ("siter-config", False),
             "pages": ("siter-pages", True),
             "template": ("siter-template", True),
+            "template-files": ("siter-template/template-files", False),
         }
 
+        # "label" -> (path, required)
         self.files = {
             "defs": (self.getdir("config") + "/" + "defs", False),
+            "outdir": (self.getdir("config") + "/" + "outdir", False),
             "tags": (self.getdir("config") + "/" + "tags", False),
             "template": (self.getdir("template") + "/" + "page.html", True),
         }
@@ -103,6 +109,18 @@ class Siter:
         for label, (path, required) in self.files.iteritems():
             if required and not os.path.isfile(path):
                 self.error("Can't find {0} file".format(path))
+
+        if os.path.isfile(self.getfile("outdir")):
+            with open(self.getfile("outdir"), "rU") as f:
+                out = f.readline().strip()
+
+                if len(out) > 0:
+                    self.args["outdir"] = out
+
+        if not os.path.isdir(self.args["outdir"]):
+            os.makedirs(self.args["outdir"])
+
+        self.info("Output dir is {0}".format(self.args["outdir"]))
 
         if os.path.isfile(self.getfile("tags")):
             with open(self.getfile("tags"), "rU") as f:
@@ -248,13 +266,15 @@ class Siter:
 
         return bindings
 
-    def apply_template(self, name, bindings):
+    def apply_template(self, name, bindings, subdir):
         with open(self.getfile(name), "rU") as f:
             template = f.read()
 
-        # This way CSS/image paths work in both the template dir and in generated pages
-        template = template.replace('="./', '="siter-template/')
+        # This way CSS/image paths work in subdir pages too
+        relpath = os.path.relpath(self.args["outdir"], self.args["outdir"] + "/" + subdir)
+        template = template.replace("template-files/", "{0}/template-files/".format(relpath))
 
+        # Fill in template
         template = self.evaluate_text(template, bindings)
 
         # Strip escape chars
@@ -277,7 +297,7 @@ class Siter:
 
         for p in pages:
             read_file = self.getdir("pages") + "/" + subdir + "/" + p
-            write_file = subdir + "/" + p
+            write_file = self.args["outdir"] + "/" + subdir + "/" + p
 
             if os.path.isdir(read_file):
                 self.run(subdir + "/" + p)
@@ -298,10 +318,10 @@ class Siter:
             bindings["s.generated"] = (["fmt"], None, lambda args: time.strftime(args[0]))
 
             # Load template and replace s.use instances with bindings
-            page = self.apply_template("template", bindings)
+            page = self.apply_template("template", bindings, subdir)
 
-            if not os.path.isdir(subdir):
-                os.makedirs(subdir)
+            if not os.path.isdir(self.args["outdir"] + "/" + subdir):
+                os.makedirs(self.args["outdir"] + "/" + subdir)
 
             with open(write_file, "w") as f:
                 f.write(page)
