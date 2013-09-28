@@ -160,6 +160,12 @@ class Siter:
                                  + "$",
                                  re.DOTALL)
 
+        # s.if <binding> <body>
+        self.re_if = re.compile("s\.if\s+([\w\.\-]+)\s+"
+                                + "(.*)"
+                                + "$",
+                                re.DOTALL)
+
         # Global function and variable bindings
         self.bindings = self.get_bindings(self.getfile("defs"))
 
@@ -181,58 +187,69 @@ class Siter:
 
     def evaluate_text(self, text, bindings):
         for block in Block.extract_blocks(text):
+            cond = self.re_if.match(block.content)
             use = self.re_use.match(block.content)
+
+            if cond:
+                check = cond.group(1)
+                body = cond.group(2)
+
+                if not check in bindings:
+                    # Conditional failed, discard the block
+                    text = text.replace(block.whole, "", 1)
+                    continue
+
+                # Evaluate the conditional body, then replace the block with it
+                body = self.evaluate_text(body, bindings)
+                text = text.replace(block.whole, body, 1)
 
             if use:
                 name = use.group(1)
                 args = use.group(2)
-            else:
-                continue
 
-            if not name in bindings:
-                # If name is not a known variable or function, discard
-                text = text.replace(block.whole, "", 1)
-                print "[ Can't find ] {0}".format(name)
-                continue
-
-            (params, body, builtin_func) = bindings[name]
-
-            bindings2 = dict(bindings)
-
-            # Avoid infinite recursion
-            del bindings2[name]
-
-            # If this is a function
-            if len(params) > 0:
-                arg_blocks = Block.extract_blocks(args)
-
-                if len(arg_blocks) != len(params):
-                    self.warning("{0} expects {1} arguments, got {2}"
-                        .format(name, len(params), len(arg_blocks)))
+                if not name in bindings:
+                    # Name is unknown, discard the block
+                    text = text.replace(block.whole, "", 1)
                     continue
 
-                arguments = []
+                (params, body, builtin_func) = bindings[name]
 
-                # Evaluate each argument
-                for arg_block in arg_blocks:
-                    arg = self.evaluate_text(arg_block.content, bindings2)
-                    arguments.append(arg)
+                bindings2 = dict(bindings)
 
-                if builtin_func is not None:
-                    # Built-in functions have their own logic
-                    body = builtin_func(arguments)
-                else:
-                    # Replace every instance of a parameter with the supplied argument
-                    for i in range(len(arguments)):
-                        for m in re.finditer(Block.TAG_OPEN_E
-                                             + "s\.use\s+" + params[i] + "\s*"
-                                             + Block.TAG_CLOSE_E,
-                                             body, re.DOTALL):
-                            body = body.replace(m.group(), arguments[i], 1)
+                # Avoid infinite recursion
+                del bindings2[name]
 
-            # Evaluate the body itself, then replace the ((block)) with it
-            body = self.evaluate_text(body, bindings2)
-            text = text.replace(block.whole, body, 1)
+                # If this is a function
+                if len(params) > 0:
+                    arg_blocks = Block.extract_blocks(args)
+
+                    if len(arg_blocks) != len(params):
+                        self.warning("{0} expects {1} arguments, got {2}"
+                            .format(name, len(params), len(arg_blocks)))
+                        continue
+
+                    arguments = []
+
+                    # Evaluate each argument
+                    for arg_block in arg_blocks:
+                        arg = self.evaluate_text(arg_block.content, bindings2)
+                        arguments.append(arg)
+
+                    if builtin_func is not None:
+                        # Built-in functions have their own logic
+                        body = builtin_func(arguments)
+                    else:
+                        # Replace every instance of a parameter with the supplied argument
+                        for i in range(len(arguments)):
+                            for m in re.finditer(Block.TAG_OPEN_E
+                                                 + "s\.use\s+" + params[i] + "\s*"
+                                                 + Block.TAG_CLOSE_E,
+                                                 body, re.DOTALL):
+                                body = body.replace(m.group(), arguments[i], 1)
+
+                # Evaluate the function body, then replace the block with it
+                body = self.evaluate_text(body, bindings2)
+                text = text.replace(block.whole, body, 1)
 
         return text
 
