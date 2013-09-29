@@ -19,73 +19,36 @@
 
 import os, re, sys, time
 
-class Block:
-    TAG_OPEN = "{{"
-    TAG_CLOSE = "}}"
-
-    TAG_OPEN_E = re.escape(TAG_OPEN)
-    TAG_CLOSE_E = re.escape(TAG_CLOSE)
-
-    def __init__(self, text):
-        # Block including TAG_OPEN and TAG_CLOSE
-        self.whole = text
-
-        # Just the inside of TAG_OPEN ... TAG_CLOSE
-        self.content = text[len(Block.TAG_OPEN) : -len(Block.TAG_CLOSE)]
-
-    @staticmethod
-    def extract_blocks(text):
-        # A block is a "{{something}}" that may contain other "{{somethings}}"
-        blocks = []
-
-        count = 0
-        start = 0
-        index = 0
-
-        def find_tag(tag, text, index):
-            while True:
-                i = text.find(tag, index)
-
-                # Ignore escaped tag
-                if i > 0 and text[i - 1] == "\\":
-                    index = i + len(tag)
-                    continue
-                else:
-                    return i
-
-        while index < len(text):
-
-            index_open = find_tag(Block.TAG_OPEN, text, index)
-            index_close = find_tag(Block.TAG_CLOSE, text, index)
-
-            if index_open == -1 and index_close == -1:
-                # No more tags found
-                break
-
-            if (index_open < index_close and index_open != -1) or index_close == -1:
-                if count == 0:
-                    # Current block starts here
-                    start = index_open
-
-                count += 1
-                index = index_open + len(Block.TAG_OPEN)
-            elif (index_close < index_open and index_close != -1) or index_open == -1:
-                count -= 1
-                index = index_close + len(Block.TAG_CLOSE)
-
-            if count == 0:
-                blocks.append(Block(text[start : index_close + len(Block.TAG_CLOSE)]))
-
-        return blocks
-
 class Siter:
+    class Args:
+        # Whether to re-generate up-to-date files
+        FORCE = False
+
+        # Block delimiters
+        TAG_OPEN = "{{"
+        TAG_CLOSE = "}}"
+        TAG_OPEN_ESC = re.escape(TAG_OPEN)
+        TAG_CLOSE_ESC = re.escape(TAG_CLOSE)
+
+        # Marks the beginning of page content
+        MARKER = "~~~"
+
+        # Where generated pages are written
+        OUTDIR = "siter-out"
+
+    class Block:
+        def __init__(self, siter, text):
+            # Block including TAG_OPEN and TAG_CLOSE
+            self.whole = text
+
+            # Just the inside of TAG_OPEN ... TAG_CLOSE
+            self.content = text[len(siter.args.TAG_OPEN) : -len(siter.args.TAG_CLOSE)]
+
     def __init__(self, arg):
-        # "label" -> value
-        self.args = {
-            "force": arg == "force",
-            "marker": "~~~",
-            "outdir": "siter-out",
-        }
+        self.args = self.Args()
+
+        if arg == "force":
+            self.args.FORCE = True
 
         # "label" -> (path, required)
         self.dirs = {
@@ -117,19 +80,19 @@ class Siter:
                 out = f.readline().strip()
 
                 if len(out) > 0:
-                    self.args["outdir"] = out
+                    self.args.OUTDIR = out
 
-        if not os.path.isdir(self.args["outdir"]):
-            os.makedirs(self.args["outdir"])
+        if not os.path.isdir(self.args.OUTDIR):
+            os.makedirs(self.args.OUTDIR)
 
-        self.info("Output dir is {0}".format(self.args["outdir"]))
+        self.info("Output dir is {0}".format(self.args.OUTDIR))
 
         if os.path.isfile(self.getfile("marker")):
             with open(self.getfile("marker"), "rU") as f:
                 marker = f.readline().strip()
 
                 if len(marker) > 0:
-                    self.args["marker"] = marker
+                    self.args.MARKER = marker
 
         if os.path.isfile(self.getfile("tags")):
             with open(self.getfile("tags"), "rU") as f:
@@ -142,10 +105,10 @@ class Siter:
                     self.error("Custom close tag is an empty string")
                 else:
                     self.info("Using {0} and {1} as tags".format(tag_open, tag_close))
-                    Block.TAG_OPEN = tag_open
-                    Block.TAG_CLOSE = tag_close
-                    Block.TAG_OPEN_E = re.escape(tag_open)
-                    Block.TAG_CLOSE_E = re.escape(tag_close)
+                    self.args.TAG_OPEN = tag_open
+                    self.args.TAG_CLOSE = tag_close
+                    self.args.TAG_OPEN_ESC = re.escape(tag_open)
+                    self.args.TAG_CLOSE_ESC = re.escape(tag_close)
 
         # s.use <name> <arguments>
         self.re_use = re.compile("s\.use\s+([\w\.\-]+)\s*"
@@ -161,9 +124,9 @@ class Siter:
 
         # s.fun <name> {{parameters}} <body>
         self.re_fun = re.compile("s\.fun\s+([\w\.\-]+)\s*"
-                                 + Block.TAG_OPEN_E
+                                 + self.args.TAG_OPEN_ESC
                                  + "(.*?)"
-                                 + Block.TAG_CLOSE_E
+                                 + self.args.TAG_CLOSE_ESC
                                  + "\s*"
                                  + "(.*)"
                                  + "$",
@@ -200,8 +163,55 @@ class Siter:
     def info(self, m):
         print "[    Info    ] {0}".format(m)
 
+    def extract_blocks(self, text):
+        # A block is a "{{something}}" that may contain other "{{somethings}}"
+        blocks = []
+
+        count = 0
+        start = 0
+        index = 0
+
+        def find_tag(tag, text, index):
+            while True:
+                i = text.find(tag, index)
+
+                # Ignore escaped tag
+                if i > 0 and text[i - 1] == "\\":
+                    index = i + len(tag)
+                    continue
+                else:
+                    return i
+
+        while index < len(text):
+
+            index_open = find_tag(self.args.TAG_OPEN, text, index)
+            index_close = find_tag(self.args.TAG_CLOSE, text, index)
+
+            if index_open == -1 and index_close == -1:
+                # No more tags found
+                break
+
+            if (index_open < index_close and index_open != -1) or index_close == -1:
+                if count == 0:
+                    # Current block starts here
+                    start = index_open
+
+                count += 1
+                index = index_open + len(self.args.TAG_OPEN)
+            elif (index_close < index_open and index_close != -1) or index_open == -1:
+                count -= 1
+                index = index_close + len(self.args.TAG_CLOSE)
+
+            if count == 0:
+                blocks.append(
+                    self.Block(self,
+                               text[start : index_close + len(self.args.TAG_CLOSE)])
+                )
+
+        return blocks
+
     def evaluate_text(self, text, bindings):
-        for block in Block.extract_blocks(text):
+        for block in self.extract_blocks(text):
             ifso = self.re_if.match(block.content)
             ifnot = self.re_ifnot.match(block.content)
             use = self.re_use.match(block.content)
@@ -250,7 +260,7 @@ class Siter:
 
                 # If this is a function
                 if len(params) > 0:
-                    arg_blocks = Block.extract_blocks(args)
+                    arg_blocks = self.extract_blocks(args)
 
                     if len(arg_blocks) != len(params):
                         self.warning("{0} expects {1} arguments, got {2}"
@@ -270,9 +280,9 @@ class Siter:
                     else:
                         # Replace every instance of a parameter with the supplied argument
                         for i in range(len(arguments)):
-                            for m in re.finditer(Block.TAG_OPEN_E
+                            for m in re.finditer(self.args.TAG_OPEN_ESC
                                                  + "s\.use\s+" + params[i] + "\s*"
-                                                 + Block.TAG_CLOSE_E,
+                                                 + self.args.TAG_CLOSE_ESC,
                                                  body, re.DOTALL):
                                 body = body.replace(m.group(), arguments[i], 1)
 
@@ -295,13 +305,13 @@ class Siter:
         bindings = {}
 
         # Find the content-start marker
-        marker = text.find(self.args["marker"])
+        marker = text.find(self.args.MARKER)
 
         if marker != -1:
-            bindings["s.content"] = ([], text[marker + len(self.args["marker"]) :].strip(), None)
+            bindings["s.content"] = ([], text[marker + len(self.args.MARKER) :].strip(), None)
             text = text[: marker]
 
-        for block in Block.extract_blocks(text):
+        for block in self.extract_blocks(text):
             var = self.re_var.match(block.content)
             fun = self.re_fun.match(block.content)
 
@@ -324,7 +334,7 @@ class Siter:
             template = f.read()
 
         # This way CSS/image paths work in subdir pages too
-        relpath = os.path.relpath(self.args["outdir"], self.args["outdir"] + "/" + subdir)
+        relpath = os.path.relpath(self.args.OUTDIR, self.args.OUTDIR + "/" + subdir)
         template = template.replace("template-files/", "{0}/template-files/".format(relpath))
 
         # Built-in bindings
@@ -344,7 +354,7 @@ class Siter:
         return template
 
     def up_to_date(self, read_file, write_file):
-        if not self.args["force"] and os.path.isfile(write_file):
+        if not self.args.FORCE and os.path.isfile(write_file):
             read_date = os.stat(read_file).st_mtime
             write_date = os.stat(write_file).st_mtime
 
@@ -358,7 +368,7 @@ class Siter:
 
         for p in pages:
             read_file = self.getdir("pages") + "/" + subdir + "/" + p
-            write_file = self.args["outdir"] + "/" + subdir + "/" + p
+            write_file = self.args.OUTDIR + "/" + subdir + "/" + p
 
             if os.path.isdir(read_file):
                 self.run(subdir + "/" + p)
@@ -389,8 +399,8 @@ class Siter:
             # Load template and replace s.use instances with bindings
             page = self.apply_template("template", bindings, subdir)
 
-            if not os.path.isdir(self.args["outdir"] + "/" + subdir):
-                os.makedirs(self.args["outdir"] + "/" + subdir)
+            if not os.path.isdir(self.args.OUTDIR + "/" + subdir):
+                os.makedirs(self.args.OUTDIR + "/" + subdir)
 
             with open(write_file, "w") as f:
                 f.write(page)
