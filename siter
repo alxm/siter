@@ -31,7 +31,7 @@ class Block:
         self.whole = text
 
         # Just the inside of TAG_OPEN ... TAG_CLOSE
-        self.content = text[len(Block.TAG_OPEN) : -len(Block.TAG_CLOSE)].strip()
+        self.content = text[len(Block.TAG_OPEN) : -len(Block.TAG_CLOSE)]
 
     @staticmethod
     def extract_blocks(text):
@@ -83,6 +83,7 @@ class Siter:
         # "label" -> value
         self.args = {
             "force": arg == "force",
+            "marker": "~~~",
             "outdir": "siter-out",
         }
 
@@ -97,6 +98,7 @@ class Siter:
         # "label" -> (path, required)
         self.files = {
             "defs": (self.getdir("config") + "/" + "defs", False),
+            "marker": (self.getdir("config") + "/" + "marker", False),
             "outdir": (self.getdir("config") + "/" + "outdir", False),
             "tags": (self.getdir("config") + "/" + "tags", False),
             "template": (self.getdir("template") + "/" + "page.html", True),
@@ -121,6 +123,13 @@ class Siter:
             os.makedirs(self.args["outdir"])
 
         self.info("Output dir is {0}".format(self.args["outdir"]))
+
+        if os.path.isfile(self.getfile("marker")):
+            with open(self.getfile("marker"), "rU") as f:
+                marker = f.readline().strip()
+
+                if len(marker) > 0:
+                    self.args["marker"] = marker
 
         if os.path.isfile(self.getfile("tags")):
             with open(self.getfile("tags"), "rU") as f:
@@ -284,6 +293,13 @@ class Siter:
 
         # "name" -> ([params], body, lambda)
         bindings = {}
+
+        # Find the content-start marker
+        marker = text.find(self.args["marker"])
+
+        if marker != -1:
+            bindings["s.content"] = ([], text[marker + len(self.args["marker"]) :].strip(), None)
+            text = text[: marker]
 
         for block in Block.extract_blocks(text):
             var = self.re_var.match(block.content)
