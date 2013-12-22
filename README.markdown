@@ -3,9 +3,9 @@ Siter
 
 Siter is a very simple static website generator written in Python.
 
-Content from `siter-pages` is fitted in `siter-template/page.html` and rendered pages are written to the site's root directory. Pages can define variables and simple functions that the template and page can call. Variables and functions that start with `s.` are reserved for the program and should not be defined by pages.
+Content from `siter-pages` is fitted in `siter-template/page.html` and rendered pages are written to `siter-out`. Pages can define variables and functions that the template and page can call. Variables and functions that start with `s.` are reserved for the program and should not be defined by pages. Configuration files go in `siter-config`.
 
-See a simple example below. My [games website](https://github.com/alxm/alxm.github.com) uses Siter too.
+See a simple example below. My [own website](http://www.alxm.org) uses Siter too.
 
 Example
 -------
@@ -13,63 +13,90 @@ Example
 ### File tree
 
     website/
-        siter-config/      # stores Siter config files
-            tags           # optional file to specify custom block tags
-        siter-pages/       # content pages
-            about.html
-            index.html
-            ...
-        siter-template/    # design template
-            page.html
-            style.css
-            ...
-        about.html         # generated page
-        index.html         # generated page
-        ...
+     |
+     |- siter-config/      # Siter config files, all are optional
+     |   |
+     |   |- defs           # Global variables and macros
+     |   |- marker         # Custom content delimiter
+     |   |- out            # Custom output dir
+     |   |- tags           # Custom block tags
+     |
+     |- siter-out/         # Generated pages are written here
+     |   |
+     |   |- about.html
+     |   |- index.html
+     |   |
+     |   |- nested/
+     |       |
+     |       |- page.html
+     |
+     |- siter-pages/       # Content pages
+     |   |
+     |   |- about.html
+     |   |- index.html
+     |   |
+     |   |- nested/
+     |       |
+     |       |- page.html
+     |
+     |- siter-template/    # HTML templates
+         |
+         |- page.html
 
-### siter-config
+### siter-config/
 
 Siter config files go in here.
 
+#### defs
+
+Variables and functions that are visible to all pages. See the `siter-pages` example below for syntax.
+
+#### marker
+
+Siter pages start with variable and function definitions, followed by a special marker. Everything following that marker is considered page content. The default marker is `~~~`, but you can specify a different one in this file. For example, if you'd prefer `*****` instead, then the `marker` file whould look like this:
+
+    *****
+
+#### out
+
+Siter writes generated pages in `siter-out`. You can specify a different output directory in this file.
+
 #### tags
 
-Specifies custom opening and closing tags, each on its own line. The two tags must be different: `[` and `]` are ok, but `%` and `%` are not. Siter defaults to `{{` and `}}`. I like using `(` and `)`, so my `tags` file would look like this:
+Specifies custom opening and closing tags, each on its own line. The two tags must be different: `[` and `]` are ok, but `%` and `%` are not. Siter defaults to `{` and `}`. I like using `[` and `]`, so my `tags` file looks like this:
 
-    (
-    )
+    [
+    ]
 
-### siter-pages
+### siter-pages/
 
 These are content pages that are fitted into a template file before site generation. For example,
 
 #### index.html
 
-    {{s.var title Home page}}
-    {{s.var content
-        Hello world!
-    }}
+    {title Home page}
+    ~~~
+    <p>Hello world!</p>
 
 #### about.html
 
-    {{s.var title About}}
-    {{s.var content
-        <p>This is a very simple website.</p>
-    }}
+    {title About}
+    ~~~
+    <p>This is a very simple website.</p>
 
-### siter-template
+### siter-template/
 
-This is the design template, including HTML, CSS, and images. Content pages will be fitted into `page.html` at generation time.
+HTML templates live here. Content pages will be fitted into `page.html` at generation time.
 
 #### page.html
 
     <html>
         <head>
-            <link rel="stylesheet" type="text/css" href="./style.css" media="screen">
-            <title>{{s.use title}}</title>
+            <title>{title}</title>
         </head>
         <body>
-            <h1>{{s.use title}}</h1>
-            {{s.use content}}
+            <h1>{title}</h1>
+            {s.content}
         </body>
     </html>
 
@@ -81,13 +108,12 @@ This is the design template, including HTML, CSS, and images. Content pages will
 
 ### Example Output
 
-The example above will generate `website/index.html` and `website/about.html`:
+The example above will generate `website/siter-out/index.html` and `website/siter-out/about.html`:
 
-#### index.html
+#### siter-out/index.html
 
     <html>
         <head>
-            <link rel="stylesheet" type="text/css" href="siter-template/style.css" media="screen">
             <title>Home page</title>
         </head>
         <body>
@@ -96,11 +122,10 @@ The example above will generate `website/index.html` and `website/about.html`:
         </body>
     </html>
 
-#### about.html
+#### siter-out/about.html
 
     <html>
         <head>
-            <link rel="stylesheet" type="text/css" href="siter-template/style.css" media="screen">
             <title>About</title>
         </head>
         <body>
