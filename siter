@@ -25,8 +25,8 @@ class Siter:
         FORCE = False
 
         # Block delimiters
-        TAG_OPEN = "{{"
-        TAG_CLOSE = "}}"
+        TAG_OPEN = "{"
+        TAG_CLOSE = "}"
         TAG_OPEN_ESC = re.escape(TAG_OPEN)
         TAG_CLOSE_ESC = re.escape(TAG_CLOSE)
 
@@ -38,10 +38,10 @@ class Siter:
 
     class Block:
         def __init__(self, siter, text):
-            # Block including TAG_OPEN and TAG_CLOSE
+            # Block including { and }
             self.whole = text
 
-            # Just the inside of TAG_OPEN ... TAG_CLOSE
+            # Just the inside of { ... }
             self.content = text[len(siter.args.TAG_OPEN) : -len(siter.args.TAG_CLOSE)]
 
     def __init__(self, arg):
@@ -110,20 +110,20 @@ class Siter:
                     self.args.TAG_OPEN_ESC = re.escape(tag_open)
                     self.args.TAG_CLOSE_ESC = re.escape(tag_close)
 
-        # s.use <name> <arguments>
-        self.re_use = re.compile("s\.use\s+([\w\.\-]+)\s*"
+        # Calling a function or variable: <name> <arguments>
+        self.re_use = re.compile("([\w\.\-]+)\s*"
                                  + "(.*)"
                                  + "$",
                                  re.DOTALL)
 
-        # s.var <name> <contents>
-        self.re_var = re.compile("s\.var\s+([\w\.\-]+)\s*"
+        # Declaring a variable: <name> <contents>
+        self.re_var = re.compile("([\w\.\-]+)\s*"
                                  + "(.*)"
                                  + "$",
                                  re.DOTALL)
 
-        # s.fun <name> {{parameters}} <body>
-        self.re_fun = re.compile("s\.fun\s+([\w\.\-]+)\s*"
+        # Declaring a function: <name> {parameters} <body>
+        self.re_fun = re.compile("([\w\.\-]+)\s*"
                                  + self.args.TAG_OPEN_ESC
                                  + "(.*?)"
                                  + self.args.TAG_CLOSE_ESC
@@ -164,7 +164,7 @@ class Siter:
         print "[    Info    ] {0}".format(m)
 
     def extract_blocks(self, text):
-        # A block is a "{{something}}" that may contain other "{{somethings}}"
+        # A block is a "{something}" that may contain other "{somethings}"
         blocks = []
 
         count = 0
@@ -228,8 +228,7 @@ class Siter:
                 # Evaluate the conditional body, then replace the block with it
                 body = self.evaluate_text(body, bindings)
                 text = text.replace(block.whole, body, 1)
-
-            if ifnot:
+            elif ifnot:
                 check = ifnot.group(1)
                 body = ifnot.group(2)
 
@@ -241,8 +240,7 @@ class Siter:
                 # Evaluate the conditional body, then replace the block with it
                 body = self.evaluate_text(body, bindings)
                 text = text.replace(block.whole, body, 1)
-
-            if use:
+            elif use:
                 name = use.group(1)
                 args = use.group(2)
 
@@ -281,7 +279,7 @@ class Siter:
                         # Replace every instance of a parameter with the supplied argument
                         for i in range(len(arguments)):
                             for m in re.finditer(self.args.TAG_OPEN_ESC
-                                                 + "s\.use\s+" + params[i] + "\s*"
+                                                 + "\s*" + params[i] + "\s*"
                                                  + self.args.TAG_CLOSE_ESC,
                                                  body, re.DOTALL):
                                 body = body.replace(m.group(), arguments[i], 1)
@@ -315,14 +313,14 @@ class Siter:
             var = self.re_var.match(block.content)
             fun = self.re_fun.match(block.content)
 
-            if var:
-                name = var.group(1)
-                bindings[name] = ([], var.group(2), None)
-            elif fun:
+            if fun:
                 name = fun.group(1)
                 params = [p for p in re.split("\s+", fun.group(2).strip())]
                 body = fun.group(3)
                 bindings[name] = (params, body, None)
+            elif var:
+                name = var.group(1)
+                bindings[name] = ([], var.group(2), None)
             else:
                 self.error("Block is neither variable nor function\n{0}"
                     .format(block.whole))
@@ -396,7 +394,7 @@ class Siter:
                 lambda args: time.strftime(args[0])
             )
 
-            # Load template and replace s.use instances with bindings
+            # Load template and replace variables and functions with bindings
             page = self.apply_template("template", bindings, subdir)
 
             if not os.path.isdir(self.args.OUTDIR + "/" + subdir):
