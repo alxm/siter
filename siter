@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os, re, sys, time
+import os, re, sys, shutil, time
 
 class Siter:
     class Args:
@@ -36,6 +36,9 @@ class Siter:
         # Where generated pages are written
         OUTDIR = "siter-out"
 
+        # Subdir in siter-out for media content copied from siter-media
+        MEDIADIR = "media"
+
     class Block:
         def __init__(self, siter, text):
             # Block including { and }
@@ -53,15 +56,16 @@ class Siter:
         # "label" -> (path, required)
         self.dirs = {
             "config": ("siter-config", False),
+            "media": ("siter-media", False),
             "pages": ("siter-pages", True),
             "template": ("siter-template", True),
-            "template-files": ("siter-template/template-files", False),
         }
 
         # "label" -> (path, required)
         self.files = {
             "defs": (self.getdir("config") + "/" + "defs", False),
             "marker": (self.getdir("config") + "/" + "marker", False),
+            "media": (self.getdir("config") + "/" + "media", False),
             "outdir": (self.getdir("config") + "/" + "outdir", False),
             "tags": (self.getdir("config") + "/" + "tags", False),
             "template": (self.getdir("template") + "/" + "page.html", True),
@@ -85,7 +89,17 @@ class Siter:
         if not os.path.isdir(self.args.OUTDIR):
             os.makedirs(self.args.OUTDIR)
 
+        if os.path.isfile(self.getfile("media")):
+            with open(self.getfile("media"), "rU") as f:
+                media = f.readline().strip()
+
+                if len(media) > 0:
+                    self.args.MEDIADIR = media
+
         self.info("Output dir is {0}".format(self.args.OUTDIR))
+
+        # Copy media files
+        os.system("rsync -r --delete {0} {1}".format(self.getdir("media") + "/", self.args.OUTDIR + "/" + self.args.MEDIADIR))
 
         if os.path.isfile(self.getfile("marker")):
             with open(self.getfile("marker"), "rU") as f:
@@ -331,15 +345,19 @@ class Siter:
         with open(self.getfile(name), "rU") as f:
             template = f.read()
 
-        # This way CSS/image paths work in subdir pages too
-        relpath = os.path.relpath(self.args.OUTDIR, self.args.OUTDIR + "/" + subdir)
-        template = template.replace("template-files/", "{0}/template-files/".format(relpath))
+        # This way links and media paths work in subdir pages too
+        root_path = os.path.relpath(self.args.OUTDIR, self.args.OUTDIR + "/" + subdir)
 
         # Built-in bindings
         # "name" -> ([params], body, lambda)
         bindings["s.root"] = (
             [],
-            relpath,
+            root_path,
+            None
+        )
+        bindings["s.media"] = (
+            [],
+            root_path + "/" + self.args.MEDIADIR,
             None
         )
 
