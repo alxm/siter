@@ -20,7 +20,7 @@
 import os, re, sys, shutil, time
 
 class Siter:
-    class Args:
+    class Settings:
         # Whether to re-generate up-to-date files
         FORCE = False
 
@@ -45,13 +45,13 @@ class Siter:
             self.whole = text
 
             # Just the inside of { ... }
-            self.content = text[len(siter.args.TAG_OPEN) : -len(siter.args.TAG_CLOSE)]
+            self.content = text[len(siter.settings.TAG_OPEN) : -len(siter.settings.TAG_CLOSE)]
 
     def __init__(self, arg):
-        self.args = self.Args()
+        self.settings = self.Settings()
 
         if arg == "force":
-            self.args.FORCE = True
+            self.settings.FORCE = True
 
         # "label" -> (path, required)
         self.dirs = {
@@ -84,29 +84,29 @@ class Siter:
                 out = f.readline().strip()
 
                 if len(out) > 0:
-                    self.args.OUTDIR = out
+                    self.settings.OUTDIR = out
 
-        if not os.path.isdir(self.args.OUTDIR):
-            os.makedirs(self.args.OUTDIR)
+        if not os.path.isdir(self.settings.OUTDIR):
+            os.makedirs(self.settings.OUTDIR)
 
         if os.path.isfile(self.getfile("media")):
             with open(self.getfile("media"), "rU") as f:
                 media = f.readline().strip()
 
                 if len(media) > 0:
-                    self.args.MEDIADIR = media
+                    self.settings.MEDIADIR = media
 
-        self.info("Output dir is {0}".format(self.args.OUTDIR))
+        self.info("Output dir is {0}".format(self.settings.OUTDIR))
 
         # Copy media files
-        os.system("rsync -r --delete {0} {1}".format(self.getdir("media") + "/", self.args.OUTDIR + "/" + self.args.MEDIADIR))
+        os.system("rsync -r --delete {0} {1}".format(self.getdir("media") + "/", self.settings.OUTDIR + "/" + self.settings.MEDIADIR))
 
         if os.path.isfile(self.getfile("marker")):
             with open(self.getfile("marker"), "rU") as f:
                 marker = f.readline().strip()
 
                 if len(marker) > 0:
-                    self.args.MARKER = marker
+                    self.settings.MARKER = marker
 
         if os.path.isfile(self.getfile("tags")):
             with open(self.getfile("tags"), "rU") as f:
@@ -119,10 +119,10 @@ class Siter:
                     self.error("Custom close tag is an empty string")
                 else:
                     self.info("Using {0} and {1} as tags".format(tag_open, tag_close))
-                    self.args.TAG_OPEN = tag_open
-                    self.args.TAG_CLOSE = tag_close
-                    self.args.TAG_OPEN_ESC = re.escape(tag_open)
-                    self.args.TAG_CLOSE_ESC = re.escape(tag_close)
+                    self.settings.TAG_OPEN = tag_open
+                    self.settings.TAG_CLOSE = tag_close
+                    self.settings.TAG_OPEN_ESC = re.escape(tag_open)
+                    self.settings.TAG_CLOSE_ESC = re.escape(tag_close)
 
         # Calling a function or variable: <name> <arguments>
         self.re_use = re.compile("([\w\.\-]+)\s*"
@@ -138,9 +138,9 @@ class Siter:
 
         # Declaring a function: <name> {parameters} <body>
         self.re_fun = re.compile("([\w\.\-]+)\s*"
-                                 + self.args.TAG_OPEN_ESC
+                                 + self.settings.TAG_OPEN_ESC
                                  + "(.*?)"
-                                 + self.args.TAG_CLOSE_ESC
+                                 + self.settings.TAG_CLOSE_ESC
                                  + "\s*"
                                  + "(.*)"
                                  + "$",
@@ -198,8 +198,8 @@ class Siter:
 
         while index < len(text):
 
-            index_open = find_tag(self.args.TAG_OPEN, text, index)
-            index_close = find_tag(self.args.TAG_CLOSE, text, index)
+            index_open = find_tag(self.settings.TAG_OPEN, text, index)
+            index_close = find_tag(self.settings.TAG_CLOSE, text, index)
 
             if index_open == -1 and index_close == -1:
                 # No more tags found
@@ -211,15 +211,15 @@ class Siter:
                     start = index_open
 
                 count += 1
-                index = index_open + len(self.args.TAG_OPEN)
+                index = index_open + len(self.settings.TAG_OPEN)
             elif (index_close < index_open and index_close != -1) or index_open == -1:
                 count -= 1
-                index = index_close + len(self.args.TAG_CLOSE)
+                index = index_close + len(self.settings.TAG_CLOSE)
 
             if count == 0:
                 blocks.append(
                     self.Block(self,
-                               text[start : index_close + len(self.args.TAG_CLOSE)])
+                               text[start : index_close + len(self.settings.TAG_CLOSE)])
                 )
 
         return blocks
@@ -292,9 +292,9 @@ class Siter:
                     else:
                         # Replace every instance of a parameter with the supplied argument
                         for i in range(len(arguments)):
-                            for m in re.finditer(self.args.TAG_OPEN_ESC
+                            for m in re.finditer(self.settings.TAG_OPEN_ESC
                                                  + "\s*" + params[i] + "\s*"
-                                                 + self.args.TAG_CLOSE_ESC,
+                                                 + self.settings.TAG_CLOSE_ESC,
                                                  body, re.DOTALL):
                                 body = body.replace(m.group(), arguments[i], 1)
 
@@ -317,10 +317,10 @@ class Siter:
         bindings = {}
 
         # Find the content-start marker
-        marker = text.find(self.args.MARKER)
+        marker = text.find(self.settings.MARKER)
 
         if marker != -1:
-            bindings["s.content"] = ([], text[marker + len(self.args.MARKER) :].strip(), None)
+            bindings["s.content"] = ([], text[marker + len(self.settings.MARKER) :].strip(), None)
             text = text[: marker]
 
         for block in self.extract_blocks(text):
@@ -346,7 +346,7 @@ class Siter:
             template = f.read()
 
         # This way links and media paths work in subdir pages too
-        root_path = os.path.relpath(self.args.OUTDIR, self.args.OUTDIR + "/" + subdir)
+        root_path = os.path.relpath(self.settings.OUTDIR, self.settings.OUTDIR + "/" + subdir)
 
         # Built-in bindings
         # "name" -> ([params], body, lambda)
@@ -357,7 +357,7 @@ class Siter:
         )
         bindings["s.media"] = (
             [],
-            root_path + "/" + self.args.MEDIADIR,
+            root_path + "/" + self.settings.MEDIADIR,
             None
         )
 
@@ -370,7 +370,7 @@ class Siter:
         return template
 
     def up_to_date(self, read_file, write_file):
-        if not self.args.FORCE and os.path.isfile(write_file):
+        if not self.settings.FORCE and os.path.isfile(write_file):
             read_date = os.stat(read_file).st_mtime
             write_date = os.stat(write_file).st_mtime
 
@@ -384,7 +384,7 @@ class Siter:
 
         for p in pages:
             read_file = self.getdir("pages") + "/" + subdir + "/" + p
-            write_file = self.args.OUTDIR + "/" + subdir + "/" + p
+            write_file = self.settings.OUTDIR + "/" + subdir + "/" + p
 
             if os.path.isdir(read_file):
                 self.run(subdir + "/" + p)
@@ -415,8 +415,8 @@ class Siter:
             # Load template and replace variables and functions with bindings
             page = self.apply_template("template", bindings, subdir)
 
-            if not os.path.isdir(self.args.OUTDIR + "/" + subdir):
-                os.makedirs(self.args.OUTDIR + "/" + subdir)
+            if not os.path.isdir(self.settings.OUTDIR + "/" + subdir):
+                os.makedirs(self.settings.OUTDIR + "/" + subdir)
 
             with open(write_file, "w") as f:
                 f.write(page)
