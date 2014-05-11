@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
     Copyright 2011 Alex Margarit
@@ -71,11 +71,11 @@ class Siter:
             "template": (self.getdir("template") + "/" + "page.html", True),
         }
 
-        for label, (path, required) in self.dirs.iteritems():
+        for label, (path, required) in iter(self.dirs.items()):
             if required and not os.path.isdir(path):
                 self.error("Can't find {0} dir".format(path))
 
-        for label, (path, required) in self.files.iteritems():
+        for label, (path, required) in iter(self.files.items()):
             if required and not os.path.isfile(path):
                 self.error("Can't find {0} file".format(path))
 
@@ -168,14 +168,14 @@ class Siter:
         return self.files[name][0]
 
     def error(self, e):
-        print "[   Error!   ] {0}".format(e)
+        print("[   Error!   ] {0}".format(e))
         sys.exit(1)
 
     def warning(self, w):
-        print "[  Warning!  ] {0}".format(w)
+        print("[  Warning!  ] {0}".format(w))
 
     def info(self, m):
-        print "[    Info    ] {0}".format(m)
+        print("[    Info    ] {0}".format(m))
 
     def extract_blocks(self, text):
         # A block is a "{something}" that may contain other "{somethings}"
@@ -391,13 +391,13 @@ class Siter:
                 continue
 
             if self.up_to_date(read_file, write_file):
-                print "[ Up to date ] " + write_file
+                print("[ Up to date ] " + write_file)
                 continue
 
-            print "[  Updating  ] " + write_file
+            print("[  Updating  ] " + write_file)
 
             # Go through page file and extract s.var and s.fun bindings
-            bindings = dict(self.bindings.items() + self.get_bindings(read_file).items())
+            bindings = dict(list(self.bindings.items()) + list(self.get_bindings(read_file).items()))
 
             # Built-in bindings
             # "name" -> ([params], body, lambda)
