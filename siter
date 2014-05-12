@@ -378,6 +378,23 @@ class Siter:
         else:
             return False
 
+    def highlight_code(self, lang, code):
+        try:
+            import pygments, pygments.formatters, pygments.lexers
+        except ImportError:
+            self.warning("Can't import Pygments, code highlighting not available")
+
+            # Replace < and > with HTML entities
+            code = code.replace("<", "&lt;")
+            code = code.replace(">", "&gt;")
+
+            return "<pre>" + code + "</pre>"
+
+        lexer = pygments.lexers.get_lexer_by_name(lang.lower().strip(), stripall = True)
+        formatter = pygments.formatters.HtmlFormatter(linenos = True, cssclass = "siter_code")
+
+        return pygments.highlight(code, lexer, formatter)
+
     def run(self, subdir):
         pages = os.listdir(self.getdir("pages") + "/" + subdir)
         pages.sort(key = lambda p: p)
@@ -410,6 +427,11 @@ class Siter:
                 ["fmt"],
                 None,
                 lambda args: time.strftime(args[0])
+            )
+            bindings["s.code"] = (
+                ["lang", "code"],
+                None,
+                lambda args: self.highlight_code(args[0], args[1])
             )
 
             # Load template and replace variables and functions with bindings
