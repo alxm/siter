@@ -379,20 +379,25 @@ class Siter:
             return False
 
     def highlight_code(self, lang, code):
+        code = code.strip()
+        is_block = code.find("\n") != -1
+
+        div_class = "siter_code"
+        container_class = "siter_code_block" if is_block else "siter_code_line"
+
         try:
             import pygments, pygments.formatters, pygments.lexers
         except ImportError:
             # Replace < and > with HTML entities
             code = code.replace("<", "&lt;")
             code = code.replace(">", "&gt;")
-
-            code = '<div class="siter_code"><pre>' + code.strip() + '</pre></div>'
+            code = '<div class="' + div_class + '"><pre>' + code + '</pre></div>'
         else:
-            lexer = pygments.lexers.get_lexer_by_name(lang.lower().strip(), stripall = True)
-            formatter = pygments.formatters.HtmlFormatter(linenos = True, cssclass = "siter_code")
+            lexer = pygments.lexers.get_lexer_by_name(lang.lower().strip())
+            formatter = pygments.formatters.HtmlFormatter(linenos = is_block, cssclass = div_class)
             code = pygments.highlight(code, lexer, formatter)
 
-        return '<div class="siter_code_container">' + code + '</div>'
+        return '<div class="' + container_class + '">' + code + '</div>'
 
     def run(self, subdir):
         pages = os.listdir(self.getdir("pages") + "/" + subdir)
