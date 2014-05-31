@@ -47,6 +47,12 @@ class Siter:
             # Just the inside of { ... }
             self.content = text[len(siter.settings.TAG_OPEN) : -len(siter.settings.TAG_CLOSE)]
 
+    class Binding:
+        def __init__(self, params = [], body = None, func = None):
+            self.params = params
+            self.body = body
+            self.func = func
+
     def __init__(self, arg):
         self.settings = self.Settings()
 
@@ -263,7 +269,8 @@ class Siter:
                     text = text.replace(block.whole, "", 1)
                     continue
 
-                (params, body, builtin_func) = bindings[name]
+                binding = bindings[name]
+                body = binding.body
 
                 bindings2 = dict(bindings)
 
@@ -271,12 +278,12 @@ class Siter:
                 del bindings2[name]
 
                 # If this is a function
-                if len(params) > 0:
+                if len(binding.params) > 0:
                     arg_blocks = self.extract_blocks(args)
 
-                    if len(arg_blocks) != len(params):
+                    if len(arg_blocks) != len(binding.params):
                         self.warning("{0} expects {1} arguments, got {2}"
-                            .format(name, len(params), len(arg_blocks)))
+                            .format(name, len(binding.params), len(arg_blocks)))
                         continue
 
                     arguments = []
@@ -286,16 +293,17 @@ class Siter:
                         arg = self.evaluate_text(arg_block.content, bindings2)
                         arguments.append(arg)
 
-                    if builtin_func is not None:
+                    if binding.func is not None:
                         # Built-in functions have their own logic
-                        body = builtin_func(arguments)
+                        body = binding.func(arguments)
                     else:
                         # Replace every instance of a parameter with the supplied argument
                         for i in range(len(arguments)):
                             for m in re.finditer(self.settings.TAG_OPEN_ESC
-                                                 + "\s*" + params[i] + "\s*"
+                                                 + "\s*" + binding.params[i] + "\s*"
                                                  + self.settings.TAG_CLOSE_ESC,
-                                                 body, re.DOTALL):
+                                                 binding.body,
+                                                 re.DOTALL):
                                 body = body.replace(m.group(), arguments[i], 1)
 
                 # Evaluate the function body, then replace the block with it
@@ -313,14 +321,14 @@ class Siter:
 
         start = 0
 
-        # "name" -> ([params], body, lambda)
+        # "name" -> Binding object
         bindings = {}
 
         # Find the content-start marker
         marker = text.find(self.settings.MARKER)
 
         if marker != -1:
-            bindings["s.content"] = ([], text[marker + len(self.settings.MARKER) :].strip(), None)
+            bindings["s.content"] = self.Binding(body = text[marker + len(self.settings.MARKER) :].strip())
             text = text[: marker]
 
         for block in self.extract_blocks(text):
@@ -331,10 +339,10 @@ class Siter:
                 name = fun.group(1)
                 params = [p for p in re.split("\s+", fun.group(2).strip())]
                 body = fun.group(3)
-                bindings[name] = (params, body, None)
+                bindings[name] = self.Binding(params = params, body = body)
             elif var:
                 name = var.group(1)
-                bindings[name] = ([], var.group(2), None)
+                bindings[name] = self.Binding(body = var.group(2))
             else:
                 self.error("Block is neither variable nor function\n{0}"
                     .format(block.whole))
@@ -349,17 +357,8 @@ class Siter:
         root_path = os.path.relpath(self.settings.OUTDIR, self.settings.OUTDIR + "/" + subdir)
 
         # Built-in bindings
-        # "name" -> ([params], body, lambda)
-        bindings["s.root"] = (
-            [],
-            root_path,
-            None
-        )
-        bindings["s.media"] = (
-            [],
-            root_path + "/" + self.settings.MEDIADIR,
-            None
-        )
+        bindings["s.root"] = self.Binding(body = root_path)
+        bindings["s.media"] = self.Binding(body = root_path + "/" + self.settings.MEDIADIR)
 
         # Fill in template
         template = self.evaluate_text(template, bindings)
@@ -421,21 +420,17 @@ class Siter:
             bindings = dict(list(self.bindings.items()) + list(self.get_bindings(read_file).items()))
 
             # Built-in bindings
-            # "name" -> ([params], body, lambda)
-            bindings["s.modified"] = (
-                ["fmt"],
-                None,
-                lambda args: time.strftime(args[0], time.localtime(os.stat(read_file).st_mtime))
+            bindings["s.modified"] = self.Binding(
+                params = ["fmt"],
+                func = lambda args: time.strftime(args[0], time.localtime(os.stat(read_file).st_mtime))
             )
-            bindings["s.generated"] = (
-                ["fmt"],
-                None,
-                lambda args: time.strftime(args[0])
+            bindings["s.generated"] = self.Binding(
+                params = ["fmt"],
+                func = lambda args: time.strftime(args[0])
             )
-            bindings["s.code"] = (
-                ["lang", "code"],
-                None,
-                lambda args: self.highlight_code(args[0], args[1])
+            bindings["s.code"] = self.Binding(
+                params = ["lang", "code"],
+                func = lambda args: self.highlight_code(args[0], args[1])
             )
 
             # Load template and replace variables and functions with bindings
