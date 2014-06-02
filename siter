@@ -48,10 +48,14 @@ class Siter:
             self.content = text[len(siter.settings.TAG_OPEN) : -len(siter.settings.TAG_CLOSE)]
 
     class Binding:
-        def __init__(self, params = [], body = None, func = None):
+        def __init__(self, params = None, body = None, func = None):
             self.params = params
             self.body = body
             self.func = func
+
+            self.is_var = body is not None and params is None
+            self.is_macro = body is not None and params is not None
+            self.is_func = func is not None
 
     def __init__(self, arg):
         self.settings = self.Settings()
@@ -203,7 +207,6 @@ class Siter:
                     return i
 
         while index < len(text):
-
             index_open = find_tag(self.settings.TAG_OPEN, text, index)
             index_close = find_tag(self.settings.TAG_CLOSE, text, index)
 
@@ -240,7 +243,7 @@ class Siter:
                 check = ifso.group(1)
                 body = ifso.group(2)
 
-                if not check in bindings:
+                if check not in bindings:
                     # Conditional failed, discard the block
                     text = text.replace(block.whole, "", 1)
                     continue
@@ -264,51 +267,53 @@ class Siter:
                 name = use.group(1)
                 args = use.group(2)
 
-                if not name in bindings:
+                if name not in bindings:
                     # Name is unknown, discard the block
                     text = text.replace(block.whole, "", 1)
                     continue
 
                 binding = bindings[name]
-                body = binding.body
-
-                bindings2 = dict(bindings)
 
                 # Avoid infinite recursion
-                del bindings2[name]
+                del bindings[name]
 
-                # If this is a function
-                if len(binding.params) > 0:
+                if binding.is_var:
+                    body = self.evaluate_text(binding.body, bindings)
+                    text = text.replace(block.whole, body, 1)
+                elif binding.is_macro or binding.is_func:
                     arg_blocks = self.extract_blocks(args)
 
-                    if len(arg_blocks) != len(binding.params):
-                        self.warning("{0} expects {1} arguments, got {2}"
+                    if binding.is_macro and len(arg_blocks) != len(binding.params):
+                        self.warning("Macro {0} expects {1} arguments, got {2}"
                             .format(name, len(binding.params), len(arg_blocks)))
-                        continue
-
-                    arguments = []
-
-                    # Evaluate each argument
-                    for arg_block in arg_blocks:
-                        arg = self.evaluate_text(arg_block.content, bindings2)
-                        arguments.append(arg)
-
-                    if binding.func is not None:
-                        # Built-in functions have their own logic
-                        body = binding.func(arguments)
+                    elif binding.is_func and binding.params > 0 and len(arg_blocks) != binding.params:
+                        self.warning("Function {0} expects {1} arguments, got {2}"
+                            .format(name, binding.params, len(arg_blocks)))
                     else:
-                        # Replace every instance of a parameter with the supplied argument
-                        for i in range(len(arguments)):
-                            for m in re.finditer(self.settings.TAG_OPEN_ESC
-                                                 + "\s*" + binding.params[i] + "\s*"
-                                                 + self.settings.TAG_CLOSE_ESC,
-                                                 binding.body,
-                                                 re.DOTALL):
-                                body = body.replace(m.group(), arguments[i], 1)
+                        arguments = []
 
-                # Evaluate the function body, then replace the block with it
-                body = self.evaluate_text(body, bindings2)
-                text = text.replace(block.whole, body, 1)
+                        # Evaluate each argument
+                        for arg_block in arg_blocks:
+                            arg = self.evaluate_text(arg_block.content, bindings)
+                            arguments.append(arg)
+
+                        if binding.is_macro:
+                            bindings2 = dict(bindings)
+
+                            # Bind each parameter to the supplied argument
+                            for (i, param) in enumerate(binding.params):
+                                bindings2[param] = self.Binding(body = arguments[i])
+
+                            body = self.evaluate_text(binding.body, bindings2)
+                        elif binding.is_func:
+                            body = binding.func(arguments)
+
+                        text = text.replace(block.whole, body, 1)
+                else:
+                    self.error("Binding {0} is not a var/func/macro".format(name))
+
+                # Restore binding
+                bindings[name] = binding
 
         return text
 
@@ -377,7 +382,17 @@ class Siter:
         else:
             return False
 
-    def highlight_code(self, lang, code):
+    def highlight_code(self, args):
+        if len(args) == 1:
+            lang = "text"
+            code = args[0]
+        elif len(args) == 2:
+            lang = args[0]
+            code = args[1]
+        else:
+            self.warning("s.code expects 1 or 2 arguments, got " + len(args))
+            return ""
+
         code = code.strip()
         is_block = code.find("\n") != -1
 
@@ -416,21 +431,21 @@ class Siter:
 
             print("[  Updating  ] " + write_file)
 
-            # Go through page file and extract s.var and s.fun bindings
+            # Go through page file and extract bindings
             bindings = dict(list(self.bindings.items()) + list(self.get_bindings(read_file).items()))
 
             # Built-in bindings
             bindings["s.modified"] = self.Binding(
-                params = ["fmt"],
+                params = 1,
                 func = lambda args: time.strftime(args[0], time.localtime(os.stat(read_file).st_mtime))
             )
             bindings["s.generated"] = self.Binding(
-                params = ["fmt"],
+                params = 1,
                 func = lambda args: time.strftime(args[0])
             )
             bindings["s.code"] = self.Binding(
-                params = ["lang", "code"],
-                func = lambda args: self.highlight_code(args[0], args[1])
+                params = 0,
+                func = self.highlight_code
             )
 
             # Load template and replace variables and functions with bindings
