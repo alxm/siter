@@ -195,20 +195,9 @@ class Siter:
         start = 0
         index = 0
 
-        def find_tag(tag, text, index):
-            while True:
-                i = text.find(tag, index)
-
-                # Ignore escaped tag
-                if i > 0 and text[i - 1] == "\\":
-                    index = i + len(tag)
-                    continue
-                else:
-                    return i
-
         while index < len(text):
-            index_open = find_tag(self.settings.TAG_OPEN, text, index)
-            index_close = find_tag(self.settings.TAG_CLOSE, text, index)
+            index_open = text.find(self.settings.TAG_OPEN, index)
+            index_close = text.find(self.settings.TAG_CLOSE, index)
 
             if index_open == -1 and index_close == -1:
                 # No more tags found
@@ -367,9 +356,6 @@ class Siter:
 
         # Fill in template
         template = self.evaluate_text(template, bindings)
-
-        # Strip escape chars
-        template = re.sub(r'\\(.)', r'\1', template)
 
         return template
 
