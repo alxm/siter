@@ -19,46 +19,46 @@
 
 import os, re, sys, shutil, time
 
+class Settings:
+    # Whether to re-generate up-to-date files
+    FORCE = False
+
+    # Block delimiters
+    TAG_OPEN = "{"
+    TAG_CLOSE = "}"
+    TAG_OPEN_ESC = re.escape(TAG_OPEN)
+    TAG_CLOSE_ESC = re.escape(TAG_CLOSE)
+
+    # Marks the beginning of page content
+    MARKER = "~~~"
+
+    # Where generated pages are written
+    OUTDIR = "siter-out"
+
+    # Subdir in siter-out for media content copied from siter-media
+    MEDIADIR = "media"
+
+class Block:
+    def __init__(self, siter, text):
+        # Block including { and }
+        self.whole = text
+
+        # Just the inside of { ... }
+        self.content = text[len(siter.settings.TAG_OPEN) : -len(siter.settings.TAG_CLOSE)].strip()
+
+class Binding:
+    def __init__(self, params = None, body = None, func = None):
+        self.params = params
+        self.body = body
+        self.func = func
+
+        self.is_var = body is not None and params is None
+        self.is_macro = body is not None and params is not None
+        self.is_func = func is not None
+
 class Siter:
-    class Settings:
-        # Whether to re-generate up-to-date files
-        FORCE = False
-
-        # Block delimiters
-        TAG_OPEN = "{"
-        TAG_CLOSE = "}"
-        TAG_OPEN_ESC = re.escape(TAG_OPEN)
-        TAG_CLOSE_ESC = re.escape(TAG_CLOSE)
-
-        # Marks the beginning of page content
-        MARKER = "~~~"
-
-        # Where generated pages are written
-        OUTDIR = "siter-out"
-
-        # Subdir in siter-out for media content copied from siter-media
-        MEDIADIR = "media"
-
-    class Block:
-        def __init__(self, siter, text):
-            # Block including { and }
-            self.whole = text
-
-            # Just the inside of { ... }
-            self.content = text[len(siter.settings.TAG_OPEN) : -len(siter.settings.TAG_CLOSE)].strip()
-
-    class Binding:
-        def __init__(self, params = None, body = None, func = None):
-            self.params = params
-            self.body = body
-            self.func = func
-
-            self.is_var = body is not None and params is None
-            self.is_macro = body is not None and params is not None
-            self.is_func = func is not None
-
     def __init__(self, arg):
-        self.settings = self.Settings()
+        self.settings = Settings()
 
         if arg == "force":
             self.settings.FORCE = True
@@ -216,8 +216,7 @@ class Siter:
 
             if count == 0:
                 blocks.append(
-                    self.Block(self,
-                               text[start : index_close + len(self.settings.TAG_CLOSE)])
+                    Block(self, text[start : index_close + len(self.settings.TAG_CLOSE)])
                 )
 
         return blocks
@@ -291,7 +290,7 @@ class Siter:
 
                             # Bind each parameter to the supplied argument
                             for (i, param) in enumerate(binding.params):
-                                bindings2[param] = self.Binding(body = arguments[i])
+                                bindings2[param] = Binding(body = arguments[i])
 
                             body = self.evaluate_text(binding.body, bindings2)
                         elif binding.is_func:
@@ -322,7 +321,7 @@ class Siter:
         marker = text.find(self.settings.MARKER)
 
         if marker != -1:
-            bindings["s.content"] = self.Binding(body = text[marker + len(self.settings.MARKER) :].strip())
+            bindings["s.content"] = Binding(body = text[marker + len(self.settings.MARKER) :].strip())
             text = text[: marker]
 
         for block in self.extract_blocks(text):
@@ -333,13 +332,12 @@ class Siter:
                 name = fun.group(1)
                 params = [p for p in re.split("\s+", fun.group(2).strip())]
                 body = fun.group(3)
-                bindings[name] = self.Binding(params = params, body = body)
+                bindings[name] = Binding(params = params, body = body)
             elif var:
                 name = var.group(1)
-                bindings[name] = self.Binding(body = var.group(2))
+                bindings[name] = Binding(body = var.group(2))
             else:
-                self.error("Block is neither variable nor function\n{0}"
-                    .format(block.whole))
+                self.error("Block is neither variable nor function\n{0}".format(block.whole))
 
         return bindings
 
@@ -351,8 +349,8 @@ class Siter:
         root_path = os.path.relpath(self.settings.OUTDIR, self.settings.OUTDIR + "/" + subdir)
 
         # Built-in bindings
-        bindings["s.root"] = self.Binding(body = root_path)
-        bindings["s.media"] = self.Binding(body = root_path + "/" + self.settings.MEDIADIR)
+        bindings["s.root"] = Binding(body = root_path)
+        bindings["s.media"] = Binding(body = root_path + "/" + self.settings.MEDIADIR)
 
         # Fill in template
         template = self.evaluate_text(template, bindings)
@@ -421,15 +419,15 @@ class Siter:
             bindings = dict(list(self.bindings.items()) + list(self.get_bindings(read_file).items()))
 
             # Built-in bindings
-            bindings["s.modified"] = self.Binding(
+            bindings["s.modified"] = Binding(
                 params = 1,
                 func = lambda args: time.strftime(args[0], time.localtime(os.stat(read_file).st_mtime))
             )
-            bindings["s.generated"] = self.Binding(
+            bindings["s.generated"] = Binding(
                 params = 1,
                 func = lambda args: time.strftime(args[0])
             )
-            bindings["s.code"] = self.Binding(
+            bindings["s.code"] = Binding(
                 params = 0,
                 func = self.highlight_code
             )
