@@ -48,6 +48,9 @@ class Block:
 
 class Binding:
     def __init__(self, params = None, body = None, func = None):
+        if body is not None:
+            body = body.strip()
+
         self.params = params
         self.body = body
         self.func = func
@@ -321,7 +324,7 @@ class Siter:
         marker = text.find(self.settings.MARKER)
 
         if marker != -1:
-            bindings["s.content"] = Binding(body = text[marker + len(self.settings.MARKER) :].strip())
+            bindings["s.content"] = Binding(body = text[marker + len(self.settings.MARKER) :])
             text = text[: marker]
 
         for block in self.extract_blocks(text):
@@ -330,7 +333,7 @@ class Siter:
 
             if fun:
                 name = fun.group(1)
-                params = [p for p in re.split("\s+", fun.group(2).strip())]
+                params = [p for p in re.split("\s+", fun.group(2))]
                 body = fun.group(3)
                 bindings[name] = Binding(params = params, body = body)
             elif var:
@@ -377,7 +380,6 @@ class Siter:
             self.warning("s.code expects 1 or 2 arguments, got " + len(args))
             return ""
 
-        code = code.strip()
         is_block = code.find("\n") != -1
 
         div_class = "siter_code"
@@ -391,7 +393,7 @@ class Siter:
             code = code.replace(">", "&gt;")
             code = '<div class="' + div_class + '"><pre>' + code + '</pre></div>'
         else:
-            lexer = pygments.lexers.get_lexer_by_name(lang.lower().strip())
+            lexer = pygments.lexers.get_lexer_by_name(lang.lower())
             formatter = pygments.formatters.HtmlFormatter(linenos = is_block, cssclass = div_class)
             code = pygments.highlight(code, lexer, formatter)
 
