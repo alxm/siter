@@ -45,7 +45,7 @@ class Siter:
             self.whole = text
 
             # Just the inside of { ... }
-            self.content = text[len(siter.settings.TAG_OPEN) : -len(siter.settings.TAG_CLOSE)]
+            self.content = text[len(siter.settings.TAG_OPEN) : -len(siter.settings.TAG_CLOSE)].strip()
 
     class Binding:
         def __init__(self, params = None, body = None, func = None):
