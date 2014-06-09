@@ -333,7 +333,7 @@ class Siter:
 
             if fun:
                 name = fun.group(1)
-                params = [p for p in re.split("\s+", fun.group(2))]
+                params = [p for p in fun.group(2).split()]
                 body = fun.group(3)
                 bindings[name] = Binding(params = params, body = body)
             elif var:
