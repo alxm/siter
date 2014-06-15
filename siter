@@ -333,7 +333,7 @@ class Siter:
 
             if fun:
                 name = fun.group(1)
-                params = [p for p in fun.group(2).split()]
+                params = fun.group(2).split()
                 body = fun.group(3)
                 bindings[name] = Binding(params = params, body = body)
             elif var:
@@ -373,9 +373,15 @@ class Siter:
         if len(args) == 1:
             lang = "text"
             code = args[0]
+            lines = []
         elif len(args) == 2:
             lang = args[0]
             code = args[1]
+            lines = []
+        elif len(args) == 3:
+            lang = args[0]
+            code = args[2]
+            lines = args[1].split()
         else:
             self.warning("s.code expects 1 or 2 arguments, got " + len(args))
             return ""
@@ -394,7 +400,7 @@ class Siter:
             code = '<div class="' + div_class + '"><pre>' + code + '</pre></div>'
         else:
             lexer = pygments.lexers.get_lexer_by_name(lang.lower())
-            formatter = pygments.formatters.HtmlFormatter(linenos = is_block, cssclass = div_class)
+            formatter = pygments.formatters.HtmlFormatter(linenos = is_block, cssclass = div_class, hl_lines=lines)
             code = pygments.highlight(code, lexer, formatter)
 
         return '<div class="' + container_class + '">' + code + '</div>'
