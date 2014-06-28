@@ -1,12 +1,10 @@
-Siter
-=====
+# Siter
 
-Siter is a static website generator written in Python.
+Siter is a static website generator written in Python 3.
 
-Content pages from `siter-pages/` are formatted with `siter-template/page.html` and written to `siter-out/`. Pages can define variables and macros to avoid content and markup duplication.
+Content pages from `siter-pages/` are formatted with `siter-template/page.html` and written to `siter-out/`. You can define variables and macros to avoid content and markup duplication.
 
-Quick Example
-=============
+# Quick Example
 
 A content page
 
@@ -32,11 +30,46 @@ generate this:
         </body>
     </html>
 
-Manual
-======
 
-File tree
----------
+# Variables and Macros
+
+    {smile :-)}
+    {format {tag text} <{tag}>{text}</{tag}>}
+    ~~~
+    {format {b} {This text is bold! {smile}}}
+    {format {i} {This text is italic.}}
+
+**This text is bold! :-)** *This text is italic.*
+
+# Special Variables
+
+* {s.content} - Everything in a page file after the `~~~` marker.
+* {s.root} - Relative path to the website root.
+* {s.media} - Relative path to siter-media.
+
+# Special Macros
+
+### s.modified
+
+Time the page content was modified. Takes a Python [time format](http://strftime.org/) string as parameter.
+
+    {s.modified {%B %Y}}
+
+### s.generated
+
+Time the page was generated. Same argument as `s.modified`.
+
+### s.code
+
+For displaying code blocks and one-liners. Optional syntax highlighting with the [Pygments](http://pygments.org/) library: `apt-get install python3-pygments`.
+
+* {s.code {code snippet}}
+* {s.code {language} {code snippet}}
+* {s.code {language} {lines to highlight} {code snippet}}
+
+See the [Pygments docs](http://pygments.org/docs/lexers/) for supported languages.
+
+# Project File Tree
 
     website/
      |- siter-config/   # Optional config files
@@ -52,29 +85,27 @@ File tree
      |- siter-template/ # HTML templates
          |- page.html
 
-siter-config/
--------------
+### siter-config/
 
 Configuration files that change default settings go here.
 
-### defs
+#### defs
 
-Variables and macros that can be used by all pages. See the example below for syntax. Variables and macros that start with `s.` are reserved and should not be defined by the user.
+Variables and macros visible by all pages. This avoids having to declare the same variables and macros in multiple pages.
 
-### marker
+#### marker
 
 Siter pages start with variable and macro definitions, followed by a special marker. Everything following that marker is considered page content. The default marker is `~~~`, but you can specify a different one like `*****` in this file.
 
-### out
+#### out
 
 Siter writes generated pages to `siter-out/`. You can specify a different output directory in this file.
 
-### tags
+#### tags
 
-Specifies custom opening and closing block tags (used for variable use and declaration), each on a separate line. The two tags must be different: `[` and `]` are ok, but `%` and `%` are not. Siter defaults to `{` and `}`.
+Tags are used to indicate variable and macro blocks, `{` and `}` are the default. You can specify your own in this file, each on a separate line. The two tags must be different: `[` and `]` are ok, but `%` and `%` are not.
 
-siter-pages/
-------------
+### siter-pages/
 
 Content pages go here. Example `siter-pages/about.html`:
 
@@ -82,8 +113,7 @@ Content pages go here. Example `siter-pages/about.html`:
     ~~~                           # Content marker
     <p>This is a simple page.</p> # Page content starts from here on
 
-siter-template/
----------------
+### siter-template/
 
 `siter-template/page.html` is the template for all content pages. Example `siter-template/page.html`:
 
@@ -97,15 +127,13 @@ siter-template/
         </body>
     </html>
 
-Calling Siter
--------------
+# Calling Siter
 
     cd website
     siter       # generate website
     siter force # regenerate all pages
 
-License
--------
+# License
 
 Copyright 2011 Alex Margarit (alex@alxm.org)
 
