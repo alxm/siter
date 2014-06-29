@@ -40,6 +40,10 @@ class Settings:
 
 class Block:
     def __init__(self, siter, text):
+        # Add block tags if missing
+        if text.find(siter.settings.TAG_OPEN) != 0:
+            text = siter.settings.TAG_OPEN + text + siter.settings.TAG_CLOSE
+
         # Block including { and }
         self.whole = text
 
@@ -273,6 +277,10 @@ class Siter:
                     text = text.replace(block.whole, body, 1)
                 elif binding.is_macro or binding.is_func:
                     arg_blocks = self.extract_blocks(args)
+
+                    # You can pass 1 argument without block tags
+                    if len(arg_blocks) == 0 and len(args) > 0:
+                        arg_blocks.append(Block(self, args))
 
                     if binding.is_macro and len(arg_blocks) != len(binding.params):
                         self.warning("Macro {0} expects {1} arguments, got {2}"
