@@ -386,24 +386,30 @@ class Siter:
             self.warning("s.code expects 1 or 2 arguments, got " + len(args))
             return ""
 
-        is_block = code.find("\n") != -1
-
-        div_class = "siter_code"
-        container_class = "siter_code_block" if is_block else "siter_code_line"
-
-        try:
-            import pygments, pygments.formatters, pygments.lexers
-        except ImportError:
+        def clean_code(code):
             # Replace < and > with HTML entities
             code = code.replace("<", "&lt;")
             code = code.replace(">", "&gt;")
-            code = '<div class="' + div_class + '"><pre>' + code + '</pre></div>'
-        else:
-            lexer = pygments.lexers.get_lexer_by_name(lang.lower())
-            formatter = pygments.formatters.HtmlFormatter(linenos = is_block, cssclass = div_class, hl_lines=lines)
-            code = pygments.highlight(code, lexer, formatter)
+            return code
 
-        return '<div class="' + container_class + '">' + code + '</div>'
+        if code.find("\n") == -1:
+            # This is a one-liner
+            code = "<code>" + clean_code(code) + "</code>"
+        else:
+            # This is a code block
+            div_class = "siter_code"
+
+            try:
+                import pygments, pygments.formatters, pygments.lexers
+            except ImportError:
+                # Can't import Pygments, use a simple fallback
+                code = '<div class="' + div_class + '"><pre>' + clean_code(code) + '</pre></div>'
+            else:
+                lexer = pygments.lexers.get_lexer_by_name(lang.lower())
+                formatter = pygments.formatters.HtmlFormatter(linenos = True, cssclass = div_class, hl_lines=lines)
+                code = pygments.highlight(code, lexer, formatter)
+
+        return code
 
     def run(self, subdir):
         pages = os.listdir(self.getdir("pages") + "/" + subdir)

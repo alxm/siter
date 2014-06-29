@@ -115,7 +115,7 @@ Content pages go here. Example `siter-pages/about.html`:
 
 ### siter-template/
 
-`siter-template/page.html` is the template for all content pages. Example `siter-template/page.html`:
+`siter-template/page.html` is the template for content pages.
 
     <html>
         <head>
