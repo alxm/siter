@@ -383,7 +383,7 @@ class Siter:
             code = args[2]
             lines = args[1].split()
         else:
-            self.warning("s.code expects 1 or 2 arguments, got " + len(args))
+            self.warning("s.code expects 1 or 2 arguments, got {0}".format(len(args)))
             return ""
 
         def clean_code(code):
