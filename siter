@@ -274,6 +274,14 @@ class Siter:
 
                 if binding.is_var:
                     body = self.evaluate_text(binding.body, bindings)
+
+                    if name == "s.content":
+                        try:
+                            import markdown
+                            body = markdown.markdown(body, output_format = "html5")
+                        except ImportError:
+                            pass
+
                     text = text.replace(block.whole, body, 1)
                 elif binding.is_macro or binding.is_func:
                     arg_blocks = self.extract_blocks(args)
