@@ -76,6 +76,7 @@ class Siter:
             "media": ("siter-media", False),
             "pages": ("siter-pages", True),
             "template": ("siter-template", True),
+            "template-media": ("siter-template/media", False),
         }
 
         # "label" -> (path, required)
@@ -115,8 +116,17 @@ class Siter:
 
         self.info("Output dir is {0}".format(self.settings.OUTDIR))
 
-        # Copy media files
-        os.system("rsync -r --delete {0} {1}".format(self.getdir("media") + "/", self.settings.OUTDIR + "/" + self.settings.MEDIADIR))
+        def copy_media(src, dst):
+            if os.path.isdir(src):
+                src = src + "/"
+                dst = self.settings.OUTDIR + "/" + dst
+
+                self.info("Copying media from {0} to {1}".format(src, dst))
+                os.system("rsync -r --delete {0} {1}".format(src, dst))
+
+        # Copy site and template media files
+        copy_media(self.getdir("media"), self.settings.MEDIADIR)
+        copy_media(self.getdir("template-media"), self.settings.MEDIADIR + "/" + "template-media")
 
         if os.path.isfile(self.getfile("marker")):
             with open(self.getfile("marker"), "rU") as f:
