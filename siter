@@ -19,15 +19,19 @@
 
 import os, re, sys, shutil, time
 
+class Tag:
+    def __init__(self, text):
+        self.raw = text
+        self.escaped = re.escape(text)
+        self.length = len(text)
+
 class Settings:
     # Whether to re-generate up-to-date files
     FORCE = False
 
     # Block delimiters
-    TAG_OPEN = "{"
-    TAG_CLOSE = "}"
-    TAG_OPEN_ESC = re.escape(TAG_OPEN)
-    TAG_CLOSE_ESC = re.escape(TAG_CLOSE)
+    TagOpen = Tag("{")
+    TagClose = Tag("}")
 
     # Marks the beginning of page content
     MARKER = "~~~"
@@ -41,14 +45,14 @@ class Settings:
 class Block:
     def __init__(self, siter, text):
         # Add block tags if missing
-        if text.find(siter.settings.TAG_OPEN) != 0:
-            text = siter.settings.TAG_OPEN + text + siter.settings.TAG_CLOSE
+        if text.find(siter.settings.TagOpen.raw) != 0:
+            text = siter.settings.TagOpen.raw + text + siter.settings.TagClose.raw
 
         # Block including { and }
         self.whole = text
 
         # Just the inside of { ... }
-        self.content = text[len(siter.settings.TAG_OPEN) : -len(siter.settings.TAG_CLOSE)].strip()
+        self.content = text[siter.settings.TagOpen.length : -siter.settings.TagClose.length].strip()
 
 class Binding:
     def __init__(self, params = None, body = None, func = None):
@@ -146,10 +150,8 @@ class Siter:
                     self.error("Custom close tag is an empty string")
                 else:
                     self.info("Using {0} and {1} as tags".format(tag_open, tag_close))
-                    self.settings.TAG_OPEN = tag_open
-                    self.settings.TAG_CLOSE = tag_close
-                    self.settings.TAG_OPEN_ESC = re.escape(tag_open)
-                    self.settings.TAG_CLOSE_ESC = re.escape(tag_close)
+                    self.settings.TagOpen = Tag(tag_open)
+                    self.settings.TagClose = Tag(tag_close)
 
         # Calling a function or variable: <name> <arguments>
         self.re_use = re.compile("([\w\.\-]+)\s*"
@@ -165,9 +167,9 @@ class Siter:
 
         # Declaring a function: <name> {parameters} <body>
         self.re_fun = re.compile("([\w\.\-]+)\s*"
-                                 + self.settings.TAG_OPEN_ESC
+                                 + self.settings.TagOpen.escaped
                                  + "(.*?)"
-                                 + self.settings.TAG_CLOSE_ESC
+                                 + self.settings.TagClose.escaped
                                  + "\s*"
                                  + "(.*)"
                                  + "$",
@@ -213,8 +215,8 @@ class Siter:
         index = 0
 
         while index < len(text):
-            index_open = text.find(self.settings.TAG_OPEN, index)
-            index_close = text.find(self.settings.TAG_CLOSE, index)
+            index_open = text.find(self.settings.TagOpen.raw, index)
+            index_close = text.find(self.settings.TagClose.raw, index)
 
             if index_open == -1 and index_close == -1:
                 # No more tags found
@@ -226,14 +228,14 @@ class Siter:
                     start = index_open
 
                 count += 1
-                index = index_open + len(self.settings.TAG_OPEN)
+                index = index_open + self.settings.TagClose.length
             elif (index_close < index_open and index_close != -1) or index_open == -1:
                 count -= 1
-                index = index_close + len(self.settings.TAG_CLOSE)
+                index = index_close + self.settings.TagClose.length
 
             if count == 0:
                 blocks.append(
-                    Block(self, text[start : index_close + len(self.settings.TAG_CLOSE)])
+                    Block(self, text[start : index_close + self.settings.TagClose.length])
                 )
 
         return blocks
