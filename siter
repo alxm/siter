@@ -27,20 +27,20 @@ class Tag:
 
 class Settings:
     # Whether to re-generate up-to-date files
-    FORCE = False
+    Force = False
 
     # Block delimiters
     TagOpen = Tag("{")
     TagClose = Tag("}")
 
     # Marks the beginning of page content
-    MARKER = "~~~"
+    Marker = "~~~"
 
     # Where generated pages are written
-    OUTDIR = "siter-out"
+    OutDir = "siter-out"
 
     # Subdir in siter-out for media content copied from siter-media
-    MEDIADIR = "media"
+    MediaDir = "media"
 
 class Block:
     def __init__(self, siter, text):
@@ -72,7 +72,7 @@ class Siter:
         self.settings = Settings()
 
         if arg == "force":
-            self.settings.FORCE = True
+            self.settings.Force = True
 
         # "label" -> (path, required)
         self.dirs = {
@@ -106,38 +106,38 @@ class Siter:
                 out = f.readline().strip()
 
                 if len(out) > 0:
-                    self.settings.OUTDIR = out
+                    self.settings.OutDir = out
 
-        if not os.path.isdir(self.settings.OUTDIR):
-            os.makedirs(self.settings.OUTDIR)
+        if not os.path.isdir(self.settings.OutDir):
+            os.makedirs(self.settings.OutDir)
 
         if os.path.isfile(self.getfile("media")):
             with open(self.getfile("media"), "rU") as f:
                 media = f.readline().strip()
 
                 if len(media) > 0:
-                    self.settings.MEDIADIR = media
+                    self.settings.MediaDir = media
 
-        self.info("Output dir is {0}".format(self.settings.OUTDIR))
+        self.info("Output dir is {0}".format(self.settings.OutDir))
 
         def copy_media(src, dst):
             if os.path.isdir(src):
                 src = src + "/"
-                dst = self.settings.OUTDIR + "/" + dst
+                dst = self.settings.OutDir + "/" + dst
 
                 self.info("Copying media from {0} to {1}".format(src, dst))
                 os.system("rsync -r --delete {0} {1}".format(src, dst))
 
         # Copy site and template media files
-        copy_media(self.getdir("media"), self.settings.MEDIADIR)
-        copy_media(self.getdir("template-media"), self.settings.MEDIADIR + "/" + "template-media")
+        copy_media(self.getdir("media"), self.settings.MediaDir)
+        copy_media(self.getdir("template-media"), self.settings.MediaDir + "/" + "template-media")
 
         if os.path.isfile(self.getfile("marker")):
             with open(self.getfile("marker"), "rU") as f:
                 marker = f.readline().strip()
 
                 if len(marker) > 0:
-                    self.settings.MARKER = marker
+                    self.settings.Marker = marker
 
         if os.path.isfile(self.getfile("tags")):
             with open(self.getfile("tags"), "rU") as f:
@@ -349,10 +349,10 @@ class Siter:
         bindings = {}
 
         # Find the content-start marker
-        marker = text.find(self.settings.MARKER)
+        marker = text.find(self.settings.Marker)
 
         if marker != -1:
-            bindings["s.content"] = Binding(body = text[marker + len(self.settings.MARKER) :])
+            bindings["s.content"] = Binding(body = text[marker + len(self.settings.Marker) :])
             text = text[: marker]
 
         for block in self.extract_blocks(text):
@@ -377,11 +377,11 @@ class Siter:
             template = f.read()
 
         # This way links and media paths work in subdir pages too
-        root_path = os.path.relpath(self.settings.OUTDIR, self.settings.OUTDIR + "/" + subdir)
+        root_path = os.path.relpath(self.settings.OutDir, self.settings.OutDir + "/" + subdir)
 
         # Built-in bindings
         bindings["s.root"] = Binding(body = root_path)
-        bindings["s.media"] = Binding(body = root_path + "/" + self.settings.MEDIADIR)
+        bindings["s.media"] = Binding(body = root_path + "/" + self.settings.MediaDir)
 
         # Fill in template
         template = self.evaluate_text(template, bindings)
@@ -389,7 +389,7 @@ class Siter:
         return template
 
     def up_to_date(self, read_file, write_file):
-        if not self.settings.FORCE and os.path.isfile(write_file):
+        if not self.settings.Force and os.path.isfile(write_file):
             read_date = os.stat(read_file).st_mtime
             write_date = os.stat(write_file).st_mtime
 
@@ -445,7 +445,7 @@ class Siter:
 
         for p in pages:
             read_file = self.getdir("pages") + "/" + subdir + "/" + p
-            write_file = self.settings.OUTDIR + "/" + subdir + "/" + p
+            write_file = self.settings.OutDir + "/" + subdir + "/" + p
 
             if os.path.isdir(read_file):
                 self.run(subdir + "/" + p)
@@ -477,8 +477,8 @@ class Siter:
             # Load template and replace variables and functions with bindings
             page = self.apply_template("template", bindings, subdir)
 
-            if not os.path.isdir(self.settings.OUTDIR + "/" + subdir):
-                os.makedirs(self.settings.OUTDIR + "/" + subdir)
+            if not os.path.isdir(self.settings.OutDir + "/" + subdir):
+                os.makedirs(self.settings.OutDir + "/" + subdir)
 
             with open(write_file, "w") as f:
                 f.write(page)
