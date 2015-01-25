@@ -34,10 +34,10 @@ class TextFile(File):
         File.__init__(self, path, required)
 
         self.lines = []
-        self.content = ""
+        self.content = ''
 
         try:
-            with open(self.path, "rU") as f:
+            with open(self.path, 'rU') as f:
                 for line in f:
                     line = line.strip()
                     self.lines.append(line if len(line) > 0 else None)
@@ -46,33 +46,32 @@ class TextFile(File):
                 self.content = f.read()
         except FileNotFoundError:
             if self.required:
-                Siter.error("Required file {0} not found".format(self.path))
+                Siter.error('Required file {} not found'.format(self.path))
 
     def line(self, number):
         if number < len(self.lines):
             return self.lines[number]
         elif self.required:
-            Siter.error("Missing line {0} in required file {1}"
-                .format(number, self.path))
+            Siter.error('Missing required file {}:{}'.format(self.path, number))
         else:
             return None
 
 class Dirs:
     def __init__(self):
-        self.config = Dir("siter-config")
-        self.media = Dir("siter-media")
-        self.pages = Dir("siter-pages", True)
-        self.template = Dir("siter-template", True)
-        self.template_media = Dir("siter-template/media")
+        self.config = Dir('siter-config')
+        self.media = Dir('siter-media')
+        self.pages = Dir('siter-pages', True)
+        self.template = Dir('siter-template', True)
+        self.template_media = Dir('siter-template/media')
 
 class Files:
     def __init__(self, dirs):
-        self.defs = dirs.config.add_file("defs")
-        self.marker = dirs.config.add_file("marker")
-        self.media = dirs.config.add_file("media")
-        self.outdir = dirs.config.add_file("outdir")
-        self.tags = dirs.config.add_file("tags")
-        self.page_html = dirs.template.add_file("page.html", True)
+        self.defs = dirs.config.add_file('defs')
+        self.marker = dirs.config.add_file('marker')
+        self.media = dirs.config.add_file('media')
+        self.outdir = dirs.config.add_file('outdir')
+        self.tags = dirs.config.add_file('tags')
+        self.page_html = dirs.template.add_file('page.html', True)
 
 class Tag:
     def __init__(self, text):
@@ -83,20 +82,20 @@ class Tag:
 class Settings:
     def __init__(self, arg):
         # Whether to re-generate up-to-date files
-        self.Force = arg == "force"
+        self.Force = arg == 'force'
 
         # Block delimiters
-        self.TagOpen = Tag("{")
-        self.TagClose = Tag("}")
+        self.TagOpen = Tag('{')
+        self.TagClose = Tag('}')
 
         # Marks the beginning of page content
-        self.Marker = "~~~"
+        self.Marker = '~~~'
 
         # Where generated pages are written
-        self.OutDir = "siter-out"
+        self.OutDir = 'siter-out'
 
         # Subdir in siter-out for media content copied from siter-media
-        self.MediaDir = "media"
+        self.MediaDir = 'media'
 
 class Block:
     def __init__(self, siter, text):
@@ -126,16 +125,16 @@ class Binding:
 class Siter:
     @staticmethod
     def error(e):
-        print("[   Error!   ] {0}".format(e))
+        print('[   Error!   ] {}'.format(e))
         sys.exit(1)
 
     @staticmethod
     def warning(w):
-        print("[  Warning!  ] {0}".format(w))
+        print('[  Warning!  ] {}'.format(w))
 
     @staticmethod
     def info(m):
-        print("[    Info    ] {0}".format(m))
+        print('[    Info    ] {}'.format(m))
 
     def __init__(self, arg):
         self.settings = Settings(arg)
@@ -151,19 +150,19 @@ class Siter:
         if self.files.media.line(0):
             self.settings.MediaDir = self.files.media.line(0)
 
-        Siter.info("Output dir is {0}".format(self.settings.OutDir))
+        Siter.info('Output dir is {}'.format(self.settings.OutDir))
 
         def copy_media(src_dir, dst):
             if os.path.isdir(src_dir.path):
-                src = src_dir.path + "/"
-                dst = self.settings.OutDir + "/" + dst
+                src = src_dir.path + '/'
+                dst = self.settings.OutDir + '/' + dst
 
-                Siter.info("Copying media from {0} to {1}".format(src, dst))
-                os.system("rsync -r --delete {0} {1}".format(src, dst))
+                Siter.info('Copying media from {} to {}'.format(src, dst))
+                os.system('rsync -r --delete {} {}'.format(src, dst))
 
         # Copy site and template media files
         copy_media(self.dirs.media, self.settings.MediaDir)
-        copy_media(self.dirs.template_media, self.settings.MediaDir + "/" + "template-media")
+        copy_media(self.dirs.template_media, self.settings.MediaDir + '/' + 'template-media')
 
         if self.files.marker.line(0):
             self.settings.Marker = self.files.marker.line(0)
@@ -172,41 +171,41 @@ class Siter:
             self.settings.TagOpen = Tag(self.files.tags.line(0))
             self.settings.TagClose = Tag(self.files.tags.line(1))
 
-            Siter.info("Using {0} and {1} as tags"
+            Siter.info('Using {} and {} as block tags'
                 .format(self.settings.TagOpen.raw, self.settings.TagClose.raw))
 
         # Calling a function or variable: <name> <arguments>
-        self.re_use = re.compile("([\w\.\-]+)\s*"
-                                 + "(.*)"
-                                 + "$",
+        self.re_use = re.compile('([\w\.\-]+)\s*'
+                                 + '(.*)'
+                                 + '$',
                                  re.DOTALL)
 
         # Declaring a variable: <name> <contents>
-        self.re_var = re.compile("([\w\.\-]+)\s*"
-                                 + "(.*)"
-                                 + "$",
+        self.re_var = re.compile('([\w\.\-]+)\s*'
+                                 + '(.*)'
+                                 + '$',
                                  re.DOTALL)
 
         # Declaring a function: <name> {parameters} <body>
-        self.re_fun = re.compile("([\w\.\-]+)\s*"
+        self.re_fun = re.compile('([\w\.\-]+)\s*'
                                  + self.settings.TagOpen.escaped
-                                 + "(.*?)"
+                                 + '(.*?)'
                                  + self.settings.TagClose.escaped
-                                 + "\s*"
-                                 + "(.*)"
-                                 + "$",
+                                 + '\s*'
+                                 + '(.*)'
+                                 + '$',
                                  re.DOTALL)
 
         # s.if <binding> <body>
-        self.re_if = re.compile("s\.if\s+([\w\.\-]+)\s+"
-                                + "(.*)"
-                                + "$",
+        self.re_if = re.compile('s\.if\s+([\w\.\-]+)\s+'
+                                + '(.*)'
+                                + '$',
                                 re.DOTALL)
 
         # s.ifnot <binding> <body>
-        self.re_ifnot = re.compile("s\.ifnot\s+([\w\.\-]+)\s+"
-                                   + "(.*)"
-                                   + "$",
+        self.re_ifnot = re.compile('s\.ifnot\s+([\w\.\-]+)\s+'
+                                   + '(.*)'
+                                   + '$',
                                    re.DOTALL)
 
         # Global function and variable bindings
@@ -258,7 +257,7 @@ class Siter:
 
                 if check not in bindings:
                     # Conditional failed, discard the block
-                    text = text.replace(block.whole, "", 1)
+                    text = text.replace(block.whole, '', 1)
                     continue
 
                 # Evaluate the conditional body, then replace the block with it
@@ -270,7 +269,7 @@ class Siter:
 
                 if check in bindings:
                     # Conditional failed, discard the block
-                    text = text.replace(block.whole, "", 1)
+                    text = text.replace(block.whole, '', 1)
                     continue
 
                 # Evaluate the conditional body, then replace the block with it
@@ -282,7 +281,7 @@ class Siter:
 
                 if name not in bindings:
                     # Name is unknown, discard the block
-                    text = text.replace(block.whole, "", 1)
+                    text = text.replace(block.whole, '', 1)
                     continue
 
                 binding = bindings[name]
@@ -293,10 +292,10 @@ class Siter:
                 if binding.is_var:
                     body = self.evaluate_text(binding.body, bindings)
 
-                    if name == "s.content":
+                    if name == 's.content':
                         try:
                             import markdown
-                            body = markdown.markdown(body, output_format = "html5")
+                            body = markdown.markdown(body, output_format = 'html5')
                         except ImportError:
                             pass
 
@@ -309,10 +308,10 @@ class Siter:
                         arg_blocks.append(Block(self, args))
 
                     if binding.is_macro and len(arg_blocks) != len(binding.params):
-                        Siter.warning("Macro {0} expects {1} arguments, got {2}"
+                        Siter.warning('Macro {} expects {} arguments, got {}'
                             .format(name, len(binding.params), len(arg_blocks)))
                     elif binding.is_func and binding.params > 0 and len(arg_blocks) != binding.params:
-                        Siter.warning("Function {0} expects {1} arguments, got {2}"
+                        Siter.warning('Function {} expects {} arguments, got {}'
                             .format(name, binding.params, len(arg_blocks)))
                     else:
                         arguments = []
@@ -335,7 +334,7 @@ class Siter:
 
                         text = text.replace(block.whole, body, 1)
                 else:
-                    Siter.error("Binding {0} is not a var/func/macro".format(name))
+                    Siter.error('Binding {} is not a var/func/macro'.format(name))
 
                 # Restore binding
                 bindings[name] = binding
@@ -346,7 +345,7 @@ class Siter:
         if not os.path.isfile(read_file):
             return {}
 
-        with open(read_file, "rU") as f:
+        with open(read_file, 'rU') as f:
             text = f.read()
 
         start = 0
@@ -358,7 +357,7 @@ class Siter:
         marker = text.find(self.settings.Marker)
 
         if marker != -1:
-            bindings["s.content"] = Binding(body = text[marker + len(self.settings.Marker) :])
+            bindings['s.content'] = Binding(body = text[marker + len(self.settings.Marker) :])
             text = text[: marker]
 
         for block in self.extract_blocks(text):
@@ -374,17 +373,18 @@ class Siter:
                 name = var.group(1)
                 bindings[name] = Binding(body = var.group(2))
             else:
-                Siter.error("Block is neither variable nor function\n{0}".format(block.whole))
+                Siter.error('Block is neither variable nor function\n{}'
+                    .format(block.whole))
 
         return bindings
 
     def apply_template(self, template_file, bindings, subdir):
         # This way links and media paths work in subdir pages too
-        root_path = os.path.relpath(self.settings.OutDir, self.settings.OutDir + "/" + subdir)
+        root_path = os.path.relpath(self.settings.OutDir, self.settings.OutDir + '/' + subdir)
 
         # Built-in bindings
-        bindings["s.root"] = Binding(body = root_path)
-        bindings["s.media"] = Binding(body = root_path + "/" + self.settings.MediaDir)
+        bindings['s.root'] = Binding(body = root_path)
+        bindings['s.media'] = Binding(body = root_path + '/' + self.settings.MediaDir)
 
         # Fill in template
         template = self.evaluate_text(template_file.content, bindings)
@@ -402,7 +402,7 @@ class Siter:
 
     def highlight_code(self, args):
         if len(args) == 1:
-            lang = "text"
+            lang = 'text'
             code = args[0]
             lines = []
         elif len(args) == 2:
@@ -414,21 +414,21 @@ class Siter:
             code = args[2]
             lines = args[1].split()
         else:
-            Siter.warning("s.code expects 1 or 2 arguments, got {0}".format(len(args)))
-            return ""
+            Siter.warning('s.code takes 1-3 args, got {}'.format(len(args)))
+            return ''
 
         def clean_code(code):
             # Replace < and > with HTML entities
-            code = code.replace("<", "&lt;")
-            code = code.replace(">", "&gt;")
+            code = code.replace('<', '&lt;')
+            code = code.replace('>', '&gt;')
             return code
 
-        if code.find("\n") == -1:
+        if code.find('\n') == -1:
             # This is a one-liner
-            code = "<code>" + clean_code(code) + "</code>"
+            code = '<code>' + clean_code(code) + '</code>'
         else:
             # This is a code block
-            div_class = "siter_code"
+            div_class = 'siter_code'
 
             try:
                 import pygments, pygments.formatters, pygments.lexers
@@ -443,36 +443,36 @@ class Siter:
         return code
 
     def run(self, subdir):
-        pages = os.listdir(self.dirs.pages.path + "/" + subdir)
+        pages = os.listdir(self.dirs.pages.path + '/' + subdir)
         pages.sort(key = lambda p: p)
 
         for p in pages:
-            read_file = self.dirs.pages.path + "/" + subdir + "/" + p
-            write_file = self.settings.OutDir + "/" + subdir + "/" + p
+            read_file = self.dirs.pages.path + '/' + subdir + '/' + p
+            write_file = self.settings.OutDir + '/' + subdir + '/' + p
 
             if os.path.isdir(read_file):
-                self.run(subdir + "/" + p)
+                self.run(subdir + '/' + p)
                 continue
 
             if self.up_to_date(read_file, write_file):
-                print("[ Up to date ] " + write_file)
+                print('[ Up to date ] {}'.format(write_file))
                 continue
 
-            print("[  Updating  ] " + write_file)
+            print('[  Updating  ] {}'.format(write_file))
 
             # Go through page file and extract bindings
             bindings = dict(list(self.bindings.items()) + list(self.get_bindings(read_file).items()))
 
             # Built-in bindings
-            bindings["s.modified"] = Binding(
+            bindings['s.modified'] = Binding(
                 params = 1,
                 func = lambda args: time.strftime(args[0], time.localtime(os.stat(read_file).st_mtime))
             )
-            bindings["s.generated"] = Binding(
+            bindings['s.generated'] = Binding(
                 params = 1,
                 func = lambda args: time.strftime(args[0])
             )
-            bindings["s.code"] = Binding(
+            bindings['s.code'] = Binding(
                 params = 0,
                 func = self.highlight_code
             )
@@ -480,12 +480,12 @@ class Siter:
             # Load template and replace variables and functions with bindings
             page = self.apply_template(self.files.page_html, bindings, subdir)
 
-            if not os.path.isdir(self.settings.OutDir + "/" + subdir):
-                os.makedirs(self.settings.OutDir + "/" + subdir)
+            if not os.path.isdir(self.settings.OutDir + '/' + subdir):
+                os.makedirs(self.settings.OutDir + '/' + subdir)
 
-            with open(write_file, "w") as f:
+            with open(write_file, 'w') as f:
                 f.write(page)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     siter = Siter(sys.argv[1] if len(sys.argv) > 1 else None)
-    siter.run(".")
+    siter.run('.')
