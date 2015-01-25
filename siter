@@ -19,6 +19,61 @@
 
 import os, re, sys, shutil, time
 
+class File:
+    def __init__(self, path, required = False):
+        self.path = path
+        self.required = required
+
+class Dir(File):
+    def add_file(self, name, required = False):
+        path = os.path.join(self.path, name)
+        return TextFile(path, required)
+
+class TextFile(File):
+    def __init__(self, path, required = False):
+        File.__init__(self, path, required)
+
+        self.lines = []
+        self.content = ""
+
+        try:
+            with open(self.path, "rU") as f:
+                for line in f:
+                    line = line.strip()
+                    self.lines.append(line if len(line) > 0 else None)
+
+                f.seek(0)
+                self.content = f.read()
+        except FileNotFoundError:
+            if self.required:
+                Siter.error("Required file {0} not found".format(self.path))
+
+    def line(self, number):
+        if number < len(self.lines):
+            return self.lines[number]
+        elif self.required:
+            Siter.error("Missing line {0} in required file {1}"
+                .format(number, self.path))
+        else:
+            return None
+
+class Dirs:
+    def __init__(self):
+        self.config = Dir("siter-config")
+        self.media = Dir("siter-media")
+        self.pages = Dir("siter-pages", True)
+        self.template = Dir("siter-template", True)
+        self.template_media = Dir("siter-template/media")
+
+class Files:
+    def __init__(self, dirs):
+        self.defs = dirs.config.add_file("defs")
+        self.marker = dirs.config.add_file("marker")
+        self.media = dirs.config.add_file("media")
+        self.outdir = dirs.config.add_file("outdir")
+        self.tags = dirs.config.add_file("tags")
+        self.page_html = dirs.template.add_file("page.html", True)
+
 class Tag:
     def __init__(self, text):
         self.raw = text
@@ -26,21 +81,22 @@ class Tag:
         self.length = len(text)
 
 class Settings:
-    # Whether to re-generate up-to-date files
-    Force = False
+    def __init__(self, arg):
+        # Whether to re-generate up-to-date files
+        self.Force = arg == "force"
 
-    # Block delimiters
-    TagOpen = Tag("{")
-    TagClose = Tag("}")
+        # Block delimiters
+        self.TagOpen = Tag("{")
+        self.TagClose = Tag("}")
 
-    # Marks the beginning of page content
-    Marker = "~~~"
+        # Marks the beginning of page content
+        self.Marker = "~~~"
 
-    # Where generated pages are written
-    OutDir = "siter-out"
+        # Where generated pages are written
+        self.OutDir = "siter-out"
 
-    # Subdir in siter-out for media content copied from siter-media
-    MediaDir = "media"
+        # Subdir in siter-out for media content copied from siter-media
+        self.MediaDir = "media"
 
 class Block:
     def __init__(self, siter, text):
@@ -68,90 +124,56 @@ class Binding:
         self.is_func = func is not None
 
 class Siter:
+    @staticmethod
+    def error(e):
+        print("[   Error!   ] {0}".format(e))
+        sys.exit(1)
+
+    @staticmethod
+    def warning(w):
+        print("[  Warning!  ] {0}".format(w))
+
+    @staticmethod
+    def info(m):
+        print("[    Info    ] {0}".format(m))
+
     def __init__(self, arg):
-        self.settings = Settings()
+        self.settings = Settings(arg)
+        self.dirs = Dirs()
+        self.files = Files(self.dirs)
 
-        if arg == "force":
-            self.settings.Force = True
-
-        # "label" -> (path, required)
-        self.dirs = {
-            "config": ("siter-config", False),
-            "media": ("siter-media", False),
-            "pages": ("siter-pages", True),
-            "template": ("siter-template", True),
-            "template-media": ("siter-template/media", False),
-        }
-
-        # "label" -> (path, required)
-        self.files = {
-            "defs": (self.getdir("config") + "/" + "defs", False),
-            "marker": (self.getdir("config") + "/" + "marker", False),
-            "media": (self.getdir("config") + "/" + "media", False),
-            "outdir": (self.getdir("config") + "/" + "outdir", False),
-            "tags": (self.getdir("config") + "/" + "tags", False),
-            "template": (self.getdir("template") + "/" + "page.html", True),
-        }
-
-        for label, (path, required) in iter(self.dirs.items()):
-            if required and not os.path.isdir(path):
-                self.error("Can't find {0} dir".format(path))
-
-        for label, (path, required) in iter(self.files.items()):
-            if required and not os.path.isfile(path):
-                self.error("Can't find {0} file".format(path))
-
-        if os.path.isfile(self.getfile("outdir")):
-            with open(self.getfile("outdir"), "rU") as f:
-                out = f.readline().strip()
-
-                if len(out) > 0:
-                    self.settings.OutDir = out
+        if self.files.outdir.line(0):
+            self.settings.OutDir = self.files.outdir.line(0)
 
         if not os.path.isdir(self.settings.OutDir):
             os.makedirs(self.settings.OutDir)
 
-        if os.path.isfile(self.getfile("media")):
-            with open(self.getfile("media"), "rU") as f:
-                media = f.readline().strip()
+        if self.files.media.line(0):
+            self.settings.MediaDir = self.files.media.line(0)
 
-                if len(media) > 0:
-                    self.settings.MediaDir = media
+        Siter.info("Output dir is {0}".format(self.settings.OutDir))
 
-        self.info("Output dir is {0}".format(self.settings.OutDir))
-
-        def copy_media(src, dst):
-            if os.path.isdir(src):
-                src = src + "/"
+        def copy_media(src_dir, dst):
+            if os.path.isdir(src_dir.path):
+                src = src_dir.path + "/"
                 dst = self.settings.OutDir + "/" + dst
 
-                self.info("Copying media from {0} to {1}".format(src, dst))
+                Siter.info("Copying media from {0} to {1}".format(src, dst))
                 os.system("rsync -r --delete {0} {1}".format(src, dst))
 
         # Copy site and template media files
-        copy_media(self.getdir("media"), self.settings.MediaDir)
-        copy_media(self.getdir("template-media"), self.settings.MediaDir + "/" + "template-media")
+        copy_media(self.dirs.media, self.settings.MediaDir)
+        copy_media(self.dirs.template_media, self.settings.MediaDir + "/" + "template-media")
 
-        if os.path.isfile(self.getfile("marker")):
-            with open(self.getfile("marker"), "rU") as f:
-                marker = f.readline().strip()
+        if self.files.marker.line(0):
+            self.settings.Marker = self.files.marker.line(0)
 
-                if len(marker) > 0:
-                    self.settings.Marker = marker
+        if self.files.tags.line(0) and self.files.tags.line(1):
+            self.settings.TagOpen = Tag(self.files.tags.line(0))
+            self.settings.TagClose = Tag(self.files.tags.line(1))
 
-        if os.path.isfile(self.getfile("tags")):
-            with open(self.getfile("tags"), "rU") as f:
-                tag_open = f.readline().strip()
-                tag_close = f.readline().strip()
-
-                if len(tag_open) == 0:
-                    self.error("Custom open tag is an empty string")
-                elif len(tag_close) == 0:
-                    self.error("Custom close tag is an empty string")
-                else:
-                    self.info("Using {0} and {1} as tags".format(tag_open, tag_close))
-                    self.settings.TagOpen = Tag(tag_open)
-                    self.settings.TagClose = Tag(tag_close)
+            Siter.info("Using {0} and {1} as tags"
+                .format(self.settings.TagOpen.raw, self.settings.TagClose.raw))
 
         # Calling a function or variable: <name> <arguments>
         self.re_use = re.compile("([\w\.\-]+)\s*"
@@ -188,23 +210,7 @@ class Siter:
                                    re.DOTALL)
 
         # Global function and variable bindings
-        self.bindings = self.get_bindings(self.getfile("defs"))
-
-    def getdir(self, name):
-        return self.dirs[name][0]
-
-    def getfile(self, name):
-        return self.files[name][0]
-
-    def error(self, e):
-        print("[   Error!   ] {0}".format(e))
-        sys.exit(1)
-
-    def warning(self, w):
-        print("[  Warning!  ] {0}".format(w))
-
-    def info(self, m):
-        print("[    Info    ] {0}".format(m))
+        self.bindings = self.get_bindings(self.files.defs.path)
 
     def extract_blocks(self, text):
         # A block is a "{something}" that may contain other "{somethings}"
@@ -303,10 +309,10 @@ class Siter:
                         arg_blocks.append(Block(self, args))
 
                     if binding.is_macro and len(arg_blocks) != len(binding.params):
-                        self.warning("Macro {0} expects {1} arguments, got {2}"
+                        Siter.warning("Macro {0} expects {1} arguments, got {2}"
                             .format(name, len(binding.params), len(arg_blocks)))
                     elif binding.is_func and binding.params > 0 and len(arg_blocks) != binding.params:
-                        self.warning("Function {0} expects {1} arguments, got {2}"
+                        Siter.warning("Function {0} expects {1} arguments, got {2}"
                             .format(name, binding.params, len(arg_blocks)))
                     else:
                         arguments = []
@@ -329,7 +335,7 @@ class Siter:
 
                         text = text.replace(block.whole, body, 1)
                 else:
-                    self.error("Binding {0} is not a var/func/macro".format(name))
+                    Siter.error("Binding {0} is not a var/func/macro".format(name))
 
                 # Restore binding
                 bindings[name] = binding
@@ -368,14 +374,11 @@ class Siter:
                 name = var.group(1)
                 bindings[name] = Binding(body = var.group(2))
             else:
-                self.error("Block is neither variable nor function\n{0}".format(block.whole))
+                Siter.error("Block is neither variable nor function\n{0}".format(block.whole))
 
         return bindings
 
-    def apply_template(self, name, bindings, subdir):
-        with open(self.getfile(name), "rU") as f:
-            template = f.read()
-
+    def apply_template(self, template_file, bindings, subdir):
         # This way links and media paths work in subdir pages too
         root_path = os.path.relpath(self.settings.OutDir, self.settings.OutDir + "/" + subdir)
 
@@ -384,7 +387,7 @@ class Siter:
         bindings["s.media"] = Binding(body = root_path + "/" + self.settings.MediaDir)
 
         # Fill in template
-        template = self.evaluate_text(template, bindings)
+        template = self.evaluate_text(template_file.content, bindings)
 
         return template
 
@@ -411,7 +414,7 @@ class Siter:
             code = args[2]
             lines = args[1].split()
         else:
-            self.warning("s.code expects 1 or 2 arguments, got {0}".format(len(args)))
+            Siter.warning("s.code expects 1 or 2 arguments, got {0}".format(len(args)))
             return ""
 
         def clean_code(code):
@@ -440,11 +443,11 @@ class Siter:
         return code
 
     def run(self, subdir):
-        pages = os.listdir(self.getdir("pages") + "/" + subdir)
+        pages = os.listdir(self.dirs.pages.path + "/" + subdir)
         pages.sort(key = lambda p: p)
 
         for p in pages:
-            read_file = self.getdir("pages") + "/" + subdir + "/" + p
+            read_file = self.dirs.pages.path + "/" + subdir + "/" + p
             write_file = self.settings.OutDir + "/" + subdir + "/" + p
 
             if os.path.isdir(read_file):
@@ -475,7 +478,7 @@ class Siter:
             )
 
             # Load template and replace variables and functions with bindings
-            page = self.apply_template("template", bindings, subdir)
+            page = self.apply_template(self.files.page_html, bindings, subdir)
 
             if not os.path.isdir(self.settings.OutDir + "/" + subdir):
                 os.makedirs(self.settings.OutDir + "/" + subdir)
