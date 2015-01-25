@@ -24,6 +24,9 @@ class File:
         self.path = path
         self.required = required
 
+        if self.required and not os.path.exists(self.path):
+            Siter.error('Required file {} not found'.format(self.path))
+
 class Dir(File):
     def add_file(self, name, required = False):
         path = os.path.join(self.path, name)
