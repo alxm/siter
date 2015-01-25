@@ -379,7 +379,8 @@ class Siter:
 
     def apply_template(self, template_file, bindings, subdir):
         # This way links and media paths work in subdir pages too
-        root_path = os.path.relpath(self.settings.OutDir, self.settings.OutDir + '/' + subdir)
+        root_path = os.path.relpath(self.settings.OutDir,
+                                    os.path.join(self.settings.OutDir, subdir))
 
         # Built-in bindings
         bindings['s.root'] = Binding(body = root_path)
@@ -442,12 +443,15 @@ class Siter:
         return code
 
     def run(self, subdir):
-        pages = os.listdir(self.dirs.pages.path + '/' + subdir)
+        in_path = os.path.join(self.dirs.pages.path, subdir)
+        out_path = os.path.join(self.settings.OutDir, subdir)
+
+        pages = os.listdir(in_path)
         pages.sort(key = lambda p: p)
 
         for p in pages:
-            read_file = self.dirs.pages.path + '/' + subdir + '/' + p
-            write_file = self.settings.OutDir + '/' + subdir + '/' + p
+            read_file = in_path + '/' + p
+            write_file = out_path + '/' + p
 
             if os.path.isdir(read_file):
                 self.run(subdir + '/' + p)
@@ -479,8 +483,7 @@ class Siter:
             # Load template and replace variables and functions with bindings
             page = self.apply_template(self.files.page_html, bindings, subdir)
 
-            if not os.path.isdir(self.settings.OutDir + '/' + subdir):
-                os.makedirs(self.settings.OutDir + '/' + subdir)
+            os.makedirs(out_path, exist_ok = True)
 
             with open(write_file, 'w') as f:
                 f.write(page)
