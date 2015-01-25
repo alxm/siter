@@ -52,7 +52,7 @@ class TextFile(File):
         if number < len(self.lines):
             return self.lines[number]
         elif self.required:
-            Siter.error('Missing required file {}:{}'.format(self.path, number))
+            Siter.error('Missing required line {}:{}'.format(self.path, number))
         else:
             return None
 
@@ -308,10 +308,10 @@ class Siter:
                         arg_blocks.append(Block(self, args))
 
                     if binding.is_macro and len(arg_blocks) != len(binding.params):
-                        Siter.warning('Macro {} expects {} arguments, got {}'
+                        Siter.warning('{} takes {} args, got {}'
                             .format(name, len(binding.params), len(arg_blocks)))
                     elif binding.is_func and binding.params > 0 and len(arg_blocks) != binding.params:
-                        Siter.warning('Function {} expects {} arguments, got {}'
+                        Siter.warning('{} takes {} args, got {}'
                             .format(name, binding.params, len(arg_blocks)))
                     else:
                         arguments = []
@@ -334,7 +334,7 @@ class Siter:
 
                         text = text.replace(block.whole, body, 1)
                 else:
-                    Siter.error('Binding {} is not a var/func/macro'.format(name))
+                    Siter.error('Cannot eval binding {}'.format(name))
 
                 # Restore binding
                 bindings[name] = binding
@@ -373,8 +373,7 @@ class Siter:
                 name = var.group(1)
                 bindings[name] = Binding(body = var.group(2))
             else:
-                Siter.error('Block is neither variable nor function\n{}'
-                    .format(block.whole))
+                Siter.error('Cannot parse block:\n{}'.format(block.whole))
 
         return bindings
 
