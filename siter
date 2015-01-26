@@ -333,11 +333,11 @@ class Siter:
         return text
 
     def get_bindings(self, read_file):
-        if not os.path.isfile(read_file):
+        try:
+            with open(read_file, 'rU') as f:
+                text = f.read()
+        except FileNotFoundError:
             return {}
-
-        with open(read_file, 'rU') as f:
-            text = f.read()
 
         start = 0
 
