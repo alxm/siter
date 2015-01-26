@@ -43,42 +43,29 @@ generate this:
 
 # Special Variables
 
-* {s.content} - Everything in a page file after the `~~~` marker.
-* {s.root} - Relative path to the website root.
-* {s.media} - Relative path to siter-media.
+* `s.content` - Everything in a page file after the `~~~` marker.
+* `s.root` - Relative path from the current page to the website root.
+* `s.media` - Relative path from the current page to siter-media.
 
 # Special Macros
 
-### s.modified
-
-Time the page content was modified. Takes a Python [time format](http://strftime.org/) string as parameter.
-
-    {s.modified {%B %Y}}
-
-### s.generated
-
-Time the page was generated. Same argument as `s.modified`.
-
-### s.code
-
-For displaying code blocks and one-liners. Optional syntax highlighting with the [Pygments](http://pygments.org/) library: `apt-get install python3-pygments`.
-
-* {s.code {code snippet}}
-* {s.code {language} {code snippet}}
-* {s.code {language} {lines to highlight} {code snippet}}
-
-See the [Pygments docs](http://pygments.org/docs/lexers/) for supported languages.
+* `s.modified` - Time the page content was modified. Takes a Python [time format](http://strftime.org/) string as parameter. Example: `{s.modified {%B %Y}}`
+* `s.generated` - Time the page was generated. Same argument as `s.modified`.
+* `s.code` - For displaying code blocks and one-liners. Optional syntax highlighting with the [Pygments](http://pygments.org/) library: `apt-get install python3-pygments`. See the [Pygments docs](http://pygments.org/docs/lexers/) for supported languages. Examples:
+    * `{s.code {code snippet}}`
+    * `{s.code {language} {code snippet}}`
+    * `{s.code {language} {lines to highlight} {code snippet}}`
 
 # Project File Tree
 
     website/
      |- siter-config/   # Optional config files
      |   '- ...
-     |- siter-out/      # Generated pages are written here
+     |- siter-out/      # Generated pages written here
      |   |- about.html
      |   |- index.html
      |   '- ...
-     |- siter-pages/    # Content pages
+     |- siter-pages/    # Source content pages
      |   |- about.html
      |   |- index.html
      |   '- ...
@@ -107,19 +94,19 @@ Content pages go here. Example `siter-pages/about.html`:
 
     {title About}                 # Declare a variable
     ~~~                           # Content marker
-    <p>This is a simple page.</p> # Page content starts from here on
+    <p>This is a simple page.</p> # Page content starts
 
 ### siter-template/
 
-`siter-template/page.html` is the template for content pages.
+`siter-template/page.html` is the template for every page.
 
     <html>
         <head>
-            <title>{title}</title> # Use variable declared by page
+            <title>{title}</title> # Use var declared by page
         </head>
         <body>
-            <h1>{title}</h1>       # Use variable declared by page
-            {s.content}            # Special variable for page content
+            <h1>{title}</h1>       # Use var declared by page
+            {s.content}            # Use special built-in var
         </body>
     </html>
 
