@@ -32,6 +32,13 @@ class Dir(File):
         path = os.path.join(self.path, name)
         return TextFile(path, required)
 
+    def copy_to(self, dst_dir):
+        src = self.path + '/'
+        dst = dst_dir.path
+
+        Siter.info('Copying media from {} to {}'.format(src, dst))
+        os.system('rsync -r --delete {} {}'.format(src, dst))
+
 class TextFile(File):
     def __init__(self, path, required = False):
         File.__init__(self, path, required)
@@ -67,6 +74,10 @@ class Dirs:
         self.template = Dir('siter-template', True)
         self.template_media = Dir('siter-template/media')
 
+        self.out_root = Dir('siter-out')
+        self.out_media = Dir('siter-out/media')
+        self.out_template_media = Dir('siter-out/media/template-media')
+
 class Files:
     def __init__(self, dirs):
         self.defs = dirs.config.add_file('defs')
@@ -93,12 +104,6 @@ class Settings:
 
         # Marks the beginning of page content
         self.Marker = '~~~'
-
-        # Where generated pages are written
-        self.OutDir = 'siter-out'
-
-        # Subdir in siter-out for media content copied from siter-media
-        self.MediaDir = 'media'
 
 class Block:
     def __init__(self, siter, text):
@@ -144,28 +149,11 @@ class Siter:
         self.dirs = Dirs()
         self.files = Files(self.dirs)
 
-        if self.files.outdir.line(0):
-            self.settings.OutDir = self.files.outdir.line(0)
-
-        if not os.path.isdir(self.settings.OutDir):
-            os.makedirs(self.settings.OutDir)
-
-        if self.files.media.line(0):
-            self.settings.MediaDir = self.files.media.line(0)
-
-        Siter.info('Output dir is {}'.format(self.settings.OutDir))
-
-        def copy_media(src_dir, dst):
-            if os.path.isdir(src_dir.path):
-                src = src_dir.path + '/'
-                dst = self.settings.OutDir + '/' + dst
-
-                Siter.info('Copying media from {} to {}'.format(src, dst))
-                os.system('rsync -r --delete {} {}'.format(src, dst))
+        os.makedirs(self.dirs.out_root.path, exist_ok = True)
 
         # Copy site and template media files
-        copy_media(self.dirs.media, self.settings.MediaDir)
-        copy_media(self.dirs.template_media, self.settings.MediaDir + '/' + 'template-media')
+        self.dirs.media.copy_to(self.dirs.out_media)
+        self.dirs.template_media.copy_to(self.dirs.out_template_media)
 
         if self.files.marker.line(0):
             self.settings.Marker = self.files.marker.line(0)
@@ -381,13 +369,13 @@ class Siter:
         return bindings
 
     def apply_template(self, template_file, bindings, subdir):
-        # This way links and media paths work in subdir pages too
-        root_path = os.path.relpath(self.settings.OutDir,
-                                    os.path.join(self.settings.OutDir, subdir))
+        current_path = os.path.join(self.dirs.out_root.path, subdir)
+        rel_root_path = os.path.relpath(self.dirs.out_root.path, current_path)
+        rel_media_path = os.path.relpath(self.dirs.out_media.path, current_path)
 
         # Built-in bindings
-        bindings['s.root'] = Binding(body = root_path)
-        bindings['s.media'] = Binding(body = root_path + '/' + self.settings.MediaDir)
+        bindings['s.root'] = Binding(body = rel_root_path)
+        bindings['s.media'] = Binding(body = rel_media_path)
 
         # Fill in template
         template = self.evaluate_text(template_file.content, bindings)
@@ -447,7 +435,7 @@ class Siter:
 
     def run(self, subdir):
         in_path = os.path.join(self.dirs.pages.path, subdir)
-        out_path = os.path.join(self.settings.OutDir, subdir)
+        out_path = os.path.join(self.dirs.out_root.path, subdir)
 
         pages = os.listdir(in_path)
         pages.sort(key = lambda p: p)

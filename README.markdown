@@ -73,17 +73,17 @@ See the [Pygments docs](http://pygments.org/docs/lexers/) for supported language
 
     website/
      |- siter-config/   # Optional config files
-     |   |- ...
+     |   '- ...
      |- siter-out/      # Generated pages are written here
      |   |- about.html
      |   |- index.html
-     |   |- ...
+     |   '- ...
      |- siter-pages/    # Content pages
      |   |- about.html
      |   |- index.html
-     |   |- ...
-     |- siter-template/ # HTML templates
-         |- page.html
+     |   '- ...
+     '- siter-template/ # HTML templates
+         '- page.html
 
 ### siter-config/
 
@@ -96,10 +96,6 @@ Variables and macros visible by all pages. This avoids having to declare the sam
 #### marker
 
 Siter pages start with variable and macro definitions, followed by a special marker. Everything following that marker is considered page content. The default marker is `~~~`, but you can specify a different one like `*****` in this file.
-
-#### out
-
-Siter writes generated pages to `siter-out/`. You can specify a different output directory in this file.
 
 #### tags
 
