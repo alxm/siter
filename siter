@@ -101,7 +101,7 @@ class Tag:
 class Settings:
     def __init__(self, arg):
         # Whether to re-generate up-to-date files
-        self.Force = arg == 'force'
+        self.ForceWrite = arg == 'force'
 
         # Block delimiters
         self.TagOpen = Tag('{')
@@ -396,7 +396,7 @@ class Siter:
         return template
 
     def up_to_date(self, read_file, write_file):
-        if not self.settings.Force and os.path.isfile(write_file):
+        if not self.settings.ForceWrite and os.path.isfile(write_file):
             read_date = os.stat(read_file).st_mtime
             write_date = os.stat(write_file).st_mtime
 
