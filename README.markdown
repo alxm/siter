@@ -51,10 +51,9 @@ generate this:
 
 * `s.modified` - Time the page content was modified. Takes a Python [time format](http://strftime.org/) string as parameter. Example: `{s.modified {%B %Y}}`
 * `s.generated` - Time the page was generated. Same argument as `s.modified`.
-* `s.code` - For displaying code blocks and one-liners. Optional syntax highlighting with the [Pygments](http://pygments.org/) library: `apt-get install python3-pygments`. See the [Pygments docs](http://pygments.org/docs/lexers/) for supported languages. Examples:
-    * `{s.code {code snippet}}`
-    * `{s.code {language} {code snippet}}`
-    * `{s.code {language} {lines to highlight} {code snippet}}`
+* `s.code` - For displaying code blocks and one-liners. See the [Pygments docs](http://pygments.org/docs/lexers/) for supported languages. Examples:
+    * `{s.code {int x = 0;}}`
+    * `{s.code {C} {int x = 0;}}`
 
 # Project File Tree
 
@@ -115,6 +114,13 @@ Content pages go here. Example `siter-pages/about.html`:
     cd website
     siter       # generate website
     siter force # regenerate all pages
+
+# Optional Packages
+
+Siter tries to use [Markdown](https://pythonhosted.org/Markdown/) for text formatting and [Pygments](http://pygments.org/) for code syntax highlighting.
+
+    apt-get install python3-markdown
+    apt-get install python3-pygments
 
 # License
 

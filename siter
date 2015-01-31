@@ -17,7 +17,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os, re, sys, shutil, time
+import sys
+import os
+import re
+import time
+import shutil
+import importlib
 
 class File:
     def __init__(self, path, required = False):
@@ -202,6 +207,17 @@ class Siter:
         # Global function and variable bindings
         self.bindings = self.get_bindings(self.files.defs.path)
 
+        def try_import(module):
+            try:
+                return importlib.import_module(module)
+            except ImportError:
+                return None
+
+        self.Markdown = try_import('markdown')
+        self.Pygments = try_import('pygments')
+        self.PygmentsLexers = try_import('pygments.lexers')
+        self.PygmentsFormatters = try_import('pygments.formatters')
+
     def extract_blocks(self, text):
         # A block is a "{something}" that may contain other "{somethings}"
         blocks = []
@@ -284,11 +300,8 @@ class Siter:
                     body = self.evaluate_text(binding.body, bindings)
 
                     if name == 's.content':
-                        try:
-                            import markdown
-                            body = markdown.markdown(body, output_format = 'html5')
-                        except ImportError:
-                            pass
+                        if self.Markdown:
+                            body = self.Markdown.markdown(body, output_format = 'html5')
 
                     text = text.replace(block.whole, body, 1)
                 elif binding.is_macro or binding.is_func:
@@ -421,15 +434,12 @@ class Siter:
             # This is a code block
             div_class = 'siter_code'
 
-            try:
-                import pygments, pygments.formatters, pygments.lexers
-            except ImportError:
-                # Can't import Pygments, use a simple fallback
-                code = '<div class="' + div_class + '"><pre>' + clean_code(code) + '</pre></div>'
+            if self.Pygments:
+                lexer = self.PygmentsLexers.get_lexer_by_name(lang.lower())
+                formatter = self.PygmentsFormatters.HtmlFormatter(linenos = True, cssclass = div_class, hl_lines=lines)
+                code = self.Pygments.highlight(code, lexer, formatter)
             else:
-                lexer = pygments.lexers.get_lexer_by_name(lang.lower())
-                formatter = pygments.formatters.HtmlFormatter(linenos = True, cssclass = div_class, hl_lines=lines)
-                code = pygments.highlight(code, lexer, formatter)
+                code = '<div class="' + div_class + '"><pre>' + clean_code(code) + '</pre></div>'
 
         return code
 
