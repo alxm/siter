@@ -98,29 +98,17 @@ class Tag:
         self.escaped = re.escape(text)
         self.length = len(text)
 
-class Settings:
-    def __init__(self, arg):
-        # Whether to re-generate up-to-date files
-        self.ForceWrite = arg == 'force'
-
-        # Block delimiters
-        self.TagOpen = Tag('{')
-        self.TagClose = Tag('}')
-
-        # Marks the beginning of page content
-        self.Marker = '~~~'
-
 class Block:
     def __init__(self, siter, text):
         # Add block tags if missing
-        if text.find(siter.settings.TagOpen.raw) != 0:
-            text = siter.settings.TagOpen.raw + text + siter.settings.TagClose.raw
+        if text.find(siter.TagOpen.raw) != 0:
+            text = siter.TagOpen.raw + text + siter.TagClose.raw
 
         # Block including { and }
         self.whole = text
 
         # Just the inside of { ... }
-        self.content = text[siter.settings.TagOpen.length : -siter.settings.TagClose.length].strip()
+        self.content = text[siter.TagOpen.length : -siter.TagClose.length].strip()
 
 class Binding:
     def __init__(self, params = None, body = None, func = None):
@@ -150,7 +138,16 @@ class Siter:
         print('[    Info    ] {}'.format(m))
 
     def __init__(self, arg):
-        self.settings = Settings(arg)
+        # Whether to re-generate up-to-date files
+        self.ForceWrite = arg == 'force'
+
+        # Block delimiters
+        self.TagOpen = Tag('{')
+        self.TagClose = Tag('}')
+
+        # Marks the beginning of page content
+        self.Marker = '~~~'
+
         self.dirs = Dirs()
         self.files = Files(self.dirs)
 
@@ -161,14 +158,14 @@ class Siter:
         self.dirs.template_media.copy_to(self.dirs.out_template_media)
 
         if self.files.marker.line(0):
-            self.settings.Marker = self.files.marker.line(0)
+            self.Marker = self.files.marker.line(0)
 
         if self.files.tags.line(0) and self.files.tags.line(1):
-            self.settings.TagOpen = Tag(self.files.tags.line(0))
-            self.settings.TagClose = Tag(self.files.tags.line(1))
+            self.TagOpen = Tag(self.files.tags.line(0))
+            self.TagClose = Tag(self.files.tags.line(1))
 
             Siter.info('Using {} and {} as block tags'
-                .format(self.settings.TagOpen.raw, self.settings.TagClose.raw))
+                .format(self.TagOpen.raw, self.TagClose.raw))
 
         # Calling a function or variable: <name> <arguments>
         self.re_use = re.compile('([\w\.\-]+)\s*'
@@ -184,9 +181,9 @@ class Siter:
 
         # Declaring a function: <name> {parameters} <body>
         self.re_fun = re.compile('([\w\.\-]+)\s*'
-                                 + self.settings.TagOpen.escaped
+                                 + self.TagOpen.escaped
                                  + '(.*?)'
-                                 + self.settings.TagClose.escaped
+                                 + self.TagClose.escaped
                                  + '\s*'
                                  + '(.*)'
                                  + '$',
@@ -227,8 +224,8 @@ class Siter:
         index = 0
 
         while index < len(text):
-            index_open = text.find(self.settings.TagOpen.raw, index)
-            index_close = text.find(self.settings.TagClose.raw, index)
+            index_open = text.find(self.TagOpen.raw, index)
+            index_close = text.find(self.TagClose.raw, index)
 
             if index_open == -1 and index_close == -1:
                 # No more tags found
@@ -240,14 +237,14 @@ class Siter:
                     start = index_open
 
                 count += 1
-                index = index_open + self.settings.TagClose.length
+                index = index_open + self.TagClose.length
             elif (index_close < index_open and index_close != -1) or index_open == -1:
                 count -= 1
-                index = index_close + self.settings.TagClose.length
+                index = index_close + self.TagClose.length
 
             if count == 0:
                 blocks.append(
-                    Block(self, text[start : index_close + self.settings.TagClose.length])
+                    Block(self, text[start : index_close + self.TagClose.length])
                 )
 
         return blocks
@@ -358,10 +355,10 @@ class Siter:
         bindings = {}
 
         # Find the content-start marker
-        marker = text.find(self.settings.Marker)
+        marker = text.find(self.Marker)
 
         if marker != -1:
-            bindings['s.content'] = Binding(body = text[marker + len(self.settings.Marker) :])
+            bindings['s.content'] = Binding(body = text[marker + len(self.Marker) :])
             text = text[: marker]
 
         for block in self.extract_blocks(text):
@@ -396,7 +393,7 @@ class Siter:
         return template
 
     def up_to_date(self, read_file, write_file):
-        if not self.settings.ForceWrite and os.path.isfile(write_file):
+        if not self.ForceWrite and os.path.isfile(write_file):
             read_date = os.stat(read_file).st_mtime
             write_date = os.stat(write_file).st_mtime
 
