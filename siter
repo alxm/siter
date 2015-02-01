@@ -444,15 +444,14 @@ class Siter:
         in_path = os.path.join(self.dirs.pages.path, subdir)
         out_path = os.path.join(self.dirs.out_root.path, subdir)
 
-        pages = os.listdir(in_path)
-        pages.sort(key = lambda p: p)
+        os.makedirs(out_path, exist_ok = True)
 
-        for p in pages:
-            read_file = os.path.join(in_path, p)
-            write_file = os.path.join(out_path, p)
+        for page in sorted(os.listdir(in_path)):
+            read_file = os.path.join(in_path, page)
+            write_file = os.path.join(out_path, page)
 
             if os.path.isdir(read_file):
-                self.run(os.path.join(subdir, p))
+                self.run(os.path.join(subdir, page))
                 continue
 
             if self.up_to_date(read_file, write_file):
@@ -479,12 +478,10 @@ class Siter:
             )
 
             # Load template and replace variables and functions with bindings
-            page = self.apply_template(self.files.page_html, bindings, subdir)
-
-            os.makedirs(out_path, exist_ok = True)
+            final = self.apply_template(self.files.page_html, bindings, subdir)
 
             with open(write_file, 'w') as f:
-                f.write(page)
+                f.write(final)
 
 if __name__ == '__main__':
     siter = Siter(sys.argv[1] if len(sys.argv) > 1 else None)
