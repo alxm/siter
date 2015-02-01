@@ -448,11 +448,11 @@ class Siter:
         pages.sort(key = lambda p: p)
 
         for p in pages:
-            read_file = in_path + '/' + p
-            write_file = out_path + '/' + p
+            read_file = os.path.join(in_path, p)
+            write_file = os.path.join(out_path, p)
 
             if os.path.isdir(read_file):
-                self.run(subdir + '/' + p)
+                self.run(os.path.join(subdir, p))
                 continue
 
             if self.up_to_date(read_file, write_file):
@@ -488,4 +488,4 @@ class Siter:
 
 if __name__ == '__main__':
     siter = Siter(sys.argv[1] if len(sys.argv) > 1 else None)
-    siter.run('.')
+    siter.run('')
