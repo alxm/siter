@@ -123,6 +123,47 @@ class Binding:
         self.is_macro = body is not None and params is not None
         self.is_func = func is not None
 
+class BuiltInFunctions:
+    @staticmethod
+    def highlight_code(siter, args):
+        if len(args) == 1:
+            lang = 'text'
+            code = args[0]
+            lines = []
+        elif len(args) == 2:
+            lang = args[0]
+            code = args[1]
+            lines = []
+        elif len(args) == 3:
+            lang = args[0]
+            code = args[2]
+            lines = args[1].split()
+        else:
+            Siter.warning('s.code takes 1-3 args, got {}'.format(len(args)))
+            return ''
+
+        def clean_code(code):
+            # Replace < and > with HTML entities
+            code = code.replace('<', '&lt;')
+            code = code.replace('>', '&gt;')
+            return code
+
+        if code.find('\n') == -1:
+            # This is a one-liner
+            code = '<code>' + clean_code(code) + '</code>'
+        else:
+            # This is a code block
+            div_class = 'siter_code'
+
+            if siter.Pygments:
+                lexer = siter.PygmentsLexers.get_lexer_by_name(lang.lower())
+                formatter = siter.PygmentsFormatters.HtmlFormatter(linenos = True, cssclass = div_class, hl_lines=lines)
+                code = siter.Pygments.highlight(code, lexer, formatter)
+            else:
+                code = '<div class="' + div_class + '"><pre>' + clean_code(code) + '</pre></div>'
+
+        return code
+
 class Siter:
     @staticmethod
     def error(e):
@@ -331,7 +372,7 @@ class Siter:
 
                             body = self.evaluate_text(binding.body, bindings2)
                         elif binding.is_func:
-                            body = binding.func(arguments)
+                            body = binding.func(self, arguments)
 
                         text = text.replace(block.whole, body, 1)
                 else:
@@ -401,45 +442,6 @@ class Siter:
         else:
             return False
 
-    def highlight_code(self, args):
-        if len(args) == 1:
-            lang = 'text'
-            code = args[0]
-            lines = []
-        elif len(args) == 2:
-            lang = args[0]
-            code = args[1]
-            lines = []
-        elif len(args) == 3:
-            lang = args[0]
-            code = args[2]
-            lines = args[1].split()
-        else:
-            Siter.warning('s.code takes 1-3 args, got {}'.format(len(args)))
-            return ''
-
-        def clean_code(code):
-            # Replace < and > with HTML entities
-            code = code.replace('<', '&lt;')
-            code = code.replace('>', '&gt;')
-            return code
-
-        if code.find('\n') == -1:
-            # This is a one-liner
-            code = '<code>' + clean_code(code) + '</code>'
-        else:
-            # This is a code block
-            div_class = 'siter_code'
-
-            if self.Pygments:
-                lexer = self.PygmentsLexers.get_lexer_by_name(lang.lower())
-                formatter = self.PygmentsFormatters.HtmlFormatter(linenos = True, cssclass = div_class, hl_lines=lines)
-                code = self.Pygments.highlight(code, lexer, formatter)
-            else:
-                code = '<div class="' + div_class + '"><pre>' + clean_code(code) + '</pre></div>'
-
-        return code
-
     def run(self, subdir):
         in_path = os.path.join(self.dirs.pages.path, subdir)
         out_path = os.path.join(self.dirs.out_root.path, subdir)
@@ -466,15 +468,15 @@ class Siter:
             # Built-in bindings
             bindings['s.modified'] = Binding(
                 params = 1,
-                func = lambda args: time.strftime(args[0], time.localtime(os.stat(read_file).st_mtime))
+                func = lambda _, args: time.strftime(args[0], time.localtime(os.stat(read_file).st_mtime))
             )
             bindings['s.generated'] = Binding(
                 params = 1,
-                func = lambda args: time.strftime(args[0])
+                func = lambda _, args: time.strftime(args[0])
             )
             bindings['s.code'] = Binding(
                 params = 0,
-                func = self.highlight_code
+                func = BuiltInFunctions.highlight_code
             )
 
             # Load template and replace variables and functions with bindings
