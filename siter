@@ -230,18 +230,6 @@ class Siter:
                                  + '$',
                                  re.DOTALL)
 
-        # s.if <binding> <body>
-        self.re_if = re.compile('s\.if\s+([\w\.\-]+)\s+'
-                                + '(.*)'
-                                + '$',
-                                re.DOTALL)
-
-        # s.ifnot <binding> <body>
-        self.re_ifnot = re.compile('s\.ifnot\s+([\w\.\-]+)\s+'
-                                   + '(.*)'
-                                   + '$',
-                                   re.DOTALL)
-
         # Global function and variable bindings
         self.bindings = self.get_bindings(self.files.defs.path)
 
@@ -292,35 +280,9 @@ class Siter:
 
     def evaluate_text(self, text, bindings):
         for block in self.extract_blocks(text):
-            ifso = self.re_if.match(block.content)
-            ifnot = self.re_ifnot.match(block.content)
             use = self.re_use.match(block.content)
 
-            if ifso:
-                check = ifso.group(1)
-                body = ifso.group(2)
-
-                if check not in bindings:
-                    # Conditional failed, discard the block
-                    text = text.replace(block.whole, '', 1)
-                    continue
-
-                # Evaluate the conditional body, then replace the block with it
-                body = self.evaluate_text(body, bindings)
-                text = text.replace(block.whole, body, 1)
-            elif ifnot:
-                check = ifnot.group(1)
-                body = ifnot.group(2)
-
-                if check in bindings:
-                    # Conditional failed, discard the block
-                    text = text.replace(block.whole, '', 1)
-                    continue
-
-                # Evaluate the conditional body, then replace the block with it
-                body = self.evaluate_text(body, bindings)
-                text = text.replace(block.whole, body, 1)
-            elif use:
+            if use:
                 name = use.group(1)
                 args = use.group(2)
 
@@ -330,9 +292,6 @@ class Siter:
                     continue
 
                 binding = bindings[name]
-
-                # Avoid infinite recursion
-                del bindings[name]
 
                 if binding.is_var:
                     body = self.evaluate_text(binding.body, bindings)
@@ -377,9 +336,6 @@ class Siter:
                         text = text.replace(block.whole, body, 1)
                 else:
                     Siter.error('Cannot eval binding {}'.format(name))
-
-                # Restore binding
-                bindings[name] = binding
 
         return text
 
@@ -467,6 +423,14 @@ class Siter:
             bindings.update(self.get_bindings(read_file))
 
             # Built-in bindings
+            bindings['s.if'] = Binding(
+                params = 2,
+                func = lambda _, args: args[1] if args[0] in bindings else ''
+            )
+            bindings['s.ifnot'] = Binding(
+                params = 2,
+                func = lambda _, args: '' if args[0] in bindings else args[1]
+            )
             bindings['s.modified'] = Binding(
                 params = 1,
                 func = lambda _, args: time.strftime(args[0], time.localtime(os.stat(read_file).st_mtime))
