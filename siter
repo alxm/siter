@@ -463,7 +463,8 @@ class Siter:
             print('[  Updating  ] {}'.format(write_file))
 
             # Go through page file and extract bindings
-            bindings = dict(list(self.bindings.items()) + list(self.get_bindings(read_file).items()))
+            bindings = self.bindings.copy()
+            bindings.update(self.get_bindings(read_file))
 
             # Built-in bindings
             bindings['s.modified'] = Binding(
