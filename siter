@@ -96,7 +96,7 @@ class Tag:
     def __init__(self, text):
         self.raw = text
         self.escaped = re.escape(text)
-        self.length = len(text)
+        self.size = len(text)
 
 class Block:
     def __init__(self, siter, text):
@@ -108,7 +108,7 @@ class Block:
         self.whole = text
 
         # Just the inside of { ... }
-        self.content = text[siter.TagOpen.length : -siter.TagClose.length].strip()
+        self.content = text[siter.TagOpen.size : -siter.TagClose.size].strip()
 
 class Binding:
     def __init__(self, params = None, body = None, func = None):
@@ -150,17 +150,19 @@ class BuiltInFunctions:
 
         if code.find('\n') == -1:
             # This is a one-liner
-            code = '<code>' + clean_code(code) + '</code>'
+            code = '<code>{}</code>'.format(clean_code(code))
         else:
             # This is a code block
             div_class = 'siter_code'
 
             if siter.Pygments:
                 lexer = siter.PygmentsLexers.get_lexer_by_name(lang.lower())
-                formatter = siter.PygmentsFormatters.HtmlFormatter(linenos = True, cssclass = div_class, hl_lines=lines)
+                formatter = siter.PygmentsFormatters.HtmlFormatter(
+                    linenos = True, cssclass = div_class, hl_lines=lines)
                 code = siter.Pygments.highlight(code, lexer, formatter)
             else:
-                code = '<div class="' + div_class + '"><pre>' + clean_code(code) + '</pre></div>'
+                code = '<div class="{}"><pre>{}</pre></div>' \
+                    .format(div_class, clean_code(code))
 
         return code
 
@@ -239,7 +241,7 @@ class Siter:
             except ImportError:
                 return None
 
-        self.Markdown = try_import('markdown')
+        self.Md = try_import('markdown')
         self.Pygments = try_import('pygments')
         self.PygmentsLexers = try_import('pygments.lexers')
         self.PygmentsFormatters = try_import('pygments.formatters')
@@ -253,89 +255,92 @@ class Siter:
         index = 0
 
         while index < len(text):
-            index_open = text.find(self.TagOpen.raw, index)
-            index_close = text.find(self.TagClose.raw, index)
+            i_open = text.find(self.TagOpen.raw, index)
+            i_close = text.find(self.TagClose.raw, index)
 
-            if index_open == -1 and index_close == -1:
+            if i_open == -1 and i_close == -1:
                 # No more tags found
                 break
 
-            if (index_open < index_close and index_open != -1) or index_close == -1:
+            if (i_open < i_close and i_open != -1) or i_close == -1:
                 if count == 0:
                     # Current block starts here
-                    start = index_open
+                    start = i_open
 
                 count += 1
-                index = index_open + self.TagClose.length
-            elif (index_close < index_open and index_close != -1) or index_open == -1:
+                index = i_open + self.TagClose.size
+            elif (i_close < i_open and i_close != -1) or i_open == -1:
                 count -= 1
-                index = index_close + self.TagClose.length
+                index = i_close + self.TagClose.size
 
             if count == 0:
                 blocks.append(
-                    Block(self, text[start : index_close + self.TagClose.length])
+                    Block(self, text[start : i_close + self.TagClose.size])
                 )
 
         return blocks
 
     def evaluate_text(self, text, bindings):
         for block in self.extract_blocks(text):
+            # <name> <arguments>
             use = self.re_use.match(block.content)
 
-            if use:
-                name = use.group(1)
-                args = use.group(2)
+            if not use:
+                continue
 
-                if name not in bindings:
-                    # Name is unknown, discard the block
-                    text = text.replace(block.whole, '', 1)
-                    continue
+            name = use.group(1)
+            args = use.group(2)
 
-                binding = bindings[name]
+            if name not in bindings:
+                # Name is unknown, discard the block
+                text = text.replace(block.whole, '', 1)
+                continue
 
-                if binding.is_var:
-                    body = self.evaluate_text(binding.body, bindings)
+            binding = bindings[name]
 
-                    if name == 's.content':
-                        if self.Markdown:
-                            body = self.Markdown.markdown(body, output_format = 'html5')
+            if binding.is_var:
+                body = self.evaluate_text(binding.body, bindings)
+
+                if name == 's.content':
+                    if self.Md:
+                        body = self.Md.markdown(body, output_format = 'html5')
+
+                text = text.replace(block.whole, body, 1)
+            elif binding.is_macro or binding.is_func:
+                arg_blocks = self.extract_blocks(args)
+
+                # You can pass 1 argument without block tags
+                if len(arg_blocks) == 0 and len(args) > 0:
+                    arg_blocks.append(Block(self, args))
+
+                if binding.is_macro and len(arg_blocks) != len(binding.params):
+                    Siter.warning('{} takes {} args, got {}'
+                        .format(name, len(binding.params), len(arg_blocks)))
+                elif binding.is_func and binding.params > 0 and len(arg_blocks) != binding.params:
+                    Siter.warning('{} takes {} args, got {}'
+                        .format(name, binding.params, len(arg_blocks)))
+                else:
+                    arguments = []
+
+                    # Evaluate each argument
+                    for arg_block in arg_blocks:
+                        arg = self.evaluate_text(arg_block.content, bindings)
+                        arguments.append(arg)
+
+                    if binding.is_macro:
+                        bindings2 = bindings.copy()
+
+                        # Bind each parameter to the supplied argument
+                        for (i, param) in enumerate(binding.params):
+                            bindings2[param] = Binding(body = arguments[i])
+
+                        body = self.evaluate_text(binding.body, bindings2)
+                    elif binding.is_func:
+                        body = binding.func(self, arguments)
 
                     text = text.replace(block.whole, body, 1)
-                elif binding.is_macro or binding.is_func:
-                    arg_blocks = self.extract_blocks(args)
-
-                    # You can pass 1 argument without block tags
-                    if len(arg_blocks) == 0 and len(args) > 0:
-                        arg_blocks.append(Block(self, args))
-
-                    if binding.is_macro and len(arg_blocks) != len(binding.params):
-                        Siter.warning('{} takes {} args, got {}'
-                            .format(name, len(binding.params), len(arg_blocks)))
-                    elif binding.is_func and binding.params > 0 and len(arg_blocks) != binding.params:
-                        Siter.warning('{} takes {} args, got {}'
-                            .format(name, binding.params, len(arg_blocks)))
-                    else:
-                        arguments = []
-
-                        # Evaluate each argument
-                        for arg_block in arg_blocks:
-                            arg = self.evaluate_text(arg_block.content, bindings)
-                            arguments.append(arg)
-
-                        if binding.is_macro:
-                            bindings2 = dict(bindings)
-
-                            # Bind each parameter to the supplied argument
-                            for (i, param) in enumerate(binding.params):
-                                bindings2[param] = Binding(body = arguments[i])
-
-                            body = self.evaluate_text(binding.body, bindings2)
-                        elif binding.is_func:
-                            body = binding.func(self, arguments)
-
-                        text = text.replace(block.whole, body, 1)
-                else:
-                    Siter.error('Cannot eval binding {}'.format(name))
+            else:
+                Siter.error('Cannot eval binding {}'.format(name))
 
         return text
 
@@ -433,7 +438,8 @@ class Siter:
             )
             bindings['s.modified'] = Binding(
                 params = 1,
-                func = lambda _, args: time.strftime(args[0], time.localtime(os.stat(read_file).st_mtime))
+                func = lambda _, args: time.strftime(
+                    args[0], time.localtime(os.stat(read_file).st_mtime))
             )
             bindings['s.generated'] = Binding(
                 params = 1,
