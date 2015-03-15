@@ -111,12 +111,13 @@ class Block:
         self.content = text[siter.TagOpen.size : -siter.TagClose.size].strip()
 
 class Binding:
-    def __init__(self, params = None, body = None, func = None):
+    def __init__(self, body = None, num_params = 0, params = None, func = None):
         if body is not None:
             body = body.strip()
 
-        self.params = params
         self.body = body
+        self.num_params = len(params) if params is not None else num_params
+        self.params = params
         self.func = func
 
         self.is_var = body is not None and params is None
@@ -306,39 +307,56 @@ class Siter:
                         body = self.Md.markdown(body, output_format = 'html5')
 
                 text = text.replace(block.whole, body, 1)
-            elif binding.is_macro or binding.is_func:
+            elif binding.is_macro:
                 arg_blocks = self.extract_blocks(args)
 
                 # You can pass 1 argument without block tags
                 if len(arg_blocks) == 0 and len(args) > 0:
                     arg_blocks.append(Block(self, args))
 
-                if binding.is_macro and len(arg_blocks) != len(binding.params):
-                    Siter.warning('{} takes {} args, got {}'
-                        .format(name, len(binding.params), len(arg_blocks)))
-                elif binding.is_func and binding.params > 0 and len(arg_blocks) != binding.params:
-                    Siter.warning('{} takes {} args, got {}'
-                        .format(name, binding.params, len(arg_blocks)))
-                else:
-                    arguments = []
+                if len(arg_blocks) != binding.num_params:
+                    Siter.warning('Macro {} takes {} args, got {}'
+                        .format(name, binding.num_params, len(arg_blocks)))
+                    continue
 
-                    # Evaluate each argument
-                    for arg_block in arg_blocks:
-                        arg = self.evaluate_text(arg_block.content, bindings)
-                        arguments.append(arg)
+                arguments = []
 
-                    if binding.is_macro:
-                        bindings2 = bindings.copy()
+                # Evaluate each argument
+                for arg_block in arg_blocks:
+                    arg = self.evaluate_text(arg_block.content, bindings)
+                    arguments.append(arg)
 
-                        # Bind each parameter to the supplied argument
-                        for (i, param) in enumerate(binding.params):
-                            bindings2[param] = Binding(body = arguments[i])
+                bindings2 = bindings.copy()
 
-                        body = self.evaluate_text(binding.body, bindings2)
-                    elif binding.is_func:
-                        body = binding.func(self, arguments)
+                # Bind each parameter to the supplied argument
+                for (i, param) in enumerate(binding.params):
+                    bindings2[param] = Binding(body = arguments[i])
 
-                    text = text.replace(block.whole, body, 1)
+                body = self.evaluate_text(binding.body, bindings2)
+                text = text.replace(block.whole, body, 1)
+            elif binding.is_func:
+                arg_blocks = self.extract_blocks(args)
+
+                # You can pass 1 argument without block tags
+                if len(arg_blocks) == 0 and len(args) > 0:
+                    arg_blocks.append(Block(self, args))
+
+                if len(arg_blocks) != binding.num_params:
+                    # -1 means arbitrary number of parameters
+                    if binding.num_params != -1:
+                        Siter.warning('Function {} takes {} args, got {}'
+                            .format(name, binding.num_params, len(arg_blocks)))
+                        continue
+
+                arguments = []
+
+                # Evaluate each argument
+                for arg_block in arg_blocks:
+                    arg = self.evaluate_text(arg_block.content, bindings)
+                    arguments.append(arg)
+
+                body = binding.func(self, arguments)
+                text = text.replace(block.whole, body, 1)
             else:
                 Siter.error('Cannot eval binding {}'.format(name))
 
@@ -360,7 +378,8 @@ class Siter:
         marker = text.find(self.Marker)
 
         if marker != -1:
-            bindings['s.content'] = Binding(body = text[marker + len(self.Marker) :])
+            bindings['s.content'] = Binding(
+                body = text[marker + len(self.Marker) :])
             text = text[: marker]
 
         for block in self.extract_blocks(text):
@@ -429,24 +448,24 @@ class Siter:
 
             # Built-in bindings
             bindings['s.if'] = Binding(
-                params = 2,
+                num_params = 2,
                 func = lambda _, args: args[1] if args[0] in bindings else ''
             )
             bindings['s.ifnot'] = Binding(
-                params = 2,
+                num_params = 2,
                 func = lambda _, args: '' if args[0] in bindings else args[1]
             )
             bindings['s.modified'] = Binding(
-                params = 1,
+                num_params = 1,
                 func = lambda _, args: time.strftime(
                     args[0], time.localtime(os.stat(read_file).st_mtime))
             )
             bindings['s.generated'] = Binding(
-                params = 1,
+                num_params = 1,
                 func = lambda _, args: time.strftime(args[0])
             )
             bindings['s.code'] = Binding(
-                params = 0,
+                num_params = -1,
                 func = BuiltInFunctions.highlight_code
             )
 
