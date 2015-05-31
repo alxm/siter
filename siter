@@ -20,6 +20,7 @@
 import sys
 import os
 import re
+import enum
 import time
 import shutil
 import importlib
@@ -92,37 +93,216 @@ class Files:
         self.tags = dirs.config.add_file('tags')
         self.page_html = dirs.template.add_file('page.html', True)
 
+class TokenType(enum.Enum):
+    Rest = 0
+    Text = 1
+    Newline = 2
+    Whitespace = 3
+    TagOpen = 4
+    TagClose = 5
+    Block = 6
+
+class Token:
+    def __init__(self, token_type, text = None):
+        self.token_type = token_type
+        self.text = text
+        self.tokens = []
+
+    def is_not_blank(self):
+        return self.token_type is not TokenType.Newline and self.token_type is not TokenType.Whitespace
+
+    def resolve(self):
+        if self.token_type is TokenType.Block:
+            s = ''
+
+            for t in self.tokens:
+                s += t.resolve()
+
+            # TODO: remove hardcoded tags
+            return '{{' + s + '}}'
+        else:
+            return self.text
+
+    def capture(self, *args):
+        i = 0
+        results = []
+
+        for arg in args:
+            found = False
+
+            if arg is TokenType.Rest:
+                found = True
+                results.append(self.tokens[i:])
+            else:
+                while i < len(self.tokens):
+                    token = self.tokens[i]
+                    i += 1
+
+                    if token.token_type is arg:
+                        found = True
+                        results.append(token)
+                        break
+                    elif token.is_not_blank():
+                        break
+
+            if not found:
+                Siter.error('Invalid block:\n{}'.format(self.resolve()))
+
+        return results
+
+    def is_variable(self):
+        return self.capture(TokenType.Text)[0].resolve() == 'var'
+
+    def is_macro(self):
+        return self.capture(TokenType.Text)[0].resolve() == 'fun'
+
+    def is_use(self):
+        results = self.capture(TokenType.Rest)
+
+        if len(results) == 0 or len(results[0]) == 0:
+            return False
+
+        if results[0][0].token_type is not TokenType.Text:
+            return False
+
+        name = results[0][0].resolve()
+
+        return len(name) > 1 and name[0] == '`'
+
+    def capture_variable(self):
+        # {var name *}
+        results = self.capture(TokenType.Text, TokenType.Text, TokenType.Rest)
+
+        name = results[1]
+        body = results[2]
+
+        return name, body
+
+    def capture_macro(self):
+        # {fun name {args} body}
+        results = self.capture(TokenType.Text, TokenType.Text, TokenType.Block, TokenType.Rest)
+
+        name = results[1]
+        args = [t for t in results[2].tokens if t.token_type is TokenType.Text]
+        body = results[3]
+
+        return name, args, body
+
+    def capture_use(self):
+        # {name *}
+        return self.capture(TokenType.Text)[0]
+
+    def capture_args(self):
+        # {name {arg1} {arg2} *}
+        results = self.capture(TokenType.Text, TokenType.Rest)
+
+        if len(results) < 2:
+            Siter.error('No arguments for {}'.format(results[0].resolve()))
+
+        return [t for t in results[1] if t.token_type is TokenType.Block]
+
+class TextStream:
+    def __init__(self, text):
+        self.text = text
+        self.delims = []
+        self.tokens = []
+
+    def add_delim(self, token_type, delim_text):
+        self.delims.append((token_type, delim_text))
+
+    def add_token(self, token_type, start, end):
+        if start < end:
+            self.tokens.append(Token(token_type, self.text[start : end]))
+            return True
+
+        return False
+
+    def form_tokens(self):
+        start = 0
+        index = 0
+        current_type = TokenType.Text
+
+        while index < len(self.text):
+            c = self.text[index]
+
+            # TODO: remove unescaped '\' chars
+            if c == '\\':
+                index += 2
+                start = index
+                continue
+            else:
+                index += 1
+
+            previous_type = current_type
+
+            if c == '\n':
+                current_type = TokenType.Newline
+            elif c == ' ' or c == '\t':
+                current_type = TokenType.Whitespace
+            else:
+                current_type = TokenType.Text
+
+            found_delim = False
+
+            for delim_token_type, delim_text in self.delims:
+                delim_start = index - len(delim_text)
+
+                if delim_start >= start:
+                    if self.text[delim_start : index] == delim_text:
+                        self.add_token(previous_type, start, delim_start)
+                        self.add_token(delim_token_type, delim_start, index)
+                        start = index
+                        found_delim = True
+                        break
+
+            if not found_delim and previous_type is not current_type:
+                if self.add_token(previous_type, start, index - 1):
+                    start = index - 1
+
+        self.add_token(current_type, start, index)
+
+    def form_blocks(self):
+        tokens = []
+        stack = []
+
+        for index, token in enumerate(self.tokens):
+            if token.token_type is TokenType.TagOpen:
+                stack.append(Token(TokenType.Block))
+            else:
+                if token.token_type is TokenType.TagClose:
+                    if len(stack) == 0:
+                        Siter.error("Found extra closing tag")
+
+                    token = stack.pop()
+
+                if len(stack) > 0:
+                    stack[-1].tokens.append(token)
+                else:
+                    tokens.append(token)
+
+        if len(stack) > 0:
+            Siter.error("Missing closing tag")
+
+        self.tokens = tokens
+
 class Tag:
     def __init__(self, text):
         self.raw = text
         self.escaped = re.escape(text)
         self.size = len(text)
 
-class Block:
-    def __init__(self, siter, text):
-        # Add block tags if missing
-        if text.find(siter.TagOpen.raw) != 0:
-            text = siter.TagOpen.raw + text + siter.TagClose.raw
-
-        # Block including { and }
-        self.whole = text
-
-        # Just the inside of { ... }
-        self.content = text[siter.TagOpen.size : -siter.TagClose.size].strip()
+class BindingType(enum.Enum):
+    Variable = 0
+    Macro = 1
+    Function = 2
 
 class Binding:
-    def __init__(self, body = None, num_params = 0, params = None, func = None):
-        if body is not None:
-            body = body.strip()
-
-        self.body = body
+    def __init__(self, b_type, tokens = [], num_params = 0, params = None, func = None):
+        self.b_type = b_type
+        self.tokens = tokens
         self.num_params = len(params) if params is not None else num_params
         self.params = params
         self.func = func
-
-        self.is_var = body is not None and params is None
-        self.is_macro = body is not None and params is not None
-        self.is_func = func is not None
 
 class BuiltInFunctions:
     @staticmethod
@@ -217,22 +397,6 @@ class Siter:
                                  + '$',
                                  re.DOTALL)
 
-        # Declaring a variable: <name> <contents>
-        self.re_var = re.compile('([\w\.\-]+)\s*'
-                                 + '(.*)'
-                                 + '$',
-                                 re.DOTALL)
-
-        # Declaring a function: <name> {parameters} <body>
-        self.re_fun = re.compile('([\w\.\-]+)\s*'
-                                 + self.TagOpen.escaped
-                                 + '(.*?)'
-                                 + self.TagClose.escaped
-                                 + '\s*'
-                                 + '(.*)'
-                                 + '$',
-                                 re.DOTALL)
-
         # Global function and variable bindings
         self.bindings = self.get_bindings(self.files.defs.path)
 
@@ -247,120 +411,102 @@ class Siter:
         self.PygmentsLexers = try_import('pygments.lexers')
         self.PygmentsFormatters = try_import('pygments.formatters')
 
-    def extract_blocks(self, text):
-        # A block is a "{something}" that may contain other "{somethings}"
-        blocks = []
+    def tokenize(self, text):
+        stream = TextStream(text)
 
-        count = 0
-        start = 0
-        index = 0
+        stream.add_delim(TokenType.TagOpen, self.TagOpen.raw)
+        stream.add_delim(TokenType.TagClose, self.TagClose.raw)
 
-        while index < len(text):
-            i_open = text.find(self.TagOpen.raw, index)
-            i_close = text.find(self.TagClose.raw, index)
+        stream.form_tokens()
+        stream.form_blocks()
 
-            if i_open == -1 and i_close == -1:
-                # No more tags found
-                break
+        return stream.tokens
 
-            if (i_open < i_close and i_open != -1) or i_close == -1:
-                if count == 0:
-                    # Current block starts here
-                    start = i_open
+    def get_blocks(self, text):
+        return [t for t in self.tokenize(text) if t.token_type is TokenType.Block]
 
-                count += 1
-                index = i_open + self.TagClose.size
-            elif (i_close < i_open and i_close != -1) or i_open == -1:
-                count -= 1
-                index = i_close + self.TagClose.size
+    def evaluate_tokens(self, tokens, bindings):
+        ev_tokens = []
 
-            if count == 0:
-                blocks.append(
-                    Block(self, text[start : i_close + self.TagClose.size])
-                )
-
-        return blocks
-
-    def evaluate_text(self, text, bindings):
-        for block in self.extract_blocks(text):
-            # <name> <arguments>
-            use = self.re_use.match(block.content)
-
-            if not use:
+        for token in tokens:
+            if token.token_type is not TokenType.Block:
+                ev_tokens.append(token)
                 continue
 
-            name = use.group(1)
-            args = use.group(2)
+            if not token.is_use():
+                # this is not a binding
+                ev_tokens += self.evaluate_tokens(token.tokens, bindings)
+                continue
+
+            name = token.capture_use().resolve()[1:]
 
             if name not in bindings:
-                # Name is unknown, discard the block
-                text = text.replace(block.whole, '', 1)
+                # Name is unknown, dump whole block contents
+                ev_tokens += self.evaluate_tokens(token.tokens, bindings)
                 continue
 
             binding = bindings[name]
 
-            if binding.is_var:
-                body = self.evaluate_text(binding.body, bindings)
+            if binding.b_type == BindingType.Variable:
+                ev_tokens += self.evaluate_tokens(binding.tokens, bindings)
+            elif binding.b_type == BindingType.Macro:
+                args = token.capture_args()
 
-                if name == 's.content':
-                    if self.Md:
-                        body = self.Md.markdown(body, output_format = 'html5')
-
-                text = text.replace(block.whole, body, 1)
-            elif binding.is_macro:
-                arg_blocks = self.extract_blocks(args)
-
-                # You can pass 1 argument without block tags
-                if len(arg_blocks) == 0 and len(args) > 0:
-                    arg_blocks.append(Block(self, args))
-
-                if len(arg_blocks) != binding.num_params:
+                if len(args) != binding.num_params:
                     Siter.warning('Macro {} takes {} args, got {}'
-                        .format(name, binding.num_params, len(arg_blocks)))
+                        .format(name, binding.num_params, len(args)))
                     continue
 
                 arguments = []
 
                 # Evaluate each argument
-                for arg_block in arg_blocks:
-                    arg = self.evaluate_text(arg_block.content, bindings)
+                for arg in args:
+                    arg = self.evaluate_tokens([arg], bindings)
                     arguments.append(arg)
 
                 bindings2 = bindings.copy()
 
                 # Bind each parameter to the supplied argument
                 for (i, param) in enumerate(binding.params):
-                    bindings2[param] = Binding(body = arguments[i])
+                    bindings2[param.resolve()] = Binding(BindingType.Variable, tokens = arguments[i])
 
-                body = self.evaluate_text(binding.body, bindings2)
-                text = text.replace(block.whole, body, 1)
-            elif binding.is_func:
-                arg_blocks = self.extract_blocks(args)
+                ev_tokens += self.evaluate_tokens(binding.tokens, bindings2)
+            elif binding.b_type == BindingType.Function:
+                args = token.capture_args()
 
-                # You can pass 1 argument without block tags
-                if len(arg_blocks) == 0 and len(args) > 0:
-                    arg_blocks.append(Block(self, args))
-
-                if len(arg_blocks) != binding.num_params:
-                    # -1 means arbitrary number of parameters
-                    if binding.num_params != -1:
-                        Siter.warning('Function {} takes {} args, got {}'
-                            .format(name, binding.num_params, len(arg_blocks)))
-                        continue
+                if len(args) != binding.num_params:
+                    Siter.warning('Function {} takes {} args, got {}'
+                        .format(name, binding.num_params, len(args)))
+                    continue
 
                 arguments = []
 
                 # Evaluate each argument
-                for arg_block in arg_blocks:
-                    arg = self.evaluate_text(arg_block.content, bindings)
-                    arguments.append(arg)
+                for arg in args:
+                    arg_s = ''
+                    arg = self.evaluate_tokens([arg], bindings)
+
+                    for t in arg:
+                        arg_s += t.resolve()
+
+                    arguments.append(arg_s)
 
                 body = binding.func(self, arguments)
-                text = text.replace(block.whole, body, 1)
+                ev_tokens += self.tokenize(body)
             else:
-                Siter.error('Cannot eval binding {}'.format(name))
+                Siter.error('Unknown binding type')
 
-        return text
+        return ev_tokens
+
+    def evaluate_text(self, text, bindings):
+        output = ''
+        tokens = self.tokenize(text)
+        tokens = self.evaluate_tokens(tokens, bindings)
+
+        for token in tokens:
+            output += token.resolve()
+
+        return output
 
     def get_bindings(self, read_file):
         try:
@@ -379,23 +525,19 @@ class Siter:
 
         if marker != -1:
             bindings['s.content'] = Binding(
-                body = text[marker + len(self.Marker) :])
+                BindingType.Variable,
+                tokens = self.tokenize(text[marker + len(self.Marker) :]))
             text = text[: marker]
 
-        for block in self.extract_blocks(text):
-            var = self.re_var.match(block.content)
-            fun = self.re_fun.match(block.content)
-
-            if fun:
-                name = fun.group(1)
-                params = fun.group(2).split()
-                body = fun.group(3)
-                bindings[name] = Binding(params = params, body = body)
-            elif var:
-                name = var.group(1)
-                bindings[name] = Binding(body = var.group(2))
+        for b in self.get_blocks(text):
+            if b.is_variable():
+                name, body = b.capture_variable()
+                bindings[name.resolve()] = Binding(BindingType.Variable, tokens = body)
+            elif b.is_macro():
+                name, args, body = b.capture_macro()
+                bindings[name.resolve()] = Binding(BindingType.Macro, params = args, tokens = body)
             else:
-                Siter.error('Cannot parse block:\n{}'.format(block.whole))
+                Siter.error('Cannot parse block:\n{}'.format(b.resolve()))
 
         return bindings
 
@@ -405,8 +547,8 @@ class Siter:
         rel_media_path = os.path.relpath(self.dirs.out_media.path, current_path)
 
         # Built-in bindings
-        bindings['s.root'] = Binding(body = rel_root_path)
-        bindings['s.media'] = Binding(body = rel_media_path)
+        bindings['s.root'] = Binding(BindingType.Variable, tokens = self.tokenize(rel_root_path))
+        bindings['s.media'] = Binding(BindingType.Variable, tokens = self.tokenize(rel_media_path))
 
         # Fill in template
         template = self.evaluate_text(template_file.content, bindings)
@@ -448,23 +590,28 @@ class Siter:
 
             # Built-in bindings
             bindings['s.if'] = Binding(
+                BindingType.Function,
                 num_params = 2,
                 func = lambda _, args: args[1] if args[0] in bindings else ''
             )
             bindings['s.ifnot'] = Binding(
+                BindingType.Function,
                 num_params = 2,
                 func = lambda _, args: '' if args[0] in bindings else args[1]
             )
             bindings['s.modified'] = Binding(
+                BindingType.Function,
                 num_params = 1,
                 func = lambda _, args: time.strftime(
                     args[0], time.localtime(os.stat(read_file).st_mtime))
             )
             bindings['s.generated'] = Binding(
+                BindingType.Function,
                 num_params = 1,
                 func = lambda _, args: time.strftime(args[0])
             )
             bindings['s.code'] = Binding(
+                BindingType.Function,
                 num_params = -1,
                 func = BuiltInFunctions.highlight_code
             )
