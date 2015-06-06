@@ -49,28 +49,27 @@ class TextFile(File):
     def __init__(self, path, required = False):
         File.__init__(self, path, required)
 
-        self.lines = []
         self.content = ''
+        self.lines = []
 
         try:
             with open(self.path, 'rU') as f:
-                for line in f:
-                    line = line.strip()
-                    self.lines.append(line if len(line) > 0 else None)
-
-                f.seek(0)
                 self.content = f.read()
+                self.lines = self.content.splitlines()
         except FileNotFoundError:
             if self.required:
                 Siter.error('Required file {} not found'.format(self.path))
 
-    def line(self, number):
+    def get_line(self, number):
         if number < len(self.lines):
             return self.lines[number]
         elif self.required:
             Siter.error('Missing required line {}:{}'.format(self.path, number))
         else:
             return None
+
+    def get_content(self):
+        return self.content
 
 class Dirs:
     def __init__(self):
@@ -381,12 +380,12 @@ class Siter:
         self.dirs.media.copy_to(self.dirs.out_media)
         self.dirs.template_media.copy_to(self.dirs.out_template_media)
 
-        if self.files.marker.line(0):
-            self.Marker = self.files.marker.line(0)
+        if self.files.marker.get_line(0):
+            self.Marker = self.files.marker.get_line(0)
 
-        if self.files.tags.line(0) and self.files.tags.line(1):
-            self.TagOpen = Tag(self.files.tags.line(0))
-            self.TagClose = Tag(self.files.tags.line(1))
+        if self.files.tags.get_line(0) and self.files.tags.get_line(1):
+            self.TagOpen = Tag(self.files.tags.get_line(0))
+            self.TagClose = Tag(self.files.tags.get_line(1))
 
             Siter.info('Using {} and {} as block tags'
                 .format(self.TagOpen.raw, self.TagClose.raw))
@@ -551,7 +550,7 @@ class Siter:
         bindings['s.media'] = Binding(BindingType.Variable, tokens = self.tokenize(rel_media_path))
 
         # Fill in template
-        template = self.evaluate_text(template_file.content, bindings)
+        template = self.evaluate_text(template_file.get_content(), bindings)
 
         return template
 
