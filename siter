@@ -19,7 +19,6 @@
 
 import sys
 import os
-import re
 import enum
 import time
 import shutil
@@ -293,8 +292,6 @@ class TextStream:
 class Tag:
     def __init__(self, text):
         self.raw = text
-        self.escaped = re.escape(text)
-        self.size = len(text)
 
 class BindingType(enum.Enum):
     Variable = 0
@@ -395,12 +392,6 @@ class Siter:
 
             Siter.info('Using {} and {} as block tags'
                 .format(self.TagOpen.raw, self.TagClose.raw))
-
-        # Calling a function or variable: <name> <arguments>
-        self.re_use = re.compile('([\w\.\-]+)\s*'
-                                 + '(.*)'
-                                 + '$',
-                                 re.DOTALL)
 
         # Global function and variable bindings
         self.bindings = self.get_bindings(self.files.defs.path)
