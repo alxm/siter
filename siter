@@ -100,16 +100,16 @@ class TokenType(enum.Enum):
     Block = 6
 
 class Token:
-    def __init__(self, token_type, text = None):
-        self.token_type = token_type
+    def __init__(self, t_type, text = None):
+        self.t_type = t_type
         self.text = text
         self.tokens = []
 
     def is_not_blank(self):
-        return self.token_type is not TokenType.Newline and self.token_type is not TokenType.Whitespace
+        return self.t_type is not TokenType.Newline and self.t_type is not TokenType.Whitespace
 
     def resolve(self):
-        if self.token_type is TokenType.Block:
+        if self.t_type is TokenType.Block:
             s = ''
 
             for t in self.tokens:
@@ -135,7 +135,7 @@ class Token:
                     token = self.tokens[i]
                     i += 1
 
-                    if token.token_type is arg:
+                    if token.t_type is arg:
                         found = True
                         results.append(token)
                         break
@@ -159,7 +159,7 @@ class Token:
         if len(results) == 0 or len(results[0]) == 0:
             return False
 
-        if results[0][0].token_type is not TokenType.Text:
+        if results[0][0].t_type is not TokenType.Text:
             return False
 
         name = results[0][0].resolve()
@@ -180,7 +180,7 @@ class Token:
         results = self.capture(TokenType.Text, TokenType.Text, TokenType.Block, TokenType.Rest)
 
         name = results[1]
-        args = [t for t in results[2].tokens if t.token_type is TokenType.Text]
+        args = [t for t in results[2].tokens if t.t_type is TokenType.Text]
         body = results[3]
 
         return name, args, body
@@ -196,7 +196,7 @@ class Token:
         if len(results) < 2:
             Siter.error('No arguments for {}'.format(results[0].resolve()))
 
-        return [t for t in results[1] if t.token_type is TokenType.Block]
+        return [t for t in results[1] if t.t_type is TokenType.Block]
 
 class BindingType(enum.Enum):
     Variable = 0
@@ -370,10 +370,10 @@ class Siter:
         block_tokens = []
 
         for token in flat_tokens:
-            if token.token_type is TokenType.TagOpen:
+            if token.t_type is TokenType.TagOpen:
                 stack.append(Token(TokenType.Block))
             else:
-                if token.token_type is TokenType.TagClose:
+                if token.t_type is TokenType.TagClose:
                     if len(stack) == 0:
                         Siter.error("Found extra closing tag")
 
@@ -397,7 +397,7 @@ class Siter:
         ev_tokens = []
 
         for token in tokens:
-            if token.token_type is not TokenType.Block:
+            if token.t_type is not TokenType.Block:
                 ev_tokens.append(token)
                 continue
 
@@ -493,7 +493,7 @@ class Siter:
                 tokens = self.tokenize(text[marker + len(self.Marker) :]))
             text = text[: marker]
 
-        for b in [t for t in self.tokenize(text) if t.token_type is TokenType.Block]:
+        for b in [t for t in self.tokenize(text) if t.t_type is TokenType.Block]:
             if b.is_variable():
                 name, body = b.capture_variable()
                 bindings[name.resolve()] = Binding(BindingType.Variable, tokens = body)
