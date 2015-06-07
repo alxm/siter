@@ -466,16 +466,6 @@ class Siter:
 
         return ev_tokens
 
-    def evaluate_text(self, text, bindings):
-        output = ''
-        tokens = self.tokenize(text)
-        tokens = self.evaluate_tokens(tokens, bindings)
-
-        for token in tokens:
-            output += token.resolve()
-
-        return output
-
     def get_bindings(self, read_file):
         try:
             with open(read_file, 'rU') as f:
@@ -514,10 +504,14 @@ class Siter:
         bindings['s.root'] = Binding(BindingType.Variable, tokens = self.tokenize(rel_root_path))
         bindings['s.media'] = Binding(BindingType.Variable, tokens = self.tokenize(rel_media_path))
 
-        # Fill in template
-        template = self.evaluate_text(template_file.get_content(), bindings)
+        output = ''
+        tokens = self.tokenize(template_file.get_content())
+        tokens = self.evaluate_tokens(tokens, bindings)
 
-        return template
+        for token in tokens:
+            output += token.resolve()
+
+        return output
 
     def up_to_date(self, read_file, write_file):
         if not self.ForceWrite and os.path.isfile(write_file):
