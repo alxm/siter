@@ -393,9 +393,6 @@ class Siter:
         flat_tokens = self.make_flat_tokens(text)
         return self.make_block_tokens(flat_tokens)
 
-    def get_blocks(self, text):
-        return [t for t in self.tokenize(text) if t.token_type is TokenType.Block]
-
     def evaluate_tokens(self, tokens, bindings):
         ev_tokens = []
 
@@ -487,11 +484,7 @@ class Siter:
             return {}
 
         start = 0
-
-        # "name" -> Binding object
         bindings = {}
-
-        # Find the content-start marker
         marker = text.find(self.Marker)
 
         if marker != -1:
@@ -500,7 +493,7 @@ class Siter:
                 tokens = self.tokenize(text[marker + len(self.Marker) :]))
             text = text[: marker]
 
-        for b in self.get_blocks(text):
+        for b in [t for t in self.tokenize(text) if t.token_type is TokenType.Block]:
             if b.is_variable():
                 name, body = b.capture_variable()
                 bindings[name.resolve()] = Binding(BindingType.Variable, tokens = body)
