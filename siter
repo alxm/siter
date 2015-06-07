@@ -301,7 +301,8 @@ class Siter:
                 .format(self.TagOpen, self.TagClose))
 
         # Global function and variable bindings
-        self.bindings = self.get_bindings(self.files.defs.get_path())
+        self.bindings = {}
+        self.set_file_bindings(self.bindings, self.files.defs.get_path())
 
         def try_import(module):
             try:
@@ -469,7 +470,7 @@ class Siter:
 
         return ev_tokens
 
-    def get_bindings(self, read_file):
+    def set_file_bindings(self, bindings, read_file):
         try:
             with open(read_file, 'rU') as f:
                 text = f.read()
@@ -477,7 +478,6 @@ class Siter:
             return {}
 
         start = 0
-        bindings = {}
         marker = text.find(self.Marker)
 
         if marker != -1:
@@ -496,17 +496,46 @@ class Siter:
             else:
                 Siter.error('Cannot parse block:\n{}'.format(b.resolve()))
 
-        return bindings
+    def set_builtin_bindings(self, bindings, read_file, subdir):
+        bindings['s.if'] = Binding(
+            BindingType.Function,
+            num_params = 2,
+            func = lambda _, args: args[1] if args[0] in bindings else '')
+
+        bindings['s.ifnot'] = Binding(
+            BindingType.Function,
+            num_params = 2,
+            func = lambda _, args: '' if args[0] in bindings else args[1])
+
+        bindings['s.modified'] = Binding(
+            BindingType.Function,
+            num_params = 1,
+            func = lambda _, args: time.strftime(
+                args[0], time.localtime(os.stat(read_file).st_mtime)))
+
+        bindings['s.generated'] = Binding(
+            BindingType.Function,
+            num_params = 1,
+            func = lambda _, args: time.strftime(args[0]))
+
+        bindings['s.code'] = Binding(
+            BindingType.Function,
+            num_params = -1,
+            func = BuiltInFunctions.highlight_code)
+
+        here = os.path.join(self.dirs.out_root.get_path(), subdir)
+        rel_root_path = os.path.relpath(self.dirs.out_root.get_path(), here)
+        rel_media_path = os.path.relpath(self.dirs.out_media.get_path(), here)
+
+        bindings['s.root'] = Binding(
+            BindingType.Variable,
+            tokens = self.tokenize(rel_root_path))
+
+        bindings['s.media'] = Binding(
+            BindingType.Variable,
+            tokens = self.tokenize(rel_media_path))
 
     def apply_template(self, template_file, bindings, subdir):
-        current_path = os.path.join(self.dirs.out_root.get_path(), subdir)
-        rel_root_path = os.path.relpath(self.dirs.out_root.get_path(), current_path)
-        rel_media_path = os.path.relpath(self.dirs.out_media.get_path(), current_path)
-
-        # Built-in bindings
-        bindings['s.root'] = Binding(BindingType.Variable, tokens = self.tokenize(rel_root_path))
-        bindings['s.media'] = Binding(BindingType.Variable, tokens = self.tokenize(rel_media_path))
-
         output = ''
         tokens = self.tokenize(template_file.get_content())
         tokens = self.evaluate_tokens(tokens, bindings)
@@ -545,37 +574,9 @@ class Siter:
 
             print('[  Updating  ] {}'.format(write_file))
 
-            # Go through page file and extract bindings
             bindings = self.bindings.copy()
-            bindings.update(self.get_bindings(read_file))
-
-            # Built-in bindings
-            bindings['s.if'] = Binding(
-                BindingType.Function,
-                num_params = 2,
-                func = lambda _, args: args[1] if args[0] in bindings else ''
-            )
-            bindings['s.ifnot'] = Binding(
-                BindingType.Function,
-                num_params = 2,
-                func = lambda _, args: '' if args[0] in bindings else args[1]
-            )
-            bindings['s.modified'] = Binding(
-                BindingType.Function,
-                num_params = 1,
-                func = lambda _, args: time.strftime(
-                    args[0], time.localtime(os.stat(read_file).st_mtime))
-            )
-            bindings['s.generated'] = Binding(
-                BindingType.Function,
-                num_params = 1,
-                func = lambda _, args: time.strftime(args[0])
-            )
-            bindings['s.code'] = Binding(
-                BindingType.Function,
-                num_params = -1,
-                func = BuiltInFunctions.highlight_code
-            )
+            self.set_file_bindings(bindings, read_file)
+            self.set_builtin_bindings(bindings, read_file, subdir)
 
             # Load template and replace variables and functions with bindings
             final = self.apply_template(self.files.page_html, bindings, subdir)
