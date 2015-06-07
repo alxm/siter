@@ -289,10 +289,6 @@ class TextStream:
         flat = self.make_flat_tokens()
         return self.make_block_tokens(flat)
 
-class Tag:
-    def __init__(self, text):
-        self.raw = text
-
 class BindingType(enum.Enum):
     Variable = 0
     Macro = 1
@@ -368,8 +364,8 @@ class Siter:
         self.ForceWrite = arg == 'force'
 
         # Block delimiters
-        self.TagOpen = Tag('{')
-        self.TagClose = Tag('}')
+        self.TagOpen = '{'
+        self.TagClose = '}'
 
         # Marks the beginning of page content
         self.Marker = '~~~'
@@ -387,11 +383,11 @@ class Siter:
             self.Marker = self.files.marker.get_line(0)
 
         if self.files.tags.get_line(0) and self.files.tags.get_line(1):
-            self.TagOpen = Tag(self.files.tags.get_line(0))
-            self.TagClose = Tag(self.files.tags.get_line(1))
+            self.TagOpen = self.files.tags.get_line(0)
+            self.TagClose = self.files.tags.get_line(1)
 
             Siter.info('Using {} and {} as block tags'
-                .format(self.TagOpen.raw, self.TagClose.raw))
+                .format(self.TagOpen, self.TagClose))
 
         # Global function and variable bindings
         self.bindings = self.get_bindings(self.files.defs.path)
@@ -410,8 +406,8 @@ class Siter:
     def tokenize(self, text):
         stream = TextStream(text)
 
-        stream.add_delim(TokenType.TagOpen, self.TagOpen.raw)
-        stream.add_delim(TokenType.TagClose, self.TagClose.raw)
+        stream.add_delim(TokenType.TagOpen, self.TagOpen)
+        stream.add_delim(TokenType.TagClose, self.TagClose)
 
         return stream.tokenize()
 
