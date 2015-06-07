@@ -348,8 +348,7 @@ class BuiltInFunctions:
 class Siter:
     @staticmethod
     def error(e):
-        print('[   Error!   ] {}'.format(e))
-        sys.exit(1)
+        raise RuntimeError('Siter runtime error\n{}'.format(e))
 
     @staticmethod
     def warning(w):
