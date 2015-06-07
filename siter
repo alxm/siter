@@ -110,13 +110,12 @@ class Token:
 
     def resolve(self):
         if self.t_type is TokenType.Block:
-            s = ''
+            output = ''
 
             for t in self.tokens:
-                s += t.resolve()
+                output += t.resolve()
 
-            # TODO: remove hardcoded tags
-            return '{{' + s + '}}'
+            return '{' + output + '}'
         else:
             return self.text
 
