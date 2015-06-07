@@ -25,11 +25,14 @@ import importlib
 
 class File:
     def __init__(self, path, required = False):
+        if required and not os.path.exists(path):
+            Siter.error('Required file {} not found'.format(path))
+
         self.path = path
         self.required = required
 
-        if self.required and not os.path.exists(self.path):
-            Siter.error('Required file {} not found'.format(self.path))
+    def get_path(self):
+        return self.path
 
 class Dir(File):
     def add_file(self, name, required = False):
@@ -281,7 +284,7 @@ class Siter:
         self.dirs = Dirs()
         self.files = Files(self.dirs)
 
-        os.makedirs(self.dirs.out_root.path, exist_ok = True)
+        os.makedirs(self.dirs.out_root.get_path(), exist_ok = True)
 
         # Copy site and template media files
         self.dirs.media.copy_to(self.dirs.out_media)
@@ -298,7 +301,7 @@ class Siter:
                 .format(self.TagOpen, self.TagClose))
 
         # Global function and variable bindings
-        self.bindings = self.get_bindings(self.files.defs.path)
+        self.bindings = self.get_bindings(self.files.defs.get_path())
 
         def try_import(module):
             try:
@@ -496,9 +499,9 @@ class Siter:
         return bindings
 
     def apply_template(self, template_file, bindings, subdir):
-        current_path = os.path.join(self.dirs.out_root.path, subdir)
-        rel_root_path = os.path.relpath(self.dirs.out_root.path, current_path)
-        rel_media_path = os.path.relpath(self.dirs.out_media.path, current_path)
+        current_path = os.path.join(self.dirs.out_root.get_path(), subdir)
+        rel_root_path = os.path.relpath(self.dirs.out_root.get_path(), current_path)
+        rel_media_path = os.path.relpath(self.dirs.out_media.get_path(), current_path)
 
         # Built-in bindings
         bindings['s.root'] = Binding(BindingType.Variable, tokens = self.tokenize(rel_root_path))
@@ -523,8 +526,8 @@ class Siter:
             return False
 
     def run(self, subdir):
-        in_path = os.path.join(self.dirs.pages.path, subdir)
-        out_path = os.path.join(self.dirs.out_root.path, subdir)
+        in_path = os.path.join(self.dirs.pages.get_path(), subdir)
+        out_path = os.path.join(self.dirs.out_root.get_path(), subdir)
 
         os.makedirs(out_path, exist_ok = True)
 
