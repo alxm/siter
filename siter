@@ -204,21 +204,14 @@ class TextStream:
     def __init__(self, text):
         self.text = text
         self.delims = []
-        self.tokens = []
 
     def add_delim(self, token_type, delim_text):
         self.delims.append((token_type, delim_text))
 
-    def add_token(self, token_type, start, end):
-        if start < end:
-            self.tokens.append(Token(token_type, self.text[start : end]))
-            return True
-
-        return False
-
-    def form_tokens(self):
+    def make_flat_tokens(self):
         start = 0
         index = 0
+        flat_tokens = []
         current_type = TokenType.Text
 
         while index < len(self.text):
@@ -246,25 +239,34 @@ class TextStream:
             for delim_token_type, delim_text in self.delims:
                 delim_start = index - len(delim_text)
 
-                if delim_start >= start:
-                    if self.text[delim_start : index] == delim_text:
-                        self.add_token(previous_type, start, delim_start)
-                        self.add_token(delim_token_type, delim_start, index)
-                        start = index
-                        found_delim = True
-                        break
+                if delim_start < start:
+                    continue
+
+                if self.text[delim_start : index] == delim_text:
+                    if start < delim_start:
+                        flat_tokens.append(Token(previous_type, self.text[start : delim_start]))
+
+                    flat_tokens.append(Token(delim_token_type, self.text[delim_start : index]))
+
+                    start = index
+                    found_delim = True
+                    break
 
             if not found_delim and previous_type is not current_type:
-                if self.add_token(previous_type, start, index - 1):
+                if start < index - 1:
+                    flat_tokens.append(Token(previous_type, self.text[start : index - 1]))
                     start = index - 1
 
-        self.add_token(current_type, start, index)
+        if start < index:
+            flat_tokens.append(Token(current_type, self.text[start : index]))
 
-    def form_blocks(self):
-        tokens = []
+        return flat_tokens
+
+    def make_block_tokens(self, flat_tokens):
         stack = []
+        block_tokens = []
 
-        for index, token in enumerate(self.tokens):
+        for token in flat_tokens:
             if token.token_type is TokenType.TagOpen:
                 stack.append(Token(TokenType.Block))
             else:
@@ -277,12 +279,16 @@ class TextStream:
                 if len(stack) > 0:
                     stack[-1].tokens.append(token)
                 else:
-                    tokens.append(token)
+                    block_tokens.append(token)
 
         if len(stack) > 0:
             Siter.error("Missing closing tag")
 
-        self.tokens = tokens
+        return block_tokens
+
+    def tokenize(self):
+        flat = self.make_flat_tokens()
+        return self.make_block_tokens(flat)
 
 class Tag:
     def __init__(self, text):
@@ -416,10 +422,7 @@ class Siter:
         stream.add_delim(TokenType.TagOpen, self.TagOpen.raw)
         stream.add_delim(TokenType.TagClose, self.TagClose.raw)
 
-        stream.form_tokens()
-        stream.form_blocks()
-
-        return stream.tokens
+        return stream.tokenize()
 
     def get_blocks(self, text):
         return [t for t in self.tokenize(text) if t.token_type is TokenType.Block]
