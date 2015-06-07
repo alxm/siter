@@ -105,9 +105,6 @@ class Token:
         self.text = text
         self.tokens = []
 
-    def is_not_blank(self):
-        return self.t_type is not TokenType.Newline and self.t_type is not TokenType.Whitespace
-
     def resolve(self):
         if self.t_type is TokenType.Block:
             s = ''
@@ -139,8 +136,11 @@ class Token:
                         found = True
                         results.append(token)
                         break
-                    elif token.is_not_blank():
-                        break
+
+                    if token.t_type is TokenType.Newline or token.t_type is TokenType.Whitespace:
+                        continue
+
+                    break
 
             if not found:
                 Siter.error('Invalid block:\n{}'.format(self.resolve()))
