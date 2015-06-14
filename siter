@@ -173,17 +173,13 @@ class Token:
         return name, args, body
 
     def is_use(self):
-        results = self.capture(TokenType.Rest)
+        results = self.capture(TokenType.Text)
 
-        if len(results) == 0 or len(results[0]) == 0:
-            return False
+        if results:
+            name = results[0].resolve()
+            return len(name) > 1 and name[0] == '`'
 
-        if results[0][0].t_type is not TokenType.Text:
-            return False
-
-        name = results[0][0].resolve()
-
-        return len(name) > 1 and name[0] == '`'
+        return False
 
     def capture_use(self):
         # {name *}
