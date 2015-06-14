@@ -150,8 +150,27 @@ class Token:
     def is_variable(self):
         return self.capture(TokenType.Text)[0].resolve() == 'var'
 
+    def capture_variable(self):
+        # {var name *}
+        results = self.capture(TokenType.Text, TokenType.Text, TokenType.Rest)
+
+        name = results[1]
+        body = results[2]
+
+        return name, body
+
     def is_macro(self):
         return self.capture(TokenType.Text)[0].resolve() == 'fun'
+
+    def capture_macro(self):
+        # {fun name {args} body}
+        results = self.capture(TokenType.Text, TokenType.Text, TokenType.Block, TokenType.Rest)
+
+        name = results[1]
+        args = [t for t in results[2].tokens if t.t_type is TokenType.Text]
+        body = results[3]
+
+        return name, args, body
 
     def is_use(self):
         results = self.capture(TokenType.Rest)
@@ -165,25 +184,6 @@ class Token:
         name = results[0][0].resolve()
 
         return len(name) > 1 and name[0] == '`'
-
-    def capture_variable(self):
-        # {var name *}
-        results = self.capture(TokenType.Text, TokenType.Text, TokenType.Rest)
-
-        name = results[1]
-        body = results[2]
-
-        return name, body
-
-    def capture_macro(self):
-        # {fun name {args} body}
-        results = self.capture(TokenType.Text, TokenType.Text, TokenType.Block, TokenType.Rest)
-
-        name = results[1]
-        args = [t for t in results[2].tokens if t.t_type is TokenType.Text]
-        body = results[3]
-
-        return name, args, body
 
     def capture_use(self):
         # {name *}
