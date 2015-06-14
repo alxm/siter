@@ -103,10 +103,10 @@ class TokenType(enum.Enum):
     Block = 6
 
 class Token:
-    def __init__(self, t_type, text = None):
+    def __init__(self, t_type, text = None, tokens = None):
         self.t_type = t_type
         self.text = text
-        self.tokens = []
+        self.tokens = tokens if tokens else []
 
     def resolve(self):
         if self.t_type is TokenType.Block:
@@ -192,7 +192,12 @@ class Token:
         if len(results) < 2:
             Siter.error('No arguments for {}'.format(results[0].resolve()))
 
-        return [t for t in results[1] if t.t_type is TokenType.Block]
+        args = [t for t in results[1] if t.t_type is TokenType.Block]
+
+        if len(args) == 0:
+            return [Token(TokenType.Block, tokens = results[1])]
+
+        return args
 
 class BindingType(enum.Enum):
     Variable = 0
