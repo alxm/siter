@@ -124,28 +124,26 @@ class Token:
         results = []
 
         for arg in args:
+            if arg is TokenType.Rest:
+                results.append(self.tokens[i:])
+                break
+
             found = False
 
-            if arg is TokenType.Rest:
-                found = True
-                results.append(self.tokens[i:])
-            else:
-                while i < len(self.tokens):
-                    token = self.tokens[i]
-                    i += 1
+            while i < len(self.tokens):
+                token = self.tokens[i]
+                i += 1
 
-                    if token.t_type is arg:
-                        found = True
-                        results.append(token)
-                        break
+                if token.t_type is arg:
+                    found = True
+                    results.append(token)
+                    break
 
-                    if token.t_type is TokenType.Newline or token.t_type is TokenType.Whitespace:
-                        continue
-
+                if token.t_type is not TokenType.Newline and token.t_type is not TokenType.Whitespace:
                     break
 
             if not found:
-                Siter.error('Invalid block:\n{}'.format(self.resolve()))
+                return None
 
         return results
 
