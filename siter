@@ -399,15 +399,14 @@ class Siter:
                 continue
 
             if not token.is_use():
-                # this is not a binding
+                # This block does not use a binding
                 ev_tokens += self.evaluate_tokens(token.tokens, bindings)
                 continue
 
             name = token.capture_use().resolve()[1:]
 
             if name not in bindings:
-                # Name is unknown, dump whole block contents
-                ev_tokens += self.evaluate_tokens(token.tokens, bindings)
+                # Name is unknown, discard block
                 continue
 
             binding = bindings[name]
