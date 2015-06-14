@@ -391,16 +391,16 @@ class Siter:
         return self.make_block_tokens(flat_tokens)
 
     def evaluate_tokens(self, tokens, bindings):
-        ev_tokens = []
+        eval_tokens = []
 
         for token in tokens:
             if token.t_type is not TokenType.Block:
-                ev_tokens.append(token)
+                eval_tokens.append(token)
                 continue
 
             if not token.is_call():
                 # This block does not call a binding
-                ev_tokens += self.evaluate_tokens(token.tokens, bindings)
+                eval_tokens += self.evaluate_tokens(token.tokens, bindings)
                 continue
 
             name = token.capture_call().resolve()[1:]
@@ -477,9 +477,9 @@ class Siter:
                 else:
                     end -= 1
 
-            ev_tokens += temp_tokens[start : end]
+            eval_tokens += temp_tokens[start : end]
 
-        return ev_tokens
+        return eval_tokens
 
     def set_file_bindings(self, bindings, read_file):
         try:
