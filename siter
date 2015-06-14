@@ -172,7 +172,7 @@ class Token:
 
         return name, args, body
 
-    def is_use(self):
+    def is_call(self):
         results = self.capture(TokenType.Text)
 
         if results:
@@ -181,7 +181,7 @@ class Token:
 
         return False
 
-    def capture_use(self):
+    def capture_call(self):
         # {name *}
         return self.capture(TokenType.Text)[0]
 
@@ -398,12 +398,12 @@ class Siter:
                 ev_tokens.append(token)
                 continue
 
-            if not token.is_use():
-                # This block does not use a binding
+            if not token.is_call():
+                # This block does not call a binding
                 ev_tokens += self.evaluate_tokens(token.tokens, bindings)
                 continue
 
-            name = token.capture_use().resolve()[1:]
+            name = token.capture_call().resolve()[1:]
 
             if name not in bindings:
                 # Name is unknown, discard block
