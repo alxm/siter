@@ -410,9 +410,10 @@ class Siter:
                 continue
 
             binding = bindings[name]
+            temp_tokens = []
 
             if binding.b_type == BindingType.Variable:
-                ev_tokens += self.evaluate_tokens(binding.tokens, bindings)
+                temp_tokens += self.evaluate_tokens(binding.tokens, bindings)
             elif binding.b_type == BindingType.Macro:
                 args = token.capture_args()
 
@@ -434,7 +435,7 @@ class Siter:
                 for (i, param) in enumerate(binding.params):
                     bindings2[param.resolve()] = Binding(BindingType.Variable, tokens = arguments[i])
 
-                ev_tokens += self.evaluate_tokens(binding.tokens, bindings2)
+                temp_tokens += self.evaluate_tokens(binding.tokens, bindings2)
             elif binding.b_type == BindingType.Function:
                 args = token.capture_args()
 
@@ -456,9 +457,27 @@ class Siter:
                     arguments.append(arg_s)
 
                 body = binding.func(self, arguments)
-                ev_tokens += self.tokenize(body)
+                temp_tokens += self.tokenize(body)
             else:
                 Siter.error('Unknown binding type')
+
+            # Trim leading and trailing whitespace
+            start = 0
+            end = len(temp_tokens)
+
+            for t in temp_tokens:
+                if t.t_type is TokenType.Text:
+                    break
+                else:
+                    start += 1
+
+            for t in reversed(temp_tokens):
+                if t.t_type is TokenType.Text:
+                    break
+                else:
+                    end -= 1
+
+            ev_tokens += temp_tokens[start : end]
 
         return ev_tokens
 
