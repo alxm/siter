@@ -314,21 +314,16 @@ class Siter:
         self.PygmentsFormatters = try_import('pygments.formatters')
 
     def make_flat_tokens(self, text):
-        start = 0
-        index = 0
         flat_tokens = []
-        current_type = TokenType.Text
+        current_type = None
+        escaped = False
+        escaped_index = -1
+        token = ''
 
-        while index < len(text):
-            c = text[index]
-
-            # TODO: remove unescaped '\' chars
-            if c == '\\':
-                index += 2
-                start = index
+        for c in text:
+            if c == '\\' and not escaped:
+                escaped = True
                 continue
-            else:
-                index += 1
 
             previous_type = current_type
 
@@ -339,31 +334,37 @@ class Siter:
             else:
                 current_type = TokenType.Text
 
-            found_delim = False
+            if current_type is previous_type:
+                token += c
+            else:
+                if len(token) > 0:
+                    flat_tokens.append(Token(previous_type, token))
 
-            for delim_token_type, delim_text in [(TokenType.TagOpen, self.TagOpen), (TokenType.TagClose, self.TagClose)]:
-                delim_start = index - len(delim_text)
+                token = c
+                escaped_index = -1
 
-                if delim_start < start:
+            if escaped:
+                escaped = False
+                escaped_index = len(token) - 1
+
+            for delim_type, delim in [(TokenType.TagOpen, self.TagOpen),
+                                      (TokenType.TagClose, self.TagClose)]:
+                if len(token) - escaped_index <= len(delim):
                     continue
 
-                if text[delim_start : index] == delim_text:
-                    if start < delim_start:
-                        flat_tokens.append(Token(previous_type, text[start : delim_start]))
+                if token[-len(delim) :] != delim:
+                    continue
 
-                    flat_tokens.append(Token(delim_token_type, text[delim_start : index]))
+                if len(token) > len(delim):
+                    flat_tokens.append(Token(TokenType.Text, token[: -len(delim)]))
 
-                    start = index
-                    found_delim = True
-                    break
+                flat_tokens.append(Token(delim_type, token[-len(delim) :]))
+                token = ''
+                escaped_index = -1
+                break
 
-            if not found_delim and previous_type is not current_type:
-                if start < index - 1:
-                    flat_tokens.append(Token(previous_type, text[start : index - 1]))
-                    start = index - 1
-
-        if start < index:
-            flat_tokens.append(Token(current_type, text[start : index]))
+        if len(token) > 0:
+            flat_tokens.append(Token(current_type, token))
 
         return flat_tokens
 
