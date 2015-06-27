@@ -374,12 +374,14 @@ class Siter:
 
         for token in flat_tokens:
             if token.t_type is TokenType.TagOpen:
+                # Subsequent tokens will be added to this new block
                 stack.append(Token(TokenType.Block))
             else:
                 if token.t_type is TokenType.TagClose:
                     if len(stack) == 0:
                         Siter.error("Found extra closing tag")
 
+                    # Got the closing tag, pop the block from the stack
                     token = stack.pop()
 
                 if len(stack) > 0:
@@ -409,6 +411,7 @@ class Siter:
                 eval_tokens += self.evaluate_tokens(token.tokens, bindings)
                 continue
 
+            # Get the binding's name and skip the `
             name = token.capture_call().resolve()[1:]
 
             if name not in bindings:
@@ -510,6 +513,7 @@ class Siter:
         marker = text.find(self.Marker)
 
         if marker != -1:
+            # s.content is everything after the first marker occurence
             bindings['s.content'] = Binding(
                 BindingType.Variable,
                 tokens = self.tokenize(text[marker + len(self.Marker) :]))
@@ -603,6 +607,9 @@ class Siter:
 
             print('[  Updating  ] {}'.format(write_file))
 
+            #   global bindings from the defs file
+            # + bindings declared by the current page file
+            # + siter built-in bindings
             bindings = self.bindings.copy()
             self.set_file_bindings(bindings, read_file)
             self.set_builtin_bindings(bindings, read_file, subdir)
