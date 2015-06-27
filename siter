@@ -139,7 +139,8 @@ class Token:
                     results.append(token)
                     break
 
-                if token.t_type is not TokenType.Newline and token.t_type is not TokenType.Whitespace:
+                if (token.t_type is not TokenType.Newline and
+                    token.t_type is not TokenType.Whitespace):
                     break
 
             if not found:
@@ -164,7 +165,10 @@ class Token:
 
     def capture_macro(self):
         # {fun name {args} body}
-        results = self.capture(TokenType.Text, TokenType.Text, TokenType.Block, TokenType.Rest)
+        results = self.capture(TokenType.Text,
+                               TokenType.Text,
+                               TokenType.Block,
+                               TokenType.Rest)
 
         name = results[1]
         args = [t for t in results[2].tokens if t.t_type is TokenType.Text]
@@ -356,7 +360,8 @@ class Siter:
                     continue
 
                 if len(token) > len(delim):
-                    flat_tokens.append(Token(TokenType.Text, token[: -len(delim)]))
+                    flat_tokens.append(
+                        Token(TokenType.Text, token[: -len(delim)]))
 
                 flat_tokens.append(Token(delim_type, token[-len(delim) :]))
                 token = ''
@@ -454,7 +459,8 @@ class Siter:
 
                 # Bind each parameter to the supplied argument
                 for (i, param) in enumerate(binding.params):
-                    bindings2[param.resolve()] = Binding(BindingType.Variable, tokens = arguments[i])
+                    bindings2[param.resolve()] = Binding(BindingType.Variable,
+                                                         tokens = arguments[i])
 
                 temp_tokens += self.evaluate_tokens(binding.tokens, bindings2)
             elif binding.b_type == BindingType.Function:
@@ -522,10 +528,13 @@ class Siter:
         for b in [t for t in self.tokenize(text) if t.t_type is TokenType.Block]:
             if b.is_variable():
                 name, body = b.capture_variable()
-                bindings[name.resolve()] = Binding(BindingType.Variable, tokens = body)
+                bindings[name.resolve()] = Binding(BindingType.Variable,
+                                                   tokens = body)
             elif b.is_macro():
                 name, args, body = b.capture_macro()
-                bindings[name.resolve()] = Binding(BindingType.Macro, params = args, tokens = body)
+                bindings[name.resolve()] = Binding(BindingType.Macro,
+                                                   params = args,
+                                                   tokens = body)
             else:
                 Siter.error('Cannot parse block:\n{}'.format(b.resolve()))
 
