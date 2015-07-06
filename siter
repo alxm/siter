@@ -272,9 +272,13 @@ class Siter:
     def info(m):
         print('[    Info    ] {}'.format(m))
 
-    def __init__(self, arg):
+    def __init__(self, argv):
         # Whether to re-generate up-to-date files
-        self.ForceWrite = arg == 'force'
+        self.ForceWrite = False
+
+        for arg in argv:
+            if arg == '-f' or arg == '--force':
+                self.ForceWrite = True
 
         # Block delimiters
         self.TagOpen = '{'
@@ -630,5 +634,5 @@ class Siter:
                 f.write(final)
 
 if __name__ == '__main__':
-    siter = Siter(sys.argv[1] if len(sys.argv) > 1 else None)
+    siter = Siter(sys.argv)
     siter.run('')
