@@ -272,16 +272,25 @@ class BuiltInFunctions:
 
 class Siter:
     @staticmethod
+    def message(title, content):
+        space = max(2, 12 - len(title))
+        head = ' ' * (space // 2)
+        tail = ' ' * (space - space // 2)
+
+        m = '[{}{}{}] {}'.format(head, title, tail, content)
+        print(m)
+
+    @staticmethod
     def error(e):
         raise RuntimeError('Siter runtime error\n{}'.format(e))
 
     @staticmethod
     def warning(w):
-        print('[  Warning!  ] {}'.format(w))
+        Siter.message('Warning', w)
 
     @staticmethod
     def info(m):
-        print('[    Info    ] {}'.format(m))
+        Siter.message('Info', m)
 
     def __init__(self, argv):
         # Whether to re-generate up-to-date files
@@ -625,10 +634,10 @@ class Siter:
                 continue
 
             if self.up_to_date(read_file, write_file):
-                print('[ Up to date ] {}'.format(write_file))
+                Siter.message('Up to date', write_file)
                 continue
 
-            print('[  Updating  ] {}'.format(write_file))
+            Siter.message('Updating', write_file)
 
             #   global bindings from the defs file
             # + bindings declared by the current page file
