@@ -272,26 +272,26 @@ class BuiltInFunctions:
 
 class Siter:
     @staticmethod
-    def message(title, content):
+    def message(title, content, color = 2):
         space = max(2, 12 - len(title))
-        head = ' ' * (space // 2)
-        tail = ' ' * (space - space // 2)
+        head = '■' * (space // 2)
+        tail = '■' * (space - space // 2)
 
-        m = '[{}{}{}] {}'.format(head, title, tail, content)
-        print(m)
+        print('\033[{};1m{} {} {}\033[0m {}'
+            .format(30 + color, head, title, tail, content))
 
     @staticmethod
     def error(e):
-        Siter.message('Error', e)
+        Siter.message('Error', e, 1)
         raise RuntimeError('Siter')
 
     @staticmethod
     def warning(w):
-        Siter.message('Warning', w)
+        Siter.message('Warning', w, 3)
 
     @staticmethod
     def info(m):
-        Siter.message('Info', m)
+        Siter.message('Info', m, 4)
 
     def __init__(self, argv):
         # Whether to re-generate up-to-date files
