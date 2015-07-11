@@ -23,21 +23,32 @@ import enum
 import time
 import importlib
 
+class FileMode(enum.Enum):
+    Optional = 0
+    Create = 1
+    Required = 2
+
 class File:
-    def __init__(self, path, required = False):
-        if required and not os.path.exists(path):
+    def __init__(self, path, mode):
+        if mode is FileMode.Required and not os.path.exists(path):
             Siter.error('Required file {} not found'.format(path))
 
         self.path = path
-        self.required = required
+        self.mode = mode
 
     def get_path(self):
         return self.path
 
 class Dir(File):
-    def add_file(self, name, required = False):
+    def __init__(self, path, mode):
+        File.__init__(self, path, mode)
+
+        if mode is FileMode.Create:
+            os.makedirs(self.path, exist_ok = True)
+
+    def add_file(self, name, mode):
         path = os.path.join(self.path, name)
-        return TextFile(path, required)
+        return TextFile(path, mode)
 
     def copy_to(self, dst_dir):
         src = self.path + '/'
@@ -47,8 +58,8 @@ class Dir(File):
         os.system('rsync -r --delete {} {}'.format(src, dst))
 
 class TextFile(File):
-    def __init__(self, path, required = False):
-        File.__init__(self, path, required)
+    def __init__(self, path, mode):
+        File.__init__(self, path, mode)
 
         self.content = ''
         self.lines = []
@@ -58,13 +69,13 @@ class TextFile(File):
                 self.content = f.read()
                 self.lines = self.content.splitlines()
         except FileNotFoundError:
-            if self.required:
+            if self.mode is not FileMode.Optional:
                 Siter.error('Required file {} not found'.format(self.path))
 
     def get_line(self, number):
         if number < len(self.lines):
             return self.lines[number]
-        elif self.required:
+        elif self.mode is not FileMode.Optional:
             Siter.error('Missing required line {}:{}'.format(self.path, number))
         else:
             return None
@@ -74,24 +85,24 @@ class TextFile(File):
 
 class Dirs:
     def __init__(self):
-        self.config = Dir('siter-config')
-        self.media = Dir('siter-media')
-        self.pages = Dir('siter-pages', True)
-        self.template = Dir('siter-template', True)
-        self.template_media = Dir('siter-template/media')
+        self.config = Dir('siter-config', FileMode.Optional)
+        self.media = Dir('siter-media', FileMode.Optional)
+        self.pages = Dir('siter-pages', FileMode.Required)
+        self.template = Dir('siter-template', FileMode.Required)
+        self.template_media = Dir('siter-template/media', FileMode.Optional)
 
-        self.out_root = Dir('siter-out')
-        self.out_media = Dir('siter-out/media')
-        self.out_template_media = Dir('siter-out/media/template-media')
+        self.out_root = Dir('siter-out', FileMode.Create)
+        self.out_media = Dir('siter-out/media', FileMode.Create)
+        self.out_template_media = Dir('siter-out/media/template-media', FileMode.Create)
 
 class Files:
     def __init__(self, dirs):
-        self.defs = dirs.config.add_file('defs')
-        self.marker = dirs.config.add_file('marker')
-        self.media = dirs.config.add_file('media')
-        self.outdir = dirs.config.add_file('outdir')
-        self.tags = dirs.config.add_file('tags')
-        self.page_html = dirs.template.add_file('page.html', True)
+        self.defs = dirs.config.add_file('defs', FileMode.Optional)
+        self.marker = dirs.config.add_file('marker', FileMode.Optional)
+        self.media = dirs.config.add_file('media', FileMode.Optional)
+        self.outdir = dirs.config.add_file('outdir', FileMode.Optional)
+        self.tags = dirs.config.add_file('tags', FileMode.Optional)
+        self.page_html = dirs.template.add_file('page.html', FileMode.Required)
 
 class TokenType(enum.Enum):
     Rest = 0
@@ -287,10 +298,9 @@ class Siter:
         # Marks the beginning of page content
         self.Marker = '~~~'
 
+        # Declare and optionally create the dirs and files Siter uses
         self.dirs = Dirs()
         self.files = Files(self.dirs)
-
-        os.makedirs(self.dirs.out_root.get_path(), exist_ok = True)
 
         # Copy site and template media files
         self.dirs.media.copy_to(self.dirs.out_media)
