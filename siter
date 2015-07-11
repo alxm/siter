@@ -282,7 +282,8 @@ class Siter:
 
     @staticmethod
     def error(e):
-        raise RuntimeError('Siter runtime error\n{}'.format(e))
+        Siter.message('Error', e)
+        raise RuntimeError('Siter')
 
     @staticmethod
     def warning(w):
