@@ -480,7 +480,7 @@ class Siter:
             elif binding.b_type == BindingType.Function:
                 args = token.capture_args()
 
-                if len(args) != binding.num_params:
+                if len(args) != binding.num_params != -1:
                     Siter.warning('Function {} takes {} args, got {}'
                         .format(name, binding.num_params, len(args)))
                     continue
