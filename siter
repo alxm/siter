@@ -121,11 +121,7 @@ class Token:
 
     def resolve(self):
         if self.t_type is TokenType.Block:
-            output = ''
-
-            for t in self.tokens:
-                output += t.resolve()
-
+            output = ''.join([t.resolve() for t in self.tokens])
             return '{' + output + '}'
         else:
             return self.text
@@ -455,11 +451,7 @@ class Siter:
 
                 # Run page content through Markdown
                 if name == 's.content' and self.Md:
-                    content = ''
-
-                    for t in body_tokens:
-                        content += t.resolve()
-
+                    content = ''.join([t.resolve() for t in body_tokens])
                     md = self.Md.markdown(content, output_format = 'html5')
                     body_tokens = [Token(TokenType.Text, text = md)]
 
@@ -499,13 +491,8 @@ class Siter:
 
                 # Evaluate each argument
                 for arg in args:
-                    arg_s = ''
                     arg = self.evaluate_tokens([arg], bindings)
-
-                    for t in arg:
-                        arg_s += t.resolve()
-
-                    arguments.append(arg_s)
+                    arguments.append(''.join([t.resolve() for t in arg]))
 
                 body = binding.func(self, arguments)
                 temp_tokens += self.tokenize(body)
@@ -602,14 +589,10 @@ class Siter:
             tokens = self.tokenize(rel_media_path))
 
     def apply_template(self, template_file, bindings, subdir):
-        output = ''
         tokens = self.tokenize(template_file.get_content())
         tokens = self.evaluate_tokens(tokens, bindings)
 
-        for token in tokens:
-            output += token.resolve()
-
-        return output
+        return ''.join([t.resolve() for t in tokens])
 
     def up_to_date(self, read_file, write_file):
         if not self.ForceWrite and os.path.isfile(write_file):
