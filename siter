@@ -594,7 +594,7 @@ class Siter:
                                                    params = args,
                                                    tokens = body)
             else:
-                Siter.error('Cannot parse block:\n{}'.format(b.resolve()))
+                Siter.warning('Unknown binding block:\n{}'.format(b.resolve()))
 
     def set_builtin_bindings(self, bindings, read_file, subdir):
         bindings['s.if'] = Binding(
