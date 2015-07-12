@@ -417,8 +417,12 @@ class Siter:
                 escaped = False
                 escaped_index = len(token) - 1
 
-            for delim_type, delim in [(TokenType.TagOpen, self.settings.TagOpen),
-                                      (TokenType.TagClose, self.settings.TagClose)]:
+            delim_tokens = [
+                (TokenType.TagOpen, self.settings.TagOpen),
+                (TokenType.TagClose, self.settings.TagClose),
+            ]
+
+            for delim_type, delim in delim_tokens:
                 if len(token) - escaped_index <= len(delim):
                     continue
 
