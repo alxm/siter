@@ -309,6 +309,17 @@ class Settings:
             if arg == '-f' or arg == '--force':
                 self.ForceWrite = True
 
+    def from_files(self, files):
+        if files.tags.test_line(0, 1) and files.tags.test_line(1, 1):
+            self.TagOpen = files.tags.get_line(0)
+            self.TagClose = files.tags.get_line(1)
+
+            Siter.info('Using {} and {} as block tags'
+                .format(self.TagOpen, self.TagClose))
+
+        if files.marker.test_line(0, 1):
+            self.Marker = files.marker.get_line(0)
+
 class Siter:
     @staticmethod
     def message(title, content, color = 2):
@@ -340,19 +351,12 @@ class Siter:
         self.dirs = Dirs()
         self.files = Files(self.dirs)
 
+        # Load user settings from config files
+        self.settings.from_files(self.files)
+
         # Copy site and template media files
         self.dirs.in_media.copy_to(self.dirs.out_media)
         self.dirs.in_template_media.copy_to(self.dirs.out_template_media)
-
-        if self.files.marker.test_line(0, 1):
-            self.settings.Marker = self.files.marker.get_line(0)
-
-        if self.files.tags.test_line(0, 1) and self.files.tags.test_line(1, 1):
-            self.settings.TagOpen = self.files.tags.get_line(0)
-            self.settings.TagClose = self.files.tags.get_line(1)
-
-            Siter.info('Using {} and {} as block tags'
-                .format(self.settings.TagOpen, self.settings.TagClose))
 
         # Global function and variable bindings
         self.bindings = {}
