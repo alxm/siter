@@ -1,27 +1,27 @@
 # Siter
 
-Siter is a static website generator written in Python 3.
+Siter is a static website generator written in Python 3. I wrote it for my own simple needs and as a way to play with Python.
 
 Content pages from `siter-pages/` are formatted with `siter-template/page.html` and written to `siter-out/`. You can define variables and macros to avoid content and markup duplication.
 
 # Quick Example
 
-A content page
+A content page:
 
-    {title Home page}
+    {var title Home page}
     ~~~
-    <p>Hello world!</p>
+    Hello world!
 
-and a page template
+And a page template:
 
     <html>
         <body>
-            <h1>{title}</h1>
-            {s.content}
+            <h1>{!title}</h1>
+            {!s.content}
         </body>
     </html>
 
-generate this:
+Generate this:
 
     <html>
         <body>
@@ -33,27 +33,70 @@ generate this:
 
 # Variables and Macros
 
-    {smile :-)}
-    {format {tag text} <{tag}>{text}</{tag}>}
+    {var smile :-)}
+    {fun format {tag text} <{!tag}>{!text}</{!tag}>}
     ~~~
-    {format {b} {This text is bold! {smile}}}
-    {format {i} {This text is italic.}}
+    {!format {b} {This text is bold {!smile}}}
+    {!format {i} {This text is italic.}}
 
-**This text is bold! :-)** *This text is italic.*
+Will give you:
+
+    <b>This text is bold :-)</b>
+    <i>This text is italic.</i>
 
 # Special Variables
 
-* `s.content` - Everything in a page file after the `~~~` marker.
-* `s.root` - Relative path from the current page to the website root.
-* `s.media` - Relative path from the current page to siter-media.
+#### s.content
+
+Everything in a page file after the `~~~` content marker.
+
+#### s.root
+
+Relative path from the current page to the website root.
+
+#### s.media
+
+Relative path from the current page to siter-media.
 
 # Special Macros
 
-* `s.modified` - Time the page content was modified. Takes a Python [time format](http://strftime.org/) string as parameter. Example: `{s.modified {%B %Y}}`
-* `s.generated` - Time the page was generated. Same argument as `s.modified`.
-* `s.code` - For displaying code blocks and one-liners. See the [Pygments docs](http://pygments.org/docs/lexers/) for supported languages. Examples:
-    * `{s.code {int x = 0;}}`
-    * `{s.code {C} {int x = 0;}}`
+#### s.modified
+
+Time the page content was modified. Takes a Python [time format](http://strftime.org/) string as parameter. Example: `{!s.modified {%B %Y}}`
+
+#### s.generated
+
+Time the page was generated. Same argument as `s.modified`.
+
+#### s.code
+
+For displaying code blocks and one-liners. See the [Pygments docs](http://pygments.org/docs/lexers/) for supported languages. There are three ways to call this macro, here are some examples:
+
+##### No syntax highlighting
+
+    {!s.code {int x = 0;}}
+
+##### Use C syntax highlighting
+
+      {!s.code {c} {int x = 0;}}
+
+##### Use Python syntax and mark lines 2 and 5
+
+    {!s.code {py} {2 5} {
+    try:
+        with open(read_file, 'rU') as f:
+            text = f.read()
+    except FileNotFoundError:
+        return None
+    }}
+
+#### s.if
+
+`{!s.if {flag} {...}}` - Expands to the `...` block if the `flag` variable has been declared somewhere.
+
+#### s.ifnot
+
+`{!s.ifnot {flag} {...}}` - Expands to the `...` block if the `flag` variable was *not* declared anywhere.
 
 # Project File Tree
 
@@ -91,7 +134,7 @@ Tags are used to indicate variable and macro blocks, `{` and `}` are the default
 
 Content pages go here. Example `siter-pages/about.html`:
 
-    {title About}                 # Declare a variable
+    {var title About}             # Declare a variable
     ~~~                           # Content marker
     <p>This is a simple page.</p> # Page content starts
 
@@ -101,11 +144,11 @@ Content pages go here. Example `siter-pages/about.html`:
 
     <html>
         <head>
-            <title>{title}</title> # Use var declared by page
+            <title>{!title}</title> # Use var declared by page
         </head>
         <body>
-            <h1>{title}</h1>       # Use var declared by page
-            {s.content}            # Use special built-in var
+            <h1>{!title}</h1>       # Use var declared by page
+            {!s.content}            # Use special built-in var
         </body>
     </html>
 
