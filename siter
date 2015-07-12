@@ -62,12 +62,11 @@ class TextFile(File):
         File.__init__(self, path, mode)
 
         self.content = None
-        self.lines = []
+        self.lines = None
 
         try:
             with open(self.path, 'rU') as f:
                 self.content = f.read()
-                self.lines = self.content.splitlines()
         except FileNotFoundError:
             if self.mode is not FileMode.Optional:
                 Siter.error('Required file {} not found'.format(self.path))
@@ -100,6 +99,9 @@ class TextFile(File):
         return True
 
     def get_line(self, number):
+        if self.lines is None:
+            self.lines = self.content.splitlines()
+
         if number < len(self.lines):
             return self.lines[number].strip()
 
