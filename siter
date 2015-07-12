@@ -293,7 +293,7 @@ class BuiltInFunctions:
         return code
 
 class Settings:
-    def __init__(self):
+    def __init__(self, argv):
         # Whether to re-generate up-to-date files
         self.ForceWrite = False
 
@@ -303,6 +303,11 @@ class Settings:
 
         # Marks the beginning of page content
         self.Marker = '~~~'
+
+        # Go through command line arguments
+        for arg in argv:
+            if arg == '-f' or arg == '--force':
+                self.ForceWrite = True
 
 class Siter:
     @staticmethod
@@ -329,11 +334,7 @@ class Siter:
 
     def __init__(self, argv):
         # Holds all user-configurable settings
-        self.settings = Settings()
-
-        for arg in argv:
-            if arg == '-f' or arg == '--force':
-                self.settings.ForceWrite = True
+        self.settings = Settings(argv)
 
         # Declare and optionally create the dirs and files Siter uses
         self.dirs = Dirs()
