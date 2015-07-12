@@ -183,20 +183,17 @@ class Token:
 
         return results
 
-    def is_variable(self):
-        return self.capture(TokenType.Text)[0].resolve() == 'var'
-
     def capture_variable(self):
         # {var name *}
         results = self.capture(TokenType.Text, TokenType.Text, TokenType.Rest)
 
-        name = results[1]
-        body = results[2]
+        if results and len(results) == 3 and results[0].resolve() == 'var':
+            name = results[1]
+            body = results[2]
 
-        return name, body
+            return name, body
 
-    def is_macro(self):
-        return self.capture(TokenType.Text)[0].resolve() == 'fun'
+        return None
 
     def capture_macro(self):
         # {fun name {args} body}
@@ -205,19 +202,23 @@ class Token:
                                TokenType.Block,
                                TokenType.Rest)
 
-        name = results[1]
-        args = [t for t in results[2].tokens if t.t_type is TokenType.Text]
-        body = results[3]
+        if results and len(results) == 4 and results[0].resolve() == 'fun':
+            name = results[1]
+            args = [t for t in results[2].tokens if t.t_type is TokenType.Text]
+            body = results[3]
 
-        return name, args, body
+            return name, args, body
 
-    def is_call(self):
-        # {`name ...}
-        return self.capture(TokenType.Eval, TokenType.Text) is not None
+        return None
 
     def capture_call(self):
         # {`name ...}
-        return self.capture(TokenType.Eval, TokenType.Text)[1]
+        results = self.capture(TokenType.Eval, TokenType.Text)
+
+        if results and len(results) == 2:
+            return results[1].resolve()
+
+        return None
 
     def capture_args(self):
         # {`name {arg1} {arg2} ...}
@@ -478,13 +479,13 @@ class Siter:
                 eval_tokens.append(token)
                 continue
 
-            if not token.is_call():
+            # Get the binding's name
+            name = token.capture_call()
+
+            if name is None:
                 # This block does not call a binding
                 eval_tokens += self.evaluate_tokens(token.tokens, bindings)
                 continue
-
-            # Get the binding's name
-            name = token.capture_call().resolve()
 
             if name not in bindings:
                 # Name is unknown, discard block
@@ -584,17 +585,24 @@ class Siter:
             text = text[: marker]
 
         for b in [t for t in self.tokenize(text) if t.t_type is TokenType.Block]:
-            if b.is_variable():
-                name, body = b.capture_variable()
+            results = b.capture_variable()
+
+            if results:
+                name, body = results
                 bindings[name.resolve()] = Binding(BindingType.Variable,
                                                    tokens = body)
-            elif b.is_macro():
-                name, args, body = b.capture_macro()
+                continue
+
+            results = b.capture_macro()
+
+            if results:
+                name, args, body = results
                 bindings[name.resolve()] = Binding(BindingType.Macro,
                                                    params = args,
                                                    tokens = body)
-            else:
-                Siter.warning('Unknown binding block:\n{}'.format(b.resolve()))
+                continue
+
+            Siter.warning('Unknown binding block:\n{}'.format(b.resolve()))
 
     def set_builtin_bindings(self, bindings, read_file, subdir):
         bindings['s.if'] = Binding(
