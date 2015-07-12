@@ -61,7 +61,7 @@ class TextFile(File):
     def __init__(self, path, mode):
         File.__init__(self, path, mode)
 
-        self.content = ''
+        self.content = None
         self.lines = []
 
         try:
@@ -72,13 +72,38 @@ class TextFile(File):
             if self.mode is not FileMode.Optional:
                 Siter.error('Required file {} not found'.format(self.path))
 
+    def test_line(self, number, min_len = -1, max_len = -1):
+        if self.content is None and self.mode is FileMode.Optional:
+            return False
+
+        error = None
+        line = self.get_line(number)
+
+        if line is None:
+            error = '{}:{} line is missing'.format(self.path, number)
+        else:
+            if min_len != -1 and len(line) < min_len:
+                error = '{}:{} length must be at least {}, is {}: "{}"' \
+                    .format(self.path, number, min_len, len(line), line)
+            elif max_len != -1 and len(line) > max_len:
+                error = '{}:{} length must not exceed {}, is {}: "{}"' \
+                    .format(self.path, number, max_len, len(line), line)
+
+        if error:
+            if self.mode is FileMode.Optional:
+                Siter.warning(error)
+            else:
+                Siter.error(error)
+
+            return False
+
+        return True
+
     def get_line(self, number):
         if number < len(self.lines):
-            return self.lines[number]
-        elif self.mode is not FileMode.Optional:
-            Siter.error('Missing required line {}:{}'.format(self.path, number))
-        else:
-            return None
+            return self.lines[number].strip()
+
+        return None
 
     def get_content(self):
         return self.content
@@ -312,10 +337,10 @@ class Siter:
         self.dirs.media.copy_to(self.dirs.out_media)
         self.dirs.template_media.copy_to(self.dirs.out_template_media)
 
-        if self.files.marker.get_line(0):
+        if self.files.marker.test_line(0, 1):
             self.Marker = self.files.marker.get_line(0)
 
-        if self.files.tags.get_line(0) and self.files.tags.get_line(1):
+        if self.files.tags.test_line(0, 1) and self.files.tags.test_line(1, 1):
             self.TagOpen = self.files.tags.get_line(0)
             self.TagClose = self.files.tags.get_line(1)
 
