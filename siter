@@ -294,7 +294,7 @@ class BuiltInFunctions:
         return code
 
 class Settings:
-    def __init__(self, argv):
+    def __init__(self, argv, files):
         # Whether to re-generate up-to-date files
         self.ForceWrite = False
 
@@ -308,6 +308,11 @@ class Settings:
         # Marks the beginning of page content
         self.Marker = '~~~'
 
+        # Load user settings
+        self.from_args(argv)
+        self.from_files(files)
+
+    def from_args(self, argv):
         # Go through command line arguments
         for arg in argv:
             if arg == '-f' or arg == '--force':
@@ -352,15 +357,12 @@ class Siter:
         Siter.message('Info', m, 4)
 
     def __init__(self, argv):
-        # Holds all user-configurable settings
-        self.settings = Settings(argv)
-
         # Declare and optionally create the dirs and files Siter uses
         self.dirs = Dirs()
         self.files = Files(self.dirs)
 
-        # Load user settings from config files
-        self.settings.from_files(self.files)
+        # Set defaults and load user settings from args and config files
+        self.settings = Settings(argv, self.files)
 
         # Copy site and template media files
         self.dirs.in_media.copy_to(self.dirs.out_media)
