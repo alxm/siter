@@ -686,3 +686,4 @@ class Siter:
 if __name__ == '__main__':
     siter = Siter(sys.argv)
     siter.run('')
+    Siter.info('Done')
