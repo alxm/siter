@@ -54,7 +54,7 @@ class Dir(File):
         src = self.path + '/'
         dst = dst_dir.path
 
-        Siter.info('Copying media from {} to {}'.format(src, dst))
+        Siter.message('Copy files', 'From {} to {}'.format(src, dst))
         os.system('rsync -r --delete {} {}'.format(src, dst))
 
 class TextFile(File):
