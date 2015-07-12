@@ -138,6 +138,7 @@ class TokenType(enum.Enum):
     TagOpen = 4
     TagClose = 5
     Block = 6
+    Eval = 7
 
 class Token:
     def __init__(self, t_type, settings, text = None, tokens = None):
@@ -211,29 +212,24 @@ class Token:
         return name, args, body
 
     def is_call(self):
-        results = self.capture(TokenType.Text)
-
-        if results:
-            name = results[0].resolve()
-            return len(name) > 1 and name[0] == self.settings.EvalHint
-
-        return False
+        # {`name ...}
+        return self.capture(TokenType.Eval, TokenType.Text) is not None
 
     def capture_call(self):
-        # {name *}
-        return self.capture(TokenType.Text)[0]
+        # {`name ...}
+        return self.capture(TokenType.Eval, TokenType.Text)[1]
 
     def capture_args(self):
-        # {name {arg1} {arg2} *}
-        results = self.capture(TokenType.Text, TokenType.Rest)
+        # {`name {arg1} {arg2} ...}
+        results = self.capture(TokenType.Eval, TokenType.Text, TokenType.Rest)
 
-        if len(results) < 2:
-            Siter.error('No arguments for {}'.format(results[0].resolve()))
+        if len(results) < 3:
+            Siter.error('No arguments for {}'.format(results[1].resolve()))
 
-        args = [t for t in results[1] if t.t_type is TokenType.Block]
+        args = [t for t in results[2] if t.t_type is TokenType.Block]
 
         if len(args) == 0:
-            return [Token(TokenType.Block, self.settings, tokens = results[1])]
+            return [Token(TokenType.Block, self.settings, tokens = results[2])]
 
         return args
 
@@ -418,6 +414,7 @@ class Siter:
                 escaped_index = len(token) - 1
 
             delim_tokens = [
+                (TokenType.Eval, self.settings.EvalHint),
                 (TokenType.TagOpen, self.settings.TagOpen),
                 (TokenType.TagClose, self.settings.TagClose),
             ]
@@ -486,8 +483,8 @@ class Siter:
                 eval_tokens += self.evaluate_tokens(token.tokens, bindings)
                 continue
 
-            # Get the binding's name and skip the eval hint
-            name = token.capture_call().resolve()[1:]
+            # Get the binding's name
+            name = token.capture_call().resolve()
 
             if name not in bindings:
                 # Name is unknown, discard block
