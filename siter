@@ -125,6 +125,7 @@ class Dirs:
 class Files:
     def __init__(self, dirs):
         self.defs = dirs.in_config.add_file('defs', FileMode.Optional)
+        self.evalhint = dirs.in_config.add_file('eval', FileMode.Optional)
         self.marker = dirs.in_config.add_file('marker', FileMode.Optional)
         self.tags = dirs.in_config.add_file('tags', FileMode.Optional)
         self.page_html = dirs.in_template.add_file('page.html', FileMode.Required)
@@ -214,7 +215,7 @@ class Token:
 
         if results:
             name = results[0].resolve()
-            return len(name) > 1 and name[0] == '`'
+            return len(name) > 1 and name[0] == self.settings.EvalHint
 
         return False
 
@@ -297,6 +298,9 @@ class Settings:
         # Whether to re-generate up-to-date files
         self.ForceWrite = False
 
+        # Blocks that start with this are evaluated; must be exactly 1 char
+        self.EvalHint = '`'
+
         # Block delimiters
         self.TagOpen = '{'
         self.TagClose = '}'
@@ -310,6 +314,10 @@ class Settings:
                 self.ForceWrite = True
 
     def from_files(self, files):
+        if files.evalhint.test_line(0, 1, 1):
+            self.EvalHint = files.evalhint.get_line(0)
+            Siter.info('Using {} as block eval hint'.format(self.EvalHint))
+
         if files.tags.test_line(0, 1) and files.tags.test_line(1, 1):
             self.TagOpen = files.tags.get_line(0)
             self.TagClose = files.tags.get_line(1)
@@ -472,7 +480,7 @@ class Siter:
                 eval_tokens += self.evaluate_tokens(token.tokens, bindings)
                 continue
 
-            # Get the binding's name and skip the `
+            # Get the binding's name and skip the eval hint
             name = token.capture_call().resolve()[1:]
 
             if name not in bindings:
