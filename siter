@@ -291,6 +291,18 @@ class BuiltInFunctions:
 
         return code
 
+class Settings:
+    def __init__(self):
+        # Whether to re-generate up-to-date files
+        self.ForceWrite = False
+
+        # Block delimiters
+        self.TagOpen = '{'
+        self.TagClose = '}'
+
+        # Marks the beginning of page content
+        self.Marker = '~~~'
+
 class Siter:
     @staticmethod
     def message(title, content, color = 2):
@@ -315,19 +327,12 @@ class Siter:
         Siter.message('Info', m, 4)
 
     def __init__(self, argv):
-        # Whether to re-generate up-to-date files
-        self.ForceWrite = False
+        # Holds all user-configurable settings
+        self.settings = Settings()
 
         for arg in argv:
             if arg == '-f' or arg == '--force':
-                self.ForceWrite = True
-
-        # Block delimiters
-        self.TagOpen = '{'
-        self.TagClose = '}'
-
-        # Marks the beginning of page content
-        self.Marker = '~~~'
+                self.settings.ForceWrite = True
 
         # Declare and optionally create the dirs and files Siter uses
         self.dirs = Dirs()
@@ -338,14 +343,14 @@ class Siter:
         self.dirs.in_template_media.copy_to(self.dirs.out_template_media)
 
         if self.files.marker.test_line(0, 1):
-            self.Marker = self.files.marker.get_line(0)
+            self.settings.Marker = self.files.marker.get_line(0)
 
         if self.files.tags.test_line(0, 1) and self.files.tags.test_line(1, 1):
-            self.TagOpen = self.files.tags.get_line(0)
-            self.TagClose = self.files.tags.get_line(1)
+            self.settings.TagOpen = self.files.tags.get_line(0)
+            self.settings.TagClose = self.files.tags.get_line(1)
 
             Siter.info('Using {} and {} as block tags'
-                .format(self.TagOpen, self.TagClose))
+                .format(self.settings.TagOpen, self.settings.TagClose))
 
         # Global function and variable bindings
         self.bindings = {}
@@ -396,8 +401,8 @@ class Siter:
                 escaped = False
                 escaped_index = len(token) - 1
 
-            for delim_type, delim in [(TokenType.TagOpen, self.TagOpen),
-                                      (TokenType.TagClose, self.TagClose)]:
+            for delim_type, delim in [(TokenType.TagOpen, self.settings.TagOpen),
+                                      (TokenType.TagClose, self.settings.TagClose)]:
                 if len(token) - escaped_index <= len(delim):
                     continue
 
@@ -552,13 +557,13 @@ class Siter:
             return {}
 
         start = 0
-        marker = text.find(self.Marker)
+        marker = text.find(self.settings.Marker)
 
         if marker != -1:
             # s.content is everything after the first marker occurence
             bindings['s.content'] = Binding(
                 BindingType.Variable,
-                tokens = self.tokenize(text[marker + len(self.Marker) :]))
+                tokens = self.tokenize(text[marker + len(self.settings.Marker) :]))
             text = text[: marker]
 
         for b in [t for t in self.tokenize(text) if t.t_type is TokenType.Block]:
@@ -620,7 +625,7 @@ class Siter:
         return ''.join([t.resolve() for t in tokens])
 
     def up_to_date(self, read_file, write_file):
-        if not self.ForceWrite and os.path.isfile(write_file):
+        if not self.settings.ForceWrite and os.path.isfile(write_file):
             read_date = os.stat(read_file).st_mtime
             write_date = os.stat(write_file).st_mtime
 
