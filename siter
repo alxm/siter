@@ -131,7 +131,6 @@ class Files:
         self.page_html = dirs.in_template.add_file('page.html', FileMode.Required)
 
 class TokenType(enum.Enum):
-    Rest = 0
     Text = 1
     Newline = 2
     Whitespace = 3
@@ -154,15 +153,11 @@ class Token:
         else:
             return self.text
 
-    def capture(self, *args):
+    def capture(self, *args, rest = True):
         i = 0
         results = []
 
         for arg in args:
-            if arg is TokenType.Rest:
-                results.append(self.tokens[i:])
-                break
-
             found = False
 
             while i < len(self.tokens):
@@ -181,11 +176,15 @@ class Token:
             if not found:
                 return None
 
-        return results if len(results) == len(args) else None
+        if rest:
+            # Capture all the remaining tokens
+            results.append(self.tokens[i:])
+
+        return results
 
     def capture_variable(self):
         # {var name *}
-        results = self.capture(TokenType.Text, TokenType.Text, TokenType.Rest)
+        results = self.capture(TokenType.Text, TokenType.Text)
 
         if results and results[0].resolve() == 'var':
             name = results[1]
@@ -197,10 +196,7 @@ class Token:
 
     def capture_macro(self):
         # {fun name {args} body}
-        results = self.capture(TokenType.Text,
-                               TokenType.Text,
-                               TokenType.Block,
-                               TokenType.Rest)
+        results = self.capture(TokenType.Text, TokenType.Text, TokenType.Block)
 
         if results and results[0].resolve() == 'fun':
             name = results[1]
@@ -213,12 +209,12 @@ class Token:
 
     def capture_call(self):
         # {`name ...}
-        results = self.capture(TokenType.Eval, TokenType.Text)
+        results = self.capture(TokenType.Eval, TokenType.Text, rest = False)
         return results[1].resolve() if results else None
 
     def capture_args(self):
         # {`name {arg1} {arg2} ...}
-        results = self.capture(TokenType.Eval, TokenType.Text, TokenType.Rest)
+        results = self.capture(TokenType.Eval, TokenType.Text)
 
         if results is None:
             return []
