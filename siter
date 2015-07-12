@@ -181,13 +181,13 @@ class Token:
             if not found:
                 return None
 
-        return results
+        return results if len(results) == len(args) else None
 
     def capture_variable(self):
         # {var name *}
         results = self.capture(TokenType.Text, TokenType.Text, TokenType.Rest)
 
-        if results and len(results) == 3 and results[0].resolve() == 'var':
+        if results and results[0].resolve() == 'var':
             name = results[1]
             body = results[2]
 
@@ -202,7 +202,7 @@ class Token:
                                TokenType.Block,
                                TokenType.Rest)
 
-        if results and len(results) == 4 and results[0].resolve() == 'fun':
+        if results and results[0].resolve() == 'fun':
             name = results[1]
             args = [t for t in results[2].tokens if t.t_type is TokenType.Text]
             body = results[3]
@@ -214,22 +214,19 @@ class Token:
     def capture_call(self):
         # {`name ...}
         results = self.capture(TokenType.Eval, TokenType.Text)
-
-        if results and len(results) == 2:
-            return results[1].resolve()
-
-        return None
+        return results[1].resolve() if results else None
 
     def capture_args(self):
         # {`name {arg1} {arg2} ...}
         results = self.capture(TokenType.Eval, TokenType.Text, TokenType.Rest)
 
-        if len(results) < 3:
-            Siter.error('No arguments for {}'.format(results[1].resolve()))
+        if results is None:
+            return []
 
         args = [t for t in results[2] if t.t_type is TokenType.Block]
 
         if len(args) == 0:
+            # Allow a single arg without block tags
             return [Token(TokenType.Block, self.settings, tokens = results[2])]
 
         return args
