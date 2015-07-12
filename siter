@@ -72,7 +72,7 @@ class TextFile(File):
                 Siter.error('Required file {} not found'.format(self.path))
 
     def test_line(self, number, min_len = -1, max_len = -1):
-        if self.content is None and self.mode is FileMode.Optional:
+        if self.content is None:
             return False
 
         error = None
