@@ -124,8 +124,6 @@ class Files:
     def __init__(self, dirs):
         self.defs = dirs.config.add_file('defs', FileMode.Optional)
         self.marker = dirs.config.add_file('marker', FileMode.Optional)
-        self.media = dirs.config.add_file('media', FileMode.Optional)
-        self.outdir = dirs.config.add_file('outdir', FileMode.Optional)
         self.tags = dirs.config.add_file('tags', FileMode.Optional)
         self.page_html = dirs.template.add_file('page.html', FileMode.Required)
 
