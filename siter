@@ -110,11 +110,11 @@ class TextFile(File):
 
 class Dirs:
     def __init__(self):
-        self.config = Dir('siter-config', FileMode.Optional)
-        self.media = Dir('siter-media', FileMode.Optional)
-        self.pages = Dir('siter-pages', FileMode.Required)
-        self.template = Dir('siter-template', FileMode.Required)
-        self.template_media = Dir('siter-template/media', FileMode.Optional)
+        self.in_config = Dir('siter-config', FileMode.Optional)
+        self.in_media = Dir('siter-media', FileMode.Optional)
+        self.in_pages = Dir('siter-pages', FileMode.Required)
+        self.in_template = Dir('siter-template', FileMode.Required)
+        self.in_template_media = Dir('siter-template/media', FileMode.Optional)
 
         self.out_root = Dir('siter-out', FileMode.Create)
         self.out_media = Dir('siter-out/media', FileMode.Create)
@@ -122,10 +122,10 @@ class Dirs:
 
 class Files:
     def __init__(self, dirs):
-        self.defs = dirs.config.add_file('defs', FileMode.Optional)
-        self.marker = dirs.config.add_file('marker', FileMode.Optional)
-        self.tags = dirs.config.add_file('tags', FileMode.Optional)
-        self.page_html = dirs.template.add_file('page.html', FileMode.Required)
+        self.defs = dirs.in_config.add_file('defs', FileMode.Optional)
+        self.marker = dirs.in_config.add_file('marker', FileMode.Optional)
+        self.tags = dirs.in_config.add_file('tags', FileMode.Optional)
+        self.page_html = dirs.in_template.add_file('page.html', FileMode.Required)
 
 class TokenType(enum.Enum):
     Rest = 0
@@ -332,8 +332,8 @@ class Siter:
         self.files = Files(self.dirs)
 
         # Copy site and template media files
-        self.dirs.media.copy_to(self.dirs.out_media)
-        self.dirs.template_media.copy_to(self.dirs.out_template_media)
+        self.dirs.in_media.copy_to(self.dirs.out_media)
+        self.dirs.in_template_media.copy_to(self.dirs.out_template_media)
 
         if self.files.marker.test_line(0, 1):
             self.Marker = self.files.marker.get_line(0)
@@ -627,7 +627,7 @@ class Siter:
             return False
 
     def run(self, subdir):
-        in_path = os.path.join(self.dirs.pages.get_path(), subdir)
+        in_path = os.path.join(self.dirs.in_pages.get_path(), subdir)
         out_path = os.path.join(self.dirs.out_root.get_path(), subdir)
 
         os.makedirs(out_path, exist_ok = True)
