@@ -139,7 +139,8 @@ class TokenType(enum.Enum):
     Block = 6
 
 class Token:
-    def __init__(self, t_type, text = None, tokens = None):
+    def __init__(self, t_type, settings, text = None, tokens = None):
+        self.settings = settings
         self.t_type = t_type
         self.text = text
         self.tokens = tokens if tokens else []
@@ -147,7 +148,7 @@ class Token:
     def resolve(self):
         if self.t_type is TokenType.Block:
             output = ''.join([t.resolve() for t in self.tokens])
-            return '{' + output + '}'
+            return self.settings.TagOpen + output + self.settings.TagClose
         else:
             return self.text
 
@@ -231,7 +232,7 @@ class Token:
         args = [t for t in results[1] if t.t_type is TokenType.Block]
 
         if len(args) == 0:
-            return [Token(TokenType.Block, tokens = results[1])]
+            return [Token(TokenType.Block, self.settings, tokens = results[1])]
 
         return args
 
@@ -392,7 +393,7 @@ class Siter:
                 token += c
             else:
                 if len(token) > 0:
-                    flat_tokens.append(Token(previous_type, token))
+                    flat_tokens.append(Token(previous_type, self.settings, token))
 
                 token = c
                 escaped_index = -1
@@ -411,15 +412,15 @@ class Siter:
 
                 if len(token) > len(delim):
                     flat_tokens.append(
-                        Token(TokenType.Text, token[: -len(delim)]))
+                        Token(TokenType.Text, self.settings, token[: -len(delim)]))
 
-                flat_tokens.append(Token(delim_type, token[-len(delim) :]))
+                flat_tokens.append(Token(delim_type, self.settings, token[-len(delim) :]))
                 token = ''
                 escaped_index = -1
                 break
 
         if len(token) > 0:
-            flat_tokens.append(Token(current_type, token))
+            flat_tokens.append(Token(current_type, self.settings, token))
 
         return flat_tokens
 
@@ -430,7 +431,7 @@ class Siter:
         for token in flat_tokens:
             if token.t_type is TokenType.TagOpen:
                 # Subsequent tokens will be added to this new block
-                stack.append(Token(TokenType.Block))
+                stack.append(Token(TokenType.Block, self.settings))
             else:
                 if token.t_type is TokenType.TagClose:
                     if len(stack) == 0:
@@ -483,7 +484,7 @@ class Siter:
                 if name == 's.content' and self.Md:
                     content = ''.join([t.resolve() for t in body_tokens])
                     md = self.Md.markdown(content, output_format = 'html5')
-                    body_tokens = [Token(TokenType.Text, text = md)]
+                    body_tokens = [Token(TokenType.Text, self.settings, text = md)]
 
                 temp_tokens += body_tokens
             elif binding.b_type == BindingType.Macro:
