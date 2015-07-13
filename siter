@@ -561,13 +561,8 @@ class Siter:
         return eval_tokens
 
     def set_file_bindings(self, bindings, read_file):
-        try:
-            with open(read_file, 'rU') as f:
-                text = f.read()
-        except FileNotFoundError:
-            return {}
-
         start = 0
+        text = TextFile(read_file, FileMode.Required).get_content()
         marker = text.find(self.settings.Marker)
 
         if marker != -1:
