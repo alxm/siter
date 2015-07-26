@@ -34,21 +34,52 @@ class File:
             Siter.error('Required file {} not found'.format(path))
 
         self.path = path
+        self.name = os.path.basename(self.path)
         self.mode = mode
 
     def get_path(self):
         return self.path
 
+    def get_name(self):
+        return self.name
+
+    def get_mod_time(self):
+        return os.stat(self.path).st_mtime
+
+    def older_than(self, target):
+        if not os.path.exists(target.path):
+            return False
+
+        return self.get_mod_time() < target.get_mod_time()
+
 class Dir(File):
     def __init__(self, path, mode):
         File.__init__(self, path, mode)
 
-        if mode is FileMode.Create:
+        if self.mode is FileMode.Create:
             os.makedirs(self.path, exist_ok = True)
+
+        self.files = [os.path.join(self.path, f)
+            for f in sorted(os.listdir(self.path))]
+
+    def list_dirs(self):
+        return [Dir(path, FileMode.Required)
+            for path in [f for f in self.files if os.path.isdir(f)]]
+
+    def list_files(self):
+        return [TextFile(path, FileMode.Required)
+            for path in [f for f in self.files if os.path.isfile(f)]]
+
+    def add_dir(self, subdir):
+        path = os.path.join(self.path, subdir)
+        return Dir(path, FileMode.Create)
 
     def add_file(self, name, mode):
         path = os.path.join(self.path, name)
         return TextFile(path, mode)
+
+    def path_to(self, target):
+        return os.path.relpath(target.get_path(), start = self.path)
 
     def copy_to(self, dst_dir):
         src = self.path + '/'
@@ -64,12 +95,13 @@ class TextFile(File):
         self.content = None
         self.lines = None
 
-        try:
-            with open(self.path, 'rU') as f:
-                self.content = f.read()
-        except FileNotFoundError:
-            if self.mode is not FileMode.Optional:
-                Siter.error('Required file {} not found'.format(self.path))
+        if self.mode is not FileMode.Create:
+            try:
+                with open(self.path, 'rU') as f:
+                    self.content = f.read()
+            except FileNotFoundError:
+                if self.mode is not FileMode.Optional:
+                    Siter.error('Required file {} not found'.format(self.path))
 
     def test_line(self, number, min_len = -1, max_len = -1):
         if self.content is None:
@@ -109,6 +141,10 @@ class TextFile(File):
 
     def get_content(self):
         return self.content
+
+    def write(self, text):
+        with open(self.path, 'w') as f:
+            f.write(text)
 
 class Dirs:
     def __init__(self):
@@ -360,7 +396,7 @@ class Siter:
 
         # Global function and variable bindings
         self.bindings = {}
-        self.set_file_bindings(self.bindings, self.files.defs.get_path())
+        self.set_file_bindings(self.bindings, self.files.defs)
 
         def try_import(module):
             try:
@@ -562,7 +598,7 @@ class Siter:
 
     def set_file_bindings(self, bindings, read_file):
         start = 0
-        text = TextFile(read_file, FileMode.Required).get_content()
+        text = read_file.get_content()
         marker = text.find(self.settings.Marker)
 
         if marker != -1:
@@ -592,7 +628,7 @@ class Siter:
 
             Siter.warning('Unknown binding block:\n{}'.format(b.resolve()))
 
-    def set_builtin_bindings(self, bindings, read_file, subdir):
+    def set_builtin_bindings(self, bindings, read_file, read_dir):
         bindings['s.if'] = Binding(
             BindingType.Function,
             num_params = 2,
@@ -607,7 +643,7 @@ class Siter:
             BindingType.Function,
             num_params = 1,
             func = lambda _, args: time.strftime(
-                args[0], time.localtime(os.stat(read_file).st_mtime)))
+                args[0], time.localtime(read_file.get_mod_time())))
 
         bindings['s.generated'] = Binding(
             BindingType.Function,
@@ -619,9 +655,10 @@ class Siter:
             num_params = -1,
             func = BuiltInFunctions.highlight_code)
 
-        here = os.path.join(self.dirs.out_root.get_path(), subdir)
-        rel_root_path = os.path.relpath(self.dirs.out_root.get_path(), here)
-        rel_media_path = os.path.relpath(self.dirs.out_media.get_path(), here)
+        current_subdir = self.dirs.in_pages.path_to(read_dir)
+        here = self.dirs.out_root.add_dir(current_subdir)
+        rel_root_path = here.path_to(self.dirs.out_root)
+        rel_media_path = here.path_to(self.dirs.out_media)
 
         bindings['s.root'] = Binding(
             BindingType.Variable,
@@ -631,55 +668,44 @@ class Siter:
             BindingType.Variable,
             tokens = self.tokenize(rel_media_path))
 
-    def apply_template(self, template_file, bindings, subdir):
+    def apply_template(self, template_file, bindings):
         tokens = self.tokenize(template_file.get_content())
         tokens = self.evaluate_tokens(tokens, bindings)
 
         return ''.join([t.resolve() for t in tokens])
 
-    def up_to_date(self, read_file, write_file):
-        if not self.settings.ForceWrite and os.path.isfile(write_file):
-            read_date = os.stat(read_file).st_mtime
-            write_date = os.stat(write_file).st_mtime
+    def run(self, read_dir = None, write_dir = None):
+        if read_dir is None:
+            read_dir = self.dirs.in_pages
 
-            return read_date < write_date
-        else:
-            return False
+        if write_dir is None:
+            write_dir = self.dirs.out_root
 
-    def run(self, subdir):
-        in_path = os.path.join(self.dirs.in_pages.get_path(), subdir)
-        out_path = os.path.join(self.dirs.out_root.get_path(), subdir)
+        for in_file in read_dir.list_files():
+            out_file = write_dir.add_file(in_file.get_name(), FileMode.Create)
 
-        os.makedirs(out_path, exist_ok = True)
-
-        for page in sorted(os.listdir(in_path)):
-            read_file = os.path.join(in_path, page)
-            write_file = os.path.join(out_path, page)
-
-            if os.path.isdir(read_file):
-                self.run(os.path.join(subdir, page))
+            if self.settings.ForceWrite is False and in_file.older_than(out_file):
+                Siter.message('Up to date', out_file.get_path())
                 continue
 
-            if self.up_to_date(read_file, write_file):
-                Siter.message('Up to date', write_file)
-                continue
-
-            Siter.message('Updating', write_file)
+            Siter.message('Updating', out_file.get_path())
 
             #   global bindings from the defs file
             # + bindings declared by the current page file
             # + siter built-in bindings
             bindings = self.bindings.copy()
-            self.set_file_bindings(bindings, read_file)
-            self.set_builtin_bindings(bindings, read_file, subdir)
+            self.set_file_bindings(bindings, in_file)
+            self.set_builtin_bindings(bindings, in_file, read_dir)
 
             # Load template and replace variables and functions with bindings
-            final = self.apply_template(self.files.page_html, bindings, subdir)
+            final = self.apply_template(self.files.page_html, bindings)
+            out_file.write(final)
 
-            with open(write_file, 'w') as f:
-                f.write(final)
+        for read_subdir in read_dir.list_dirs():
+            write_subdir = write_dir.add_dir(read_subdir.get_name())
+            self.run(read_subdir, write_subdir)
 
 if __name__ == '__main__':
     siter = Siter(sys.argv)
-    siter.run('')
+    siter.run()
     Siter.info('Done')
