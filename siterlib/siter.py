@@ -119,8 +119,8 @@ class Siter:
         self.tokenizer = Tokenizer(self.settings)
 
         # Copy site and template media files
-        self.dirs.in_media.copy_to(self.dirs.out_media)
-        self.dirs.in_template_media.copy_to(self.dirs.out_template_media)
+        self.dirs.media.copy_to(self.dirs.out_media)
+        self.dirs.template_media.copy_to(self.dirs.out_template_media)
 
         # Global function and variable bindings
         self.bindings = {}
@@ -285,9 +285,9 @@ class Siter:
             num_params = -1,
             func = BuiltInFunctions.highlight_code)
 
-        current_subdir = self.dirs.in_pages.path_to(read_dir)
-        here = self.dirs.out_root.add_dir(current_subdir)
-        rel_root_path = here.path_to(self.dirs.out_root)
+        current_subdir = self.dirs.pages.path_to(read_dir)
+        here = self.dirs.out.add_dir(current_subdir)
+        rel_root_path = here.path_to(self.dirs.out)
         rel_media_path = here.path_to(self.dirs.out_media)
 
         bindings['s.root'] = Binding(
@@ -306,10 +306,10 @@ class Siter:
 
     def run(self, read_dir = None, write_dir = None):
         if read_dir is None:
-            read_dir = self.dirs.in_pages
+            read_dir = self.dirs.pages
 
         if write_dir is None:
-            write_dir = self.dirs.out_root
+            write_dir = self.dirs.out
 
         for in_file in read_dir.list_files():
             out_file = write_dir.add_file(in_file.get_name(), FileMode.Create)

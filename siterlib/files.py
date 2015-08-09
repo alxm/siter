@@ -151,20 +151,20 @@ class TextFile(File):
 
 class Dirs:
     def __init__(self):
-        self.in_config = Dir('siter-config', FileMode.Optional)
-        self.in_media = Dir('siter-media', FileMode.Optional)
-        self.in_pages = Dir('siter-pages', FileMode.Required)
-        self.in_template = Dir('siter-template', FileMode.Required)
-        self.in_template_media = Dir('siter-template/media', FileMode.Optional)
+        self.config = Dir('siter-config', FileMode.Optional)
+        self.media = Dir('siter-media', FileMode.Optional)
+        self.pages = Dir('siter-pages', FileMode.Required)
+        self.template = Dir('siter-template', FileMode.Required)
+        self.template_media = Dir('siter-template/media', FileMode.Optional)
 
-        self.out_root = Dir('siter-out', FileMode.Create)
+        self.out = Dir('siter-out', FileMode.Create)
         self.out_media = Dir('siter-out/media', FileMode.Create)
         self.out_template_media = Dir('siter-out/media/template-media', FileMode.Create)
 
 class Files:
     def __init__(self, dirs):
-        self.defs = dirs.in_config.add_file('defs', FileMode.Optional)
-        self.evalhint = dirs.in_config.add_file('eval', FileMode.Optional)
-        self.marker = dirs.in_config.add_file('marker', FileMode.Optional)
-        self.tags = dirs.in_config.add_file('tags', FileMode.Optional)
-        self.page_html = dirs.in_template.add_file('page.html', FileMode.Required)
+        self.defs = dirs.config.add_file('defs', FileMode.Optional)
+        self.evalhint = dirs.config.add_file('eval', FileMode.Optional)
+        self.marker = dirs.config.add_file('marker', FileMode.Optional)
+        self.tags = dirs.config.add_file('tags', FileMode.Optional)
+        self.page_html = dirs.template.add_file('page.html', FileMode.Required)
