@@ -22,7 +22,7 @@ import time
 
 from siterlib.util import Util
 from siterlib.files import FileMode, Dirs, Files
-from siterlib.tokens import Token, TokenType
+from siterlib.tokens import TokenType, Token, Tokenizer
 
 class BindingType(enum.Enum):
     Variable = 0
@@ -128,6 +128,7 @@ class Siter:
 
         # Set defaults and load user settings from args and config files
         self.settings = Settings(argv, self.files)
+        self.tokenizer = Tokenizer(self.settings)
 
         # Copy site and template media files
         self.dirs.in_media.copy_to(self.dirs.out_media)
@@ -136,102 +137,10 @@ class Siter:
         # Global function and variable bindings
         self.bindings = {}
         self.set_file_bindings(self.bindings, self.files.defs)
-
         self.Md = Util.try_import('markdown')
         self.Pygments = Util.try_import('pygments')
         self.PygmentsLexers = Util.try_import('pygments.lexers')
         self.PygmentsFormatters = Util.try_import('pygments.formatters')
-
-    def make_flat_tokens(self, text):
-        flat_tokens = []
-        current_type = None
-        escaped = False
-        escaped_index = -1
-        token = ''
-
-        for c in text:
-            if c == '\\' and not escaped:
-                escaped = True
-                continue
-
-            previous_type = current_type
-
-            if c == '\n':
-                current_type = TokenType.Newline
-            elif c == ' ' or c == '\t':
-                current_type = TokenType.Whitespace
-            else:
-                current_type = TokenType.Text
-
-            if current_type is previous_type:
-                token += c
-            else:
-                if len(token) > 0:
-                    flat_tokens.append(Token(previous_type, self.settings, token))
-
-                token = c
-                escaped_index = -1
-
-            if escaped:
-                escaped = False
-                escaped_index = len(token) - 1
-
-            delim_tokens = [
-                (TokenType.Eval, self.settings.EvalHint),
-                (TokenType.TagOpen, self.settings.TagOpen),
-                (TokenType.TagClose, self.settings.TagClose),
-            ]
-
-            for delim_type, delim in delim_tokens:
-                if len(token) - escaped_index <= len(delim):
-                    continue
-
-                if token[-len(delim) :] != delim:
-                    continue
-
-                if len(token) > len(delim):
-                    flat_tokens.append(
-                        Token(TokenType.Text, self.settings, token[: -len(delim)]))
-
-                flat_tokens.append(Token(delim_type, self.settings, token[-len(delim) :]))
-                token = ''
-                escaped_index = -1
-                break
-
-        if len(token) > 0:
-            flat_tokens.append(Token(current_type, self.settings, token))
-
-        return flat_tokens
-
-    def make_block_tokens(self, flat_tokens):
-        stack = []
-        block_tokens = []
-
-        for token in flat_tokens:
-            if token.t_type is TokenType.TagOpen:
-                # Subsequent tokens will be added to this new block
-                stack.append(Token(TokenType.Block, self.settings))
-            else:
-                if token.t_type is TokenType.TagClose:
-                    if len(stack) == 0:
-                        Util.error("Found extra closing tag")
-
-                    # Got the closing tag, pop the block from the stack
-                    token = stack.pop()
-
-                if len(stack) > 0:
-                    stack[-1].tokens.append(token)
-                else:
-                    block_tokens.append(token)
-
-        if len(stack) > 0:
-            Util.error("Missing closing tag")
-
-        return block_tokens
-
-    def tokenize(self, text):
-        flat_tokens = self.make_flat_tokens(text)
-        return self.make_block_tokens(flat_tokens)
 
     def evaluate_tokens(self, tokens, bindings):
         eval_tokens = []
@@ -305,7 +214,7 @@ class Siter:
                     arguments.append(''.join([t.resolve() for t in arg]))
 
                 body = binding.func(self, arguments)
-                temp_tokens += self.tokenize(body)
+                temp_tokens += self.tokenizer.tokenize(body)
             else:
                 Util.error('Unknown binding type')
 
@@ -338,10 +247,10 @@ class Siter:
             # s.content is everything after the first marker occurence
             bindings['s.content'] = Binding(
                 BindingType.Variable,
-                tokens = self.tokenize(text[marker + len(self.settings.Marker) :]))
+                tokens = self.tokenizer.tokenize(text[marker + len(self.settings.Marker) :]))
             text = text[: marker]
 
-        for b in [t for t in self.tokenize(text) if t.t_type is TokenType.Block]:
+        for b in [t for t in self.tokenizer.tokenize(text) if t.t_type is TokenType.Block]:
             results = b.capture_variable()
 
             if results:
@@ -395,14 +304,14 @@ class Siter:
 
         bindings['s.root'] = Binding(
             BindingType.Variable,
-            tokens = self.tokenize(rel_root_path))
+            tokens = self.tokenizer.tokenize(rel_root_path))
 
         bindings['s.media'] = Binding(
             BindingType.Variable,
-            tokens = self.tokenize(rel_media_path))
+            tokens = self.tokenizer.tokenize(rel_media_path))
 
     def apply_template(self, template_file, bindings):
-        tokens = self.tokenize(template_file.get_content())
+        tokens = self.tokenizer.tokenize(template_file.get_content())
         tokens = self.evaluate_tokens(tokens, bindings)
 
         return ''.join([t.resolve() for t in tokens])
