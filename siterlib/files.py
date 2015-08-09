@@ -73,9 +73,9 @@ class Dir(File):
         return [TextFile(path, FileMode.Required)
             for path in [f for f in self.files if os.path.isfile(f)]]
 
-    def add_dir(self, subdir):
+    def add_dir(self, subdir, mode):
         path = os.path.join(self.path, subdir)
-        return Dir(path, FileMode.Create)
+        return Dir(path, mode)
 
     def add_file(self, name, mode):
         path = os.path.join(self.path, name)
@@ -155,11 +155,11 @@ class Dirs:
         self.media = Dir('siter-media', FileMode.Optional)
         self.pages = Dir('siter-pages', FileMode.Required)
         self.template = Dir('siter-template', FileMode.Required)
-        self.template_media = Dir('siter-template/media', FileMode.Optional)
+        self.template_media = self.template.add_dir('media', FileMode.Optional)
 
         self.out = Dir('siter-out', FileMode.Create)
-        self.out_media = Dir('siter-out/media', FileMode.Create)
-        self.out_template_media = Dir('siter-out/media/template-media', FileMode.Create)
+        self.out_media = self.out.add_dir('media', FileMode.Create)
+        self.out_template_media = self.out_media.add_dir('template-media', FileMode.Create)
 
 class Files:
     def __init__(self, dirs):

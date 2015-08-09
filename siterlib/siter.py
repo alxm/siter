@@ -286,7 +286,7 @@ class Siter:
             func = BuiltInFunctions.highlight_code)
 
         current_subdir = self.dirs.pages.path_to(read_dir)
-        here = self.dirs.out.add_dir(current_subdir)
+        here = self.dirs.out.add_dir(current_subdir, FileMode.Optional)
         rel_root_path = here.path_to(self.dirs.out)
         rel_media_path = here.path_to(self.dirs.out_media)
 
@@ -332,5 +332,5 @@ class Siter:
             out_file.write(final)
 
         for read_subdir in read_dir.list_dirs():
-            write_subdir = write_dir.add_dir(read_subdir.get_name())
+            write_subdir = write_dir.add_dir(read_subdir.get_name(), FileMode.Create)
             self.run(read_subdir, write_subdir)
