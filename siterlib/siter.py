@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
     Copyright 2011 Alex Margarit
 
@@ -17,7 +15,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import sys
 import os
 import enum
 import time
@@ -704,8 +701,3 @@ class Siter:
         for read_subdir in read_dir.list_dirs():
             write_subdir = write_dir.add_dir(read_subdir.get_name())
             self.run(read_subdir, write_subdir)
-
-if __name__ == '__main__':
-    siter = Siter(sys.argv)
-    siter.run()
-    Siter.info('Done')
