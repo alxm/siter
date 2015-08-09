@@ -21,7 +21,8 @@ import time
 
 from siterlib.util import Util
 from siterlib.files import FileMode, Dirs, Files
-from siterlib.tokens import TokenType, Token, Tokenizer
+from siterlib.tokens import TokenType, Token
+from siterlib.tokenizer import Tokenizer
 from siterlib.bindings import BindingType, Binding
 
 class BuiltInFunctions:
