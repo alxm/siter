@@ -42,7 +42,7 @@ class Token:
         else:
             return self.text
 
-    def capture(self, *args, rest = True):
+    def __capture(self, *args, rest = True):
         i = 0
         results = []
 
@@ -73,7 +73,7 @@ class Token:
 
     def capture_variable(self):
         # {var name *}
-        results = self.capture(TokenType.Text, TokenType.Text)
+        results = self.__capture(TokenType.Text, TokenType.Text)
 
         if results and results[0].resolve() == 'var':
             name = results[1]
@@ -85,7 +85,7 @@ class Token:
 
     def capture_macro(self):
         # {fun name {args} body}
-        results = self.capture(TokenType.Text, TokenType.Text, TokenType.Block)
+        results = self.__capture(TokenType.Text, TokenType.Text, TokenType.Block)
 
         if results and results[0].resolve() == 'fun':
             name = results[1]
@@ -98,12 +98,12 @@ class Token:
 
     def capture_call(self):
         # {`name ...}
-        results = self.capture(TokenType.Eval, TokenType.Text, rest = False)
+        results = self.__capture(TokenType.Eval, TokenType.Text, rest = False)
         return results[1].resolve() if results else None
 
     def capture_args(self):
         # {`name {arg1} {arg2} ...}
-        results = self.capture(TokenType.Eval, TokenType.Text)
+        results = self.__capture(TokenType.Eval, TokenType.Text)
 
         if results is None:
             return []

@@ -136,9 +136,9 @@ class Siter:
 
         # Global function and variable bindings
         self.bindings = {}
-        self.set_file_bindings(self.bindings, self.files.defs)
+        self.__set_file_bindings(self.bindings, self.files.defs)
 
-    def set_file_bindings(self, bindings, read_file):
+    def __set_file_bindings(self, bindings, read_file):
         start = 0
         text = read_file.get_content()
         marker = text.find(self.settings.Marker)
@@ -170,7 +170,7 @@ class Siter:
 
             Util.warning('Unknown binding block:\n{}'.format(b.resolve()))
 
-    def set_builtin_bindings(self, bindings, read_file, read_dir):
+    def __set_builtin_bindings(self, bindings, read_file, read_dir):
         bindings['s.if'] = Binding(
             BindingType.Function,
             num_params = 2,
@@ -210,7 +210,7 @@ class Siter:
             BindingType.Variable,
             tokens = self.tokenizer.tokenize(rel_media_path))
 
-    def apply_template(self, template_file, bindings):
+    def __apply_template(self, template_file, bindings):
         tokens = self.tokenizer.tokenize(template_file.get_content())
         tokens = self.tokenizer.evaluate(tokens, bindings)
 
@@ -236,11 +236,11 @@ class Siter:
             # + bindings declared by the current page file
             # + siter built-in bindings
             bindings = self.bindings.copy()
-            self.set_file_bindings(bindings, in_file)
-            self.set_builtin_bindings(bindings, in_file, read_dir)
+            self.__set_file_bindings(bindings, in_file)
+            self.__set_builtin_bindings(bindings, in_file, read_dir)
 
             # Load template and replace variables and functions with bindings
-            final = self.apply_template(self.files.page_html, bindings)
+            final = self.__apply_template(self.files.page_html, bindings)
             out_file.write(final)
 
         for read_subdir in read_dir.list_dirs():

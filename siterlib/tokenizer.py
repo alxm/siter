@@ -26,7 +26,7 @@ class Tokenizer:
         self.settings = settings
         self.imports = imports
 
-    def make_flat_tokens(self, text):
+    def __make_flat_tokens(self, text):
         flat_tokens = []
         current_type = None
         escaped = False
@@ -87,7 +87,7 @@ class Tokenizer:
 
         return flat_tokens
 
-    def make_block_tokens(self, flat_tokens):
+    def __make_block_tokens(self, flat_tokens):
         stack = []
         block_tokens = []
 
@@ -114,8 +114,8 @@ class Tokenizer:
         return block_tokens
 
     def tokenize(self, text):
-        flat_tokens = self.make_flat_tokens(text)
-        block_tokens = self.make_block_tokens(flat_tokens)
+        flat_tokens = self.__make_flat_tokens(text)
+        block_tokens = self.__make_block_tokens(flat_tokens)
 
         return block_tokens
 
