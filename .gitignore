@@ -1,2 +1,2 @@
 /todo
-/siterlib/__pycache__/
+*.pyc
