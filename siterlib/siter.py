@@ -20,10 +20,10 @@
 import time
 
 from siterlib.util import Util
-from siterlib.files import FileMode, Dirs, Files
-from siterlib.tokens import TokenType, Token
+from siterlib.file import FileMode, Dirs, Files
+from siterlib.token import TokenType, Token
 from siterlib.tokenizer import Tokenizer
-from siterlib.bindings import BindingType, Binding
+from siterlib.binding import BindingType, Binding
 
 class BuiltInFunctions:
     @staticmethod

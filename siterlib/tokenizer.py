@@ -18,8 +18,8 @@
 """
 
 from siterlib.util import Util
-from siterlib.tokens import TokenType, Token
-from siterlib.bindings import BindingType, Binding
+from siterlib.token import TokenType, Token
+from siterlib.binding import BindingType, Binding
 
 class Tokenizer:
     def __init__(self, siter):
