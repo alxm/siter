@@ -20,7 +20,6 @@
 import os
 import enum
 import time
-import importlib
 
 from siterlib.util import Util
 
@@ -377,16 +376,10 @@ class Siter:
         self.bindings = {}
         self.set_file_bindings(self.bindings, self.files.defs)
 
-        def try_import(module):
-            try:
-                return importlib.import_module(module)
-            except ImportError:
-                return None
-
-        self.Md = try_import('markdown')
-        self.Pygments = try_import('pygments')
-        self.PygmentsLexers = try_import('pygments.lexers')
-        self.PygmentsFormatters = try_import('pygments.formatters')
+        self.Md = Util.try_import('markdown')
+        self.Pygments = Util.try_import('pygments')
+        self.PygmentsLexers = Util.try_import('pygments.lexers')
+        self.PygmentsFormatters = Util.try_import('pygments.formatters')
 
     def make_flat_tokens(self, text):
         flat_tokens = []
