@@ -29,12 +29,15 @@ class FileMode(enum.Enum):
 
 class File:
     def __init__(self, path, mode):
-        if mode is FileMode.Required and not os.path.exists(path):
-            Util.error('Required file {} not found'.format(path))
-
         self.path = path
         self.name = os.path.basename(self.path)
         self.mode = mode
+
+        if self.mode is FileMode.Required and not self.exists():
+            Util.error('Required file {} not found'.format(self.path))
+
+    def exists(self):
+        return os.path.exists(self.path)
 
     def get_path(self):
         return self.path
@@ -46,7 +49,7 @@ class File:
         return os.stat(self.path).st_mtime
 
     def older_than(self, target):
-        if not os.path.exists(target.path):
+        if not target.exists():
             return False
 
         return self.get_mod_time() < target.get_mod_time()
@@ -58,8 +61,9 @@ class Dir(File):
         if self.mode is FileMode.Create:
             os.makedirs(self.path, exist_ok = True)
 
-        self.files = [os.path.join(self.path, f)
-            for f in sorted(os.listdir(self.path))]
+        if self.exists():
+            self.files = [os.path.join(self.path, f)
+                for f in sorted(os.listdir(self.path))]
 
     def list_dirs(self):
         return [Dir(path, FileMode.Required)
