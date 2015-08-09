@@ -19,6 +19,9 @@
 
 import enum
 
+from siterlib.util import Util
+from siterlib.bindings import BindingType, Binding
+
 class TokenType(enum.Enum):
     Text = 1
     Newline = 2
@@ -117,8 +120,9 @@ class Token:
         return args
 
 class Tokenizer:
-    def __init__(self, settings):
-        self.settings = settings
+    def __init__(self, siter):
+        self.siter = siter
+        self.settings = self.siter.settings
 
     def make_flat_tokens(self, text):
         flat_tokens = []
@@ -212,3 +216,99 @@ class Tokenizer:
         block_tokens = self.make_block_tokens(flat_tokens)
 
         return block_tokens
+
+    def evaluate(self, tokens, bindings):
+        eval_tokens = []
+
+        for token in tokens:
+            if token.t_type is not TokenType.Block:
+                eval_tokens.append(token)
+                continue
+
+            # Get the binding's name
+            name = token.capture_call()
+
+            if name is None:
+                # This block does not call a binding
+                eval_tokens += self.evaluate(token.tokens, bindings)
+                continue
+
+            if name not in bindings:
+                # Name is unknown, discard block
+                continue
+
+            binding = bindings[name]
+            temp_tokens = []
+
+            if binding.b_type == BindingType.Variable:
+                body_tokens = self.evaluate(binding.tokens, bindings)
+
+                # Run page content through Markdown
+                if name == 's.content' and self.siter.Md:
+                    content = ''.join([t.resolve() for t in body_tokens])
+                    md = self.siter.Md.markdown(content, output_format = 'html5')
+                    body_tokens = [Token(TokenType.Text, self.settings, text = md)]
+
+                temp_tokens += body_tokens
+            elif binding.b_type == BindingType.Macro:
+                args = token.capture_args()
+
+                if len(args) != binding.num_params:
+                    Util.warning('Macro {} takes {} args, got {}'
+                        .format(name, binding.num_params, len(args)))
+                    continue
+
+                arguments = []
+
+                # Evaluate each argument
+                for arg in args:
+                    arg = self.evaluate([arg], bindings)
+                    arguments.append(arg)
+
+                bindings2 = bindings.copy()
+
+                # Bind each parameter to the supplied argument
+                for (i, param) in enumerate(binding.params):
+                    bindings2[param.resolve()] = Binding(BindingType.Variable,
+                                                         tokens = arguments[i])
+
+                temp_tokens += self.evaluate(binding.tokens, bindings2)
+            elif binding.b_type == BindingType.Function:
+                args = token.capture_args()
+
+                if len(args) != binding.num_params != -1:
+                    Util.warning('Function {} takes {} args, got {}'
+                        .format(name, binding.num_params, len(args)))
+                    continue
+
+                arguments = []
+
+                # Evaluate each argument
+                for arg in args:
+                    arg = self.evaluate([arg], bindings)
+                    arguments.append(''.join([t.resolve() for t in arg]))
+
+                body = binding.func(self.siter, arguments)
+                temp_tokens += self.tokenize(body)
+            else:
+                Util.error('Unknown binding type')
+
+            # Trim leading and trailing whitespace
+            start = 0
+            end = len(temp_tokens)
+
+            for t in temp_tokens:
+                if t.t_type is TokenType.Text:
+                    break
+                else:
+                    start += 1
+
+            for t in reversed(temp_tokens):
+                if t.t_type is TokenType.Text:
+                    break
+                else:
+                    end -= 1
+
+            eval_tokens += temp_tokens[start : end]
+
+        return eval_tokens

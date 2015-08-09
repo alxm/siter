@@ -17,7 +17,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import enum
 import time
 
 from siterlib.util import Util
@@ -116,7 +115,7 @@ class Siter:
 
         # Set defaults and load user settings from args and config files
         self.settings = Settings(argv, self.files)
-        self.tokenizer = Tokenizer(self.settings)
+        self.tokenizer = Tokenizer(self)
 
         # Copy site and template media files
         self.dirs.media.copy_to(self.dirs.out_media)
@@ -131,102 +130,6 @@ class Siter:
         self.Pygments = Util.try_import('pygments')
         self.PygmentsLexers = Util.try_import('pygments.lexers')
         self.PygmentsFormatters = Util.try_import('pygments.formatters')
-
-    def evaluate_tokens(self, tokens, bindings):
-        eval_tokens = []
-
-        for token in tokens:
-            if token.t_type is not TokenType.Block:
-                eval_tokens.append(token)
-                continue
-
-            # Get the binding's name
-            name = token.capture_call()
-
-            if name is None:
-                # This block does not call a binding
-                eval_tokens += self.evaluate_tokens(token.tokens, bindings)
-                continue
-
-            if name not in bindings:
-                # Name is unknown, discard block
-                continue
-
-            binding = bindings[name]
-            temp_tokens = []
-
-            if binding.b_type == BindingType.Variable:
-                body_tokens = self.evaluate_tokens(binding.tokens, bindings)
-
-                # Run page content through Markdown
-                if name == 's.content' and self.Md:
-                    content = ''.join([t.resolve() for t in body_tokens])
-                    md = self.Md.markdown(content, output_format = 'html5')
-                    body_tokens = [Token(TokenType.Text, self.settings, text = md)]
-
-                temp_tokens += body_tokens
-            elif binding.b_type == BindingType.Macro:
-                args = token.capture_args()
-
-                if len(args) != binding.num_params:
-                    Util.warning('Macro {} takes {} args, got {}'
-                        .format(name, binding.num_params, len(args)))
-                    continue
-
-                arguments = []
-
-                # Evaluate each argument
-                for arg in args:
-                    arg = self.evaluate_tokens([arg], bindings)
-                    arguments.append(arg)
-
-                bindings2 = bindings.copy()
-
-                # Bind each parameter to the supplied argument
-                for (i, param) in enumerate(binding.params):
-                    bindings2[param.resolve()] = Binding(BindingType.Variable,
-                                                         tokens = arguments[i])
-
-                temp_tokens += self.evaluate_tokens(binding.tokens, bindings2)
-            elif binding.b_type == BindingType.Function:
-                args = token.capture_args()
-
-                if len(args) != binding.num_params != -1:
-                    Util.warning('Function {} takes {} args, got {}'
-                        .format(name, binding.num_params, len(args)))
-                    continue
-
-                arguments = []
-
-                # Evaluate each argument
-                for arg in args:
-                    arg = self.evaluate_tokens([arg], bindings)
-                    arguments.append(''.join([t.resolve() for t in arg]))
-
-                body = binding.func(self, arguments)
-                temp_tokens += self.tokenizer.tokenize(body)
-            else:
-                Util.error('Unknown binding type')
-
-            # Trim leading and trailing whitespace
-            start = 0
-            end = len(temp_tokens)
-
-            for t in temp_tokens:
-                if t.t_type is TokenType.Text:
-                    break
-                else:
-                    start += 1
-
-            for t in reversed(temp_tokens):
-                if t.t_type is TokenType.Text:
-                    break
-                else:
-                    end -= 1
-
-            eval_tokens += temp_tokens[start : end]
-
-        return eval_tokens
 
     def set_file_bindings(self, bindings, read_file):
         start = 0
@@ -302,7 +205,7 @@ class Siter:
 
     def apply_template(self, template_file, bindings):
         tokens = self.tokenizer.tokenize(template_file.get_content())
-        tokens = self.evaluate_tokens(tokens, bindings)
+        tokens = self.tokenizer.evaluate(tokens, bindings)
 
         return ''.join([t.resolve() for t in tokens])
 
