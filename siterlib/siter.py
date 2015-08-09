@@ -23,19 +23,7 @@ import time
 from siterlib.util import Util
 from siterlib.files import FileMode, Dirs, Files
 from siterlib.tokens import TokenType, Token, Tokenizer
-
-class BindingType(enum.Enum):
-    Variable = 0
-    Macro = 1
-    Function = 2
-
-class Binding:
-    def __init__(self, b_type, tokens = None, num_params = 0, params = None, func = None):
-        self.b_type = b_type
-        self.tokens = tokens
-        self.num_params = len(params) if params else num_params
-        self.params = params
-        self.func = func
+from siterlib.bindings import BindingType, Binding
 
 class BuiltInFunctions:
     @staticmethod
