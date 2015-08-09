@@ -27,7 +27,7 @@ from siterlib.binding import BindingType, Binding
 
 class BuiltInFunctions:
     @staticmethod
-    def highlight_code(siter, args):
+    def highlight_code(imports, args):
         if len(args) == 1:
             lang = 'text'
             code = args[0]
@@ -57,16 +57,23 @@ class BuiltInFunctions:
             # This is a code block
             div_class = 'siter_code'
 
-            if siter.Pygments:
-                lexer = siter.PygmentsLexers.get_lexer_by_name(lang.lower())
-                formatter = siter.PygmentsFormatters.HtmlFormatter(
+            if imports.Pygments:
+                lexer = imports.PygmentsLexers.get_lexer_by_name(lang.lower())
+                formatter = imports.PygmentsFormatters.HtmlFormatter(
                     linenos = True, cssclass = div_class, hl_lines=lines)
-                code = siter.Pygments.highlight(code, lexer, formatter)
+                code = imports.Pygments.highlight(code, lexer, formatter)
             else:
                 code = '<div class="{}"><pre>{}</pre></div>' \
                     .format(div_class, clean_code(code))
 
         return code
+
+class Imports:
+    def __init__(self):
+        self.Md = Util.try_import('markdown')
+        self.Pygments = Util.try_import('pygments')
+        self.PygmentsLexers = Util.try_import('pygments.lexers')
+        self.PygmentsFormatters = Util.try_import('pygments.formatters')
 
 class Settings:
     def __init__(self, argv, files):
@@ -116,7 +123,12 @@ class Siter:
 
         # Set defaults and load user settings from args and config files
         self.settings = Settings(argv, self.files)
-        self.tokenizer = Tokenizer(self)
+
+        # Optional packages
+        self.imports = Imports()
+
+        # Token processing utilities
+        self.tokenizer = Tokenizer(self.settings, self.imports)
 
         # Copy site and template media files
         self.dirs.media.copy_to(self.dirs.out_media)
@@ -125,12 +137,6 @@ class Siter:
         # Global function and variable bindings
         self.bindings = {}
         self.set_file_bindings(self.bindings, self.files.defs)
-
-        # Optional packages
-        self.Md = Util.try_import('markdown')
-        self.Pygments = Util.try_import('pygments')
-        self.PygmentsLexers = Util.try_import('pygments.lexers')
-        self.PygmentsFormatters = Util.try_import('pygments.formatters')
 
     def set_file_bindings(self, bindings, read_file):
         start = 0

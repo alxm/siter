@@ -22,9 +22,9 @@ from siterlib.token import TokenType, Token
 from siterlib.binding import BindingType, Binding
 
 class Tokenizer:
-    def __init__(self, siter):
-        self.siter = siter
-        self.settings = self.siter.settings
+    def __init__(self, settings, imports):
+        self.settings = settings
+        self.imports = imports
 
     def make_flat_tokens(self, text):
         flat_tokens = []
@@ -146,9 +146,9 @@ class Tokenizer:
                 body_tokens = self.evaluate(binding.tokens, bindings)
 
                 # Run page content through Markdown
-                if name == 's.content' and self.siter.Md:
+                if name == 's.content' and self.imports.Md:
                     content = ''.join([t.resolve() for t in body_tokens])
-                    md = self.siter.Md.markdown(content, output_format = 'html5')
+                    md = self.imports.Md.markdown(content, output_format = 'html5')
                     body_tokens = [Token(TokenType.Text, self.settings, text = md)]
 
                 temp_tokens += body_tokens
@@ -190,7 +190,7 @@ class Tokenizer:
                     arg = self.evaluate([arg], bindings)
                     arguments.append(''.join([t.resolve() for t in arg]))
 
-                body = binding.func(self.siter, arguments)
+                body = binding.func(self.imports, arguments)
                 temp_tokens += self.tokenize(body)
             else:
                 Util.error('Unknown binding type')
