@@ -1,6 +1,8 @@
 """
     Copyright 2011 Alex Margarit
 
+    This file is part of Siter, a static website generator.
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -20,6 +22,8 @@ import enum
 import time
 import importlib
 
+from siterlib.util import Util
+
 class FileMode(enum.Enum):
     Optional = 0
     Create = 1
@@ -28,7 +32,7 @@ class FileMode(enum.Enum):
 class File:
     def __init__(self, path, mode):
         if mode is FileMode.Required and not os.path.exists(path):
-            Siter.error('Required file {} not found'.format(path))
+            Util.error('Required file {} not found'.format(path))
 
         self.path = path
         self.name = os.path.basename(self.path)
@@ -82,7 +86,7 @@ class Dir(File):
         src = self.path + '/'
         dst = dst_dir.path
 
-        Siter.message('Copy files', 'From {} to {}'.format(src, dst))
+        Util.message('Copy files', 'From {} to {}'.format(src, dst))
         os.system('rsync -r --delete {} {}'.format(src, dst))
 
 class TextFile(File):
@@ -98,7 +102,7 @@ class TextFile(File):
                     self.content = f.read()
             except FileNotFoundError:
                 if self.mode is not FileMode.Optional:
-                    Siter.error('Required file {} not found'.format(self.path))
+                    Util.error('Required file {} not found'.format(self.path))
 
     def test_line(self, number, min_len = -1, max_len = -1):
         if self.content is None:
@@ -119,9 +123,9 @@ class TextFile(File):
 
         if error:
             if self.mode is FileMode.Optional:
-                Siter.warning(error)
+                Util.warning(error)
             else:
-                Siter.error(error)
+                Util.error(error)
 
             return False
 
@@ -289,7 +293,7 @@ class BuiltInFunctions:
             code = args[2]
             lines = args[1].split()
         else:
-            Siter.warning('s.code takes 1-3 args, got {}'.format(len(args)))
+            Util.warning('s.code takes 1-3 args, got {}'.format(len(args)))
             return ''
 
         def clean_code(code):
@@ -344,41 +348,19 @@ class Settings:
     def from_files(self, files):
         if files.evalhint.test_line(0, 1, 1):
             self.EvalHint = files.evalhint.get_line(0)
-            Siter.info('Using {} as block eval hint'.format(self.EvalHint))
+            Util.info('Using {} as block eval hint'.format(self.EvalHint))
 
         if files.tags.test_line(0, 1) and files.tags.test_line(1, 1):
             self.TagOpen = files.tags.get_line(0)
             self.TagClose = files.tags.get_line(1)
 
-            Siter.info('Using {} and {} as block tags'
+            Util.info('Using {} and {} as block tags'
                 .format(self.TagOpen, self.TagClose))
 
         if files.marker.test_line(0, 1):
             self.Marker = files.marker.get_line(0)
 
 class Siter:
-    @staticmethod
-    def message(title, content, color = 2):
-        space = max(2, 12 - len(title))
-        head = '■' * (space // 2)
-        tail = '■' * (space - space // 2)
-
-        print('\033[{};1m{} {} {}\033[0m {}'
-            .format(30 + color, head, title, tail, content))
-
-    @staticmethod
-    def error(e):
-        Siter.message('Error', e, 1)
-        raise RuntimeError('Siter')
-
-    @staticmethod
-    def warning(w):
-        Siter.message('Warning', w, 3)
-
-    @staticmethod
-    def info(m):
-        Siter.message('Info', m, 4)
-
     def __init__(self, argv):
         # Declare and optionally create the dirs and files Siter uses
         self.dirs = Dirs()
@@ -478,7 +460,7 @@ class Siter:
             else:
                 if token.t_type is TokenType.TagClose:
                     if len(stack) == 0:
-                        Siter.error("Found extra closing tag")
+                        Util.error("Found extra closing tag")
 
                     # Got the closing tag, pop the block from the stack
                     token = stack.pop()
@@ -489,7 +471,7 @@ class Siter:
                     block_tokens.append(token)
 
         if len(stack) > 0:
-            Siter.error("Missing closing tag")
+            Util.error("Missing closing tag")
 
         return block_tokens
 
@@ -534,7 +516,7 @@ class Siter:
                 args = token.capture_args()
 
                 if len(args) != binding.num_params:
-                    Siter.warning('Macro {} takes {} args, got {}'
+                    Util.warning('Macro {} takes {} args, got {}'
                         .format(name, binding.num_params, len(args)))
                     continue
 
@@ -557,7 +539,7 @@ class Siter:
                 args = token.capture_args()
 
                 if len(args) != binding.num_params != -1:
-                    Siter.warning('Function {} takes {} args, got {}'
+                    Util.warning('Function {} takes {} args, got {}'
                         .format(name, binding.num_params, len(args)))
                     continue
 
@@ -571,7 +553,7 @@ class Siter:
                 body = binding.func(self, arguments)
                 temp_tokens += self.tokenize(body)
             else:
-                Siter.error('Unknown binding type')
+                Util.error('Unknown binding type')
 
             # Trim leading and trailing whitespace
             start = 0
@@ -623,7 +605,7 @@ class Siter:
                                                    tokens = body)
                 continue
 
-            Siter.warning('Unknown binding block:\n{}'.format(b.resolve()))
+            Util.warning('Unknown binding block:\n{}'.format(b.resolve()))
 
     def set_builtin_bindings(self, bindings, read_file, read_dir):
         bindings['s.if'] = Binding(
@@ -682,10 +664,10 @@ class Siter:
             out_file = write_dir.add_file(in_file.get_name(), FileMode.Create)
 
             if self.settings.ForceWrite is False and in_file.older_than(out_file):
-                Siter.message('Up to date', out_file.get_path())
+                Util.message('Up to date', out_file.get_path())
                 continue
 
-            Siter.message('Updating', out_file.get_path())
+            Util.message('Updating', out_file.get_path())
 
             #   global bindings from the defs file
             # + bindings declared by the current page file
