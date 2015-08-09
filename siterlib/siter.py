@@ -125,6 +125,8 @@ class Siter:
         # Global function and variable bindings
         self.bindings = {}
         self.set_file_bindings(self.bindings, self.files.defs)
+
+        # Optional packages
         self.Md = Util.try_import('markdown')
         self.Pygments = Util.try_import('pygments')
         self.PygmentsLexers = Util.try_import('pygments.lexers')
