@@ -135,11 +135,11 @@ class Tokenizer:
                 eval_tokens += self.evaluate(token.tokens, bindings)
                 continue
 
-            if name not in bindings:
+            if not bindings.contains(name):
                 # Name is unknown, discard block
                 continue
 
-            binding = bindings[name]
+            binding = bindings.get(name)
             temp_tokens = []
 
             if binding.b_type == BindingType.Variable:
@@ -167,14 +167,16 @@ class Tokenizer:
                     arg = self.evaluate([arg], bindings)
                     arguments.append(arg)
 
-                bindings2 = bindings.copy()
+                bindings.push()
 
                 # Bind each parameter to the supplied argument
                 for (i, param) in enumerate(binding.params):
-                    bindings2[param.resolve()] = Binding(BindingType.Variable,
-                                                         tokens = arguments[i])
+                    bindings.add(param.resolve(), BindingType.Variable,
+                        tokens = arguments[i])
 
-                temp_tokens += self.evaluate(binding.tokens, bindings2)
+                temp_tokens += self.evaluate(binding.tokens, bindings)
+
+                bindings.pop()
             elif binding.b_type == BindingType.Function:
                 args = token.capture_args()
 

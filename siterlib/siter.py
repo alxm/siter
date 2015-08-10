@@ -17,56 +17,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import time
-
 from siterlib.util import Util
 from siterlib.file import FileMode, Dirs, Files
-from siterlib.token import TokenType, Token
 from siterlib.tokenizer import Tokenizer
-from siterlib.binding import BindingType, Binding
-
-class BuiltInFunctions:
-    @staticmethod
-    def highlight_code(imports, args):
-        if len(args) == 1:
-            lang = 'text'
-            code = args[0]
-            lines = []
-        elif len(args) == 2:
-            lang = args[0]
-            code = args[1]
-            lines = []
-        elif len(args) == 3:
-            lang = args[0]
-            code = args[2]
-            lines = args[1].split()
-        else:
-            Util.warning('s.code takes 1-3 args, got {}'.format(len(args)))
-            return ''
-
-        def clean_code(code):
-            # Replace < and > with HTML entities
-            code = code.replace('<', '&lt;')
-            code = code.replace('>', '&gt;')
-            return code
-
-        if code.find('\n') == -1:
-            # This is a one-liner
-            code = '<code>{}</code>'.format(clean_code(code))
-        else:
-            # This is a code block
-            div_class = 'siter_code'
-
-            if imports.Pygments:
-                lexer = imports.PygmentsLexers.get_lexer_by_name(lang.lower())
-                formatter = imports.PygmentsFormatters.HtmlFormatter(
-                    linenos = True, cssclass = div_class, hl_lines=lines)
-                code = imports.Pygments.highlight(code, lexer, formatter)
-            else:
-                code = '<div class="{}"><pre>{}</pre></div>' \
-                    .format(div_class, clean_code(code))
-
-        return code
+from siterlib.bindings import Bindings
 
 class Imports:
     def __init__(self):
@@ -135,80 +89,8 @@ class Siter:
         self.dirs.template_media.copy_to(self.dirs.out_template_media)
 
         # Global function and variable bindings
-        self.bindings = {}
-        self.__set_file_bindings(self.bindings, self.files.defs)
-
-    def __set_file_bindings(self, bindings, read_file):
-        start = 0
-        text = read_file.get_content()
-        marker = text.find(self.settings.Marker)
-
-        if marker != -1:
-            # s.content is everything after the first marker occurence
-            bindings['s.content'] = Binding(
-                BindingType.Variable,
-                tokens = self.tokenizer.tokenize(text[marker + len(self.settings.Marker) :]))
-            text = text[: marker]
-
-        for b in [t for t in self.tokenizer.tokenize(text) if t.t_type is TokenType.Block]:
-            results = b.capture_variable()
-
-            if results:
-                name, body = results
-                bindings[name.resolve()] = Binding(BindingType.Variable,
-                                                   tokens = body)
-                continue
-
-            results = b.capture_macro()
-
-            if results:
-                name, args, body = results
-                bindings[name.resolve()] = Binding(BindingType.Macro,
-                                                   params = args,
-                                                   tokens = body)
-                continue
-
-            Util.warning('Unknown binding block:\n{}'.format(b.resolve()))
-
-    def __set_builtin_bindings(self, bindings, read_file, read_dir):
-        bindings['s.if'] = Binding(
-            BindingType.Function,
-            num_params = 2,
-            func = lambda _, args: args[1] if args[0] in bindings else '')
-
-        bindings['s.ifnot'] = Binding(
-            BindingType.Function,
-            num_params = 2,
-            func = lambda _, args: '' if args[0] in bindings else args[1])
-
-        bindings['s.modified'] = Binding(
-            BindingType.Function,
-            num_params = 1,
-            func = lambda _, args: time.strftime(
-                args[0], time.localtime(read_file.get_mod_time())))
-
-        bindings['s.generated'] = Binding(
-            BindingType.Function,
-            num_params = 1,
-            func = lambda _, args: time.strftime(args[0]))
-
-        bindings['s.code'] = Binding(
-            BindingType.Function,
-            num_params = -1,
-            func = BuiltInFunctions.highlight_code)
-
-        current_subdir = self.dirs.pages.path_to(read_dir)
-        here = self.dirs.out.add_dir(current_subdir, FileMode.Optional)
-        rel_root_path = here.path_to(self.dirs.out)
-        rel_media_path = here.path_to(self.dirs.out_media)
-
-        bindings['s.root'] = Binding(
-            BindingType.Variable,
-            tokens = self.tokenizer.tokenize(rel_root_path))
-
-        bindings['s.media'] = Binding(
-            BindingType.Variable,
-            tokens = self.tokenizer.tokenize(rel_media_path))
+        self.bindings = Bindings(self.settings, self.tokenizer)
+        self.bindings.set_from_file(self.files.defs)
 
     def __apply_template(self, template_file, bindings):
         tokens = self.tokenizer.tokenize(template_file.get_content())
@@ -235,13 +117,15 @@ class Siter:
             #   global bindings from the defs file
             # + bindings declared by the current page file
             # + siter built-in bindings
-            bindings = self.bindings.copy()
-            self.__set_file_bindings(bindings, in_file)
-            self.__set_builtin_bindings(bindings, in_file, read_dir)
+            self.bindings.push()
+            self.bindings.set_from_file(in_file)
+            self.bindings.set_builtin(in_file, read_dir, self.dirs)
 
             # Load template and replace variables and functions with bindings
-            final = self.__apply_template(self.files.page_html, bindings)
+            final = self.__apply_template(self.files.page_html, self.bindings)
             out_file.write(final)
+
+            self.bindings.pop()
 
         for read_subdir in read_dir.list_dirs():
             write_subdir = write_dir.add_dir(read_subdir.get_name(), FileMode.Create)
