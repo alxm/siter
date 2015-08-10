@@ -78,7 +78,7 @@ class Bindings:
 
             Util.warning('Unknown binding block:\n{}'.format(b.resolve()))
 
-    def set_builtin(self, in_file, read_dir, dirs):
+    def set_builtin(self, read_file, read_dir, dirs):
         self.add('s.if', BindingType.Function, num_params = 2,
             func = lambda _, args: args[1] if self.contains(args[0]) else '')
 
