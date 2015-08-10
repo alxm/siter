@@ -39,8 +39,8 @@ class Bindings:
         self.bindings[name] = binding
 
     def get(self, name):
-        #if name not in self.bindings:
-        #    Util.error('{} not in bindings'.format(name))
+        if name not in self.bindings:
+            Util.error('{} not in bindings'.format(name))
 
         return self.bindings[name]
 
