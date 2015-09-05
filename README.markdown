@@ -92,11 +92,7 @@ For displaying code blocks and one-liners. See the [Pygments docs](http://pygmen
 
 #### s.if
 
-`{!s.if {flag} {...}}` - Expands to the `...` block if the `flag` variable has been declared somewhere.
-
-#### s.ifnot
-
-`{!s.ifnot {flag} {...}}` - Expands to the `...` block if the `flag` variable was *not* declared anywhere.
+`{!s.if {flag} {a} {b}}` - Expands to the `a` block if the `flag` variable has been declared somewhere, or to the `b` block otherwise. The `b` block is optional.
 
 # Project File Tree
 

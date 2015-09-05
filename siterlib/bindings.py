@@ -82,13 +82,8 @@ class Bindings:
     def set_builtin(self, read_file, read_dir, dirs):
         self.add('s.if',
                  BindingType.Function,
-                 num_params = [2],
-                 func = lambda _, args: args[1] if self.contains(args[0]) else '')
-
-        self.add('s.ifnot',
-                 BindingType.Function,
-                 num_params = [2],
-                 func = lambda _, args: '' if self.contains(args[0]) else args[1])
+                 num_params = [2, 3],
+                 func = lambda _, args: args[1] if self.contains(args[0]) else args[2] if len(args) == 3 else '')
 
         self.add('s.modified',
                  BindingType.Function,
