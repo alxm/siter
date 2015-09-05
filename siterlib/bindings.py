@@ -104,16 +104,10 @@ class Bindings:
         current_subdir = dirs.pages.path_to(read_dir)
         here = dirs.out.add_dir(current_subdir, FileMode.Optional)
         rel_root_path = here.path_to(dirs.out)
-        rel_media_path = here.path_to(dirs.out_media)
 
         self.add('s.root',
                  BindingType.Variable,
                  tokens = self.tokenizer.tokenize(rel_root_path),
-                 overwrite = False)
-
-        self.add('s.media',
-                 BindingType.Variable,
-                 tokens = self.tokenizer.tokenize(rel_media_path),
                  overwrite = False)
 
 class BuiltInFunctions:

@@ -84,9 +84,8 @@ class Siter:
         # Token processing utilities
         self.tokenizer = Tokenizer(self.settings, self.imports)
 
-        # Copy site and template media files
-        self.dirs.media.copy_to(self.dirs.out_media)
-        self.dirs.template_media.copy_to(self.dirs.out_template_media)
+        # Copy static files
+        self.dirs.static.copy_to(self.dirs.out)
 
         # Global function and variable bindings
         self.bindings = Bindings(self.settings, self.tokenizer)

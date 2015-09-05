@@ -54,10 +54,6 @@ Everything in a page file after the `~~~` content marker.
 
 Relative path from the current page to the website root.
 
-#### s.media
-
-Relative path from the current page to siter-media.
-
 # Special Macros
 
 #### s.modified
@@ -103,9 +99,11 @@ For displaying code blocks and one-liners. See the [Pygments docs](http://pygmen
      |   |- about.html
      |   |- index.html
      |   '- ...
-     |- siter-pages/    # Source content pages
+     |- siter-pages/    # Content pages read by Siter
      |   |- about.html
      |   |- index.html
+     |   '- ...
+     |- siter-static/   # Files copied to siter-out as they are
      |   '- ...
      '- siter-template/ # HTML templates
          '- page.html

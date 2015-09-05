@@ -152,14 +152,10 @@ class TextFile(File):
 class Dirs:
     def __init__(self):
         self.config = Dir('siter-config', FileMode.Optional)
-        self.media = Dir('siter-media', FileMode.Optional)
-        self.pages = Dir('siter-pages', FileMode.Required)
-        self.template = Dir('siter-template', FileMode.Required)
-        self.template_media = self.template.add_dir('media', FileMode.Optional)
-
         self.out = Dir('siter-out', FileMode.Create)
-        self.out_media = self.out.add_dir('media', FileMode.Create)
-        self.out_template_media = self.out_media.add_dir('template-media', FileMode.Create)
+        self.pages = Dir('siter-pages', FileMode.Required)
+        self.static = Dir('siter-static', FileMode.Optional)
+        self.template = Dir('siter-template', FileMode.Required)
 
 class Files:
     def __init__(self, dirs):
