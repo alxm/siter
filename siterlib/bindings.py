@@ -34,9 +34,10 @@ class Bindings:
     def contains(self, name):
         return name in self.bindings
 
-    def add(self, name, b_type, tokens = None, num_params = 0, params = None, func = None):
-        binding = Binding(b_type, tokens, num_params, params, func)
-        self.bindings[name] = binding
+    def add(self, name, b_type, tokens = None, num_params = 0, params = None, func = None, overwrite = True):
+        if overwrite or not self.contains(name):
+            binding = Binding(b_type, tokens, num_params, params, func)
+            self.bindings[name] = binding
 
     def get(self, name):
         if name not in self.bindings:
@@ -79,32 +80,46 @@ class Bindings:
             Util.warning('Unknown binding block:\n{}'.format(b.resolve()))
 
     def set_builtin(self, read_file, read_dir, dirs):
-        self.add('s.if', BindingType.Function, num_params = 2,
-            func = lambda _, args: args[1] if self.contains(args[0]) else '')
+        self.add('s.if',
+                 BindingType.Function,
+                 num_params = 2,
+                 func = lambda _, args: args[1] if self.contains(args[0]) else '')
 
-        self.add('s.ifnot', BindingType.Function, num_params = 2,
-            func = lambda _, args: '' if self.contains(args[0]) else args[1])
+        self.add('s.ifnot',
+                 BindingType.Function,
+                 num_params = 2,
+                 func = lambda _, args: '' if self.contains(args[0]) else args[1])
 
-        self.add('s.modified', BindingType.Function, num_params = 1,
-            func = lambda _, args: time.strftime(
-                args[0], time.localtime(read_file.get_mod_time())))
+        self.add('s.modified',
+                 BindingType.Function,
+                 num_params = 1,
+                 func = lambda _, args: time.strftime(args[0], time.localtime(read_file.get_mod_time())),
+                 overwrite = False)
 
-        self.add('s.generated', BindingType.Function, num_params = 1,
-            func = lambda _, args: time.strftime(args[0]))
+        self.add('s.generated',
+                 BindingType.Function,
+                 num_params = 1,
+                 func = lambda _, args: time.strftime(args[0]))
 
-        self.add('s.code', BindingType.Function, num_params = -1,
-            func = BuiltInFunctions.highlight_code)
+        self.add('s.code',
+                 BindingType.Function,
+                 num_params = -1,
+                 func = BuiltInFunctions.highlight_code)
 
         current_subdir = dirs.pages.path_to(read_dir)
         here = dirs.out.add_dir(current_subdir, FileMode.Optional)
         rel_root_path = here.path_to(dirs.out)
         rel_media_path = here.path_to(dirs.out_media)
 
-        self.add('s.root', BindingType.Variable,
-            tokens = self.tokenizer.tokenize(rel_root_path))
+        self.add('s.root',
+                 BindingType.Variable,
+                 tokens = self.tokenizer.tokenize(rel_root_path),
+                 overwrite = False)
 
-        self.add('s.media', BindingType.Variable,
-            tokens = self.tokenizer.tokenize(rel_media_path))
+        self.add('s.media',
+                 BindingType.Variable,
+                 tokens = self.tokenizer.tokenize(rel_media_path),
+                 overwrite = False)
 
 class BuiltInFunctions:
     @staticmethod
