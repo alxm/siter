@@ -34,7 +34,7 @@ class Bindings:
     def contains(self, name):
         return name in self.bindings
 
-    def add(self, name, b_type, tokens = None, num_params = 0, params = None, func = None, overwrite = True):
+    def add(self, name, b_type, tokens = None, num_params = None, params = None, func = None, overwrite = True):
         if overwrite or not self.contains(name):
             binding = Binding(b_type, tokens, num_params, params, func)
             self.bindings[name] = binding
@@ -82,28 +82,28 @@ class Bindings:
     def set_builtin(self, read_file, read_dir, dirs):
         self.add('s.if',
                  BindingType.Function,
-                 num_params = 2,
+                 num_params = [2],
                  func = lambda _, args: args[1] if self.contains(args[0]) else '')
 
         self.add('s.ifnot',
                  BindingType.Function,
-                 num_params = 2,
+                 num_params = [2],
                  func = lambda _, args: '' if self.contains(args[0]) else args[1])
 
         self.add('s.modified',
                  BindingType.Function,
-                 num_params = 1,
+                 num_params = [1],
                  func = lambda _, args: time.strftime(args[0], time.localtime(read_file.get_mod_time())),
                  overwrite = False)
 
         self.add('s.generated',
                  BindingType.Function,
-                 num_params = 1,
+                 num_params = [1],
                  func = lambda _, args: time.strftime(args[0]))
 
         self.add('s.code',
                  BindingType.Function,
-                 num_params = -1,
+                 num_params = [1, 2, 3],
                  func = BuiltInFunctions.highlight_code)
 
         current_subdir = dirs.pages.path_to(read_dir)
@@ -136,9 +136,6 @@ class BuiltInFunctions:
             lang = args[0]
             code = args[2]
             lines = args[1].split()
-        else:
-            Util.warning('s.code takes 1-3 args, got {}'.format(len(args)))
-            return ''
 
         def clean_code(code):
             # Replace < and > with HTML entities

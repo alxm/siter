@@ -153,9 +153,9 @@ class Tokenizer:
 
                 temp_tokens += body_tokens
             elif binding.b_type == BindingType.Macro:
-                args = token.capture_args(binding.num_params == 1)
+                args = token.capture_args(binding.num_params == [1])
 
-                if len(args) != binding.num_params:
+                if len(args) not in binding.num_params:
                     Util.warning('Macro {} takes {} args, got {}'
                         .format(name, binding.num_params, len(args)))
                     continue
@@ -178,9 +178,9 @@ class Tokenizer:
 
                 bindings.pop()
             elif binding.b_type == BindingType.Function:
-                args = token.capture_args(binding.num_params == 1)
+                args = token.capture_args(binding.num_params == [1])
 
-                if len(args) != binding.num_params != -1:
+                if len(args) not in binding.num_params:
                     Util.warning('Function {} takes {} args, got {}'
                         .format(name, binding.num_params, len(args)))
                     continue
