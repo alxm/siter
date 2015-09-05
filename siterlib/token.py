@@ -101,7 +101,7 @@ class Token:
         results = self.__capture(TokenType.Eval, TokenType.Text, rest = False)
         return results[1].resolve() if results else None
 
-    def capture_args(self):
+    def capture_args(self, single_arg):
         # {`name {arg1} {arg2} ...}
         results = self.__capture(TokenType.Eval, TokenType.Text)
 
@@ -110,8 +110,9 @@ class Token:
 
         args = [t for t in results[2] if t.t_type is TokenType.Block]
 
-        if len(args) == 0:
-            # Allow a single arg without block tags
-            return [Token(TokenType.Block, self.settings, tokens = results[2])]
+        if single_arg or len(args) == 0:
+            # Put all the args in a parent block if we only want a single arg,
+            # or if there were no blocks in the args.
+            args = [Token(TokenType.Block, self.settings, tokens = results[2])]
 
         return args
