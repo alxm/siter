@@ -105,7 +105,7 @@ class Token:
         # {`name {arg1} {arg2} ...}
         results = self.__capture(TokenType.Eval, TokenType.Text)
 
-        if results is None:
+        if results is None or len(results[2]) == 0:
             return []
 
         args = [t for t in results[2] if t.t_type is TokenType.Block]
