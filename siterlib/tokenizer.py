@@ -156,8 +156,8 @@ class Tokenizer:
                 args = token.capture_args(binding.num_params == [1])
 
                 if len(args) not in binding.num_params:
-                    Util.warning('Macro {} takes {} args, got {}'
-                        .format(name, binding.num_params, len(args)))
+                    Util.warning('Macro {} takes {} args, got {}:\n{}'
+                        .format(name, binding.num_params, len(args), token))
                     continue
 
                 arguments = []
@@ -181,8 +181,8 @@ class Tokenizer:
                 args = token.capture_args(binding.num_params == [1])
 
                 if len(args) not in binding.num_params:
-                    Util.warning('Function {} takes {} args, got {}'
-                        .format(name, binding.num_params, len(args)))
+                    Util.warning('Function {} takes {} args, got {}:\n{}'
+                        .format(name, binding.num_params, len(args), token))
                     continue
 
                 arguments = []
@@ -195,7 +195,7 @@ class Tokenizer:
                 body = binding.func(self.imports, arguments)
                 temp_tokens += self.tokenize(body)
             else:
-                Util.error('Unknown binding type')
+                Util.error('{} has an unknown binding type'.format(name))
 
             # Trim leading and trailing whitespace
             start = 0

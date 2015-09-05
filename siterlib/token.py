@@ -35,6 +35,9 @@ class Token:
         self.text = text
         self.tokens = tokens if tokens else []
 
+    def __str__(self):
+        return self.resolve()
+
     def resolve(self):
         if self.t_type is TokenType.Block:
             output = ''.join([t.resolve() for t in self.tokens])

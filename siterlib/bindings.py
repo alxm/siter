@@ -77,7 +77,7 @@ class Bindings:
                 self.add(name.resolve(), BindingType.Macro, params = args, tokens = body)
                 continue
 
-            Util.warning('Unknown binding block:\n{}'.format(b.resolve()))
+            Util.warning('Unknown binding block:\n{}'.format(b))
 
     def set_builtin(self, read_file, read_dir, dirs):
         self.add('s.if',
