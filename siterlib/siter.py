@@ -90,7 +90,9 @@ class Siter:
 
         # Global function and variable bindings
         self.bindings = Bindings(self.settings, self.tokenizer)
-        self.bindings.set_from_file(self.files.defs)
+
+        if self.files.defs.exists():
+            self.bindings.set_from_file(self.files.defs)
 
     def __apply_template(self, template_file, bindings):
         tokens = self.tokenizer.tokenize(template_file.get_content())
