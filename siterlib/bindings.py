@@ -57,12 +57,15 @@ class Bindings:
         marker = text.find(self.settings.Marker)
 
         if marker != -1:
-            # s.content is everything after the first marker occurence
-            self.add('s.content', BindingType.Variable,
-                tokens = self.tokenizer.tokenize(text[marker + len(self.settings.Marker) :]))
-            text = text[: marker]
+            declarations = text[: marker]
+            content = text[marker + len(self.settings.Marker) :]
+        else:
+            declarations = text
+            content = ''
 
-        for b in [t for t in self.tokenizer.tokenize(text) if t.t_type is TokenType.Block]:
+        self.add('s.content', BindingType.Variable, tokens = self.tokenizer.tokenize(content))
+
+        for b in [t for t in self.tokenizer.tokenize(declarations) if t.t_type is TokenType.Block]:
             results = b.capture_variable()
 
             if results:
