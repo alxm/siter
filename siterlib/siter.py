@@ -18,6 +18,7 @@
 """
 
 from siterlib.util import Util
+from siterlib.settings import Settings
 from siterlib.file import FileMode, Dirs, Files
 from siterlib.tokenizer import Tokenizer
 from siterlib.token import TokenType, Token
@@ -30,46 +31,6 @@ class Imports:
         self.Pygments = Util.try_import('pygments')
         self.PygmentsLexers = Util.try_import('pygments.lexers')
         self.PygmentsFormatters = Util.try_import('pygments.formatters')
-
-class Settings:
-    def __init__(self, argv, files):
-        # Whether to re-generate up-to-date files
-        self.ForceWrite = False
-
-        # Blocks that start with this are evaluated; must be exactly 1 char
-        self.EvalHint = '`'
-
-        # Block delimiters
-        self.TagOpen = '{'
-        self.TagClose = '}'
-
-        # Marks the beginning of page content
-        self.Marker = '~~~'
-
-        # Load user settings
-        self.from_args(argv)
-        self.from_files(files)
-
-    def from_args(self, argv):
-        # Go through command line arguments
-        for arg in argv:
-            if arg in ['-f', '--force']:
-                self.ForceWrite = True
-
-    def from_files(self, files):
-        if files.evalhint.test_line(0, 1, 1):
-            self.EvalHint = files.evalhint.get_line(0)
-            Util.info('Using {} as block eval hint'.format(self.EvalHint))
-
-        if files.tags.test_line(0, 1) and files.tags.test_line(1, 1):
-            self.TagOpen = files.tags.get_line(0)
-            self.TagClose = files.tags.get_line(1)
-
-            Util.info('Using {} and {} as block tags'
-                .format(self.TagOpen, self.TagClose))
-
-        if files.marker.test_line(0, 1):
-            self.Marker = files.marker.get_line(0)
 
 class Siter:
     def __init__(self, argv):
