@@ -23,6 +23,7 @@ from siterlib.util import Util
 from siterlib.token import TokenType
 from siterlib.binding import BindingType, Binding
 from siterlib.file import FileMode
+from siterlib.functions import Functions
 
 class Bindings:
     def __init__(self, settings, tokenizer):
@@ -89,12 +90,12 @@ class Bindings:
         self.add('s.var',
                  BindingType.Function,
                  num_params = [2],
-                 func = BuiltInFunctions.declare_variable)
+                 func = Functions.declare_variable)
 
         self.add('s.fun',
                  BindingType.Function,
                  num_params = [3],
-                 func = BuiltInFunctions.declare_function)
+                 func = Functions.declare_function)
 
         self.add('s.if',
                  BindingType.Function,
@@ -115,7 +116,7 @@ class Bindings:
         self.add('s.code',
                  BindingType.Function,
                  num_params = [1, 2, 3],
-                 func = BuiltInFunctions.highlight_code)
+                 func = Functions.highlight_code)
 
         current_subdir = dirs.pages.path_to(read_dir)
         here = dirs.out.add_dir(current_subdir, FileMode.Optional)
@@ -125,58 +126,3 @@ class Bindings:
                  BindingType.Variable,
                  tokens = self.tokenizer.tokenize(rel_root_path),
                  overwrite = False)
-
-class BuiltInFunctions:
-    @staticmethod
-    def declare_variable(bindings, args):
-        name = args[0].tokens[0].resolve()
-        body = [args[1]]
-
-        bindings.add(name, BindingType.Variable, tokens = body)
-
-    @staticmethod
-    def declare_function(bindings, args):
-        name = args[0].tokens[0].resolve()
-        params = [t for t in args[1].tokens if t.t_type is TokenType.Text]
-        body = [args[2]]
-
-        bindings.add(name, BindingType.Macro, params = params, tokens = body)
-
-    @staticmethod
-    def highlight_code(imports, args):
-        if len(args) == 1:
-            lang = 'text'
-            code = args[0]
-            lines = []
-        elif len(args) == 2:
-            lang = args[0]
-            code = args[1]
-            lines = []
-        elif len(args) == 3:
-            lang = args[0]
-            code = args[2]
-            lines = args[1].split()
-
-        def clean_code(code):
-            # Replace < and > with HTML entities
-            code = code.replace('<', '&lt;')
-            code = code.replace('>', '&gt;')
-            return code
-
-        if code.find('\n') == -1:
-            # This is a one-liner
-            code = '<code>{}</code>'.format(clean_code(code))
-        else:
-            # This is a code block
-            div_class = 'siter_code'
-
-            if imports.Pygments:
-                lexer = imports.PygmentsLexers.get_lexer_by_name(lang.lower())
-                formatter = imports.PygmentsFormatters.HtmlFormatter(
-                    linenos = True, cssclass = div_class, hl_lines=lines)
-                code = imports.Pygments.highlight(code, lexer, formatter)
-            else:
-                code = '<div class="{}"><pre>{}</pre></div>' \
-                    .format(div_class, clean_code(code))
-
-        return code
