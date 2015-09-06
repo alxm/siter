@@ -21,9 +21,8 @@ from siterlib.util import Util
 from siterlib.token import TokenType, Token
 
 class Tokenizer:
-    def __init__(self, settings, imports):
+    def __init__(self, settings):
         self.settings = settings
-        self.imports = imports
 
     def __make_flat_tokens(self, text):
         flat_tokens = []

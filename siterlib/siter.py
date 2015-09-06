@@ -84,7 +84,7 @@ class Siter:
         self.imports = Imports()
 
         # Token processing utilities
-        self.tokenizer = Tokenizer(self.settings, self.imports)
+        self.tokenizer = Tokenizer(self.settings)
 
         # Copy static files
         self.dirs.static.copy_to(self.dirs.out)
