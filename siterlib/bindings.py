@@ -52,7 +52,7 @@ class Bindings:
     def pop(self):
         self.bindings = self.stack.pop()
 
-    def set_from_file(self, read_file):
+    def set_from_file(self, siter, read_file):
         start = 0
         text = read_file.get_content()
         marker = text.find(self.settings.Marker)
@@ -65,7 +65,7 @@ class Bindings:
             content = ''
 
         content_tokens = self.tokenizer.tokenize(content)
-        content_tokens = self.tokenizer.evaluate(content_tokens, self)
+        content_tokens = siter.evaluate(content_tokens)
 
         self.add('s.content', BindingType.Variable, tokens = content_tokens)
 
