@@ -17,8 +17,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import time
-
 from siterlib.util import Util
 from siterlib.token import TokenType
 from siterlib.binding import BindingType, Binding
@@ -105,13 +103,13 @@ class Bindings:
         self.add('s.modified',
                  BindingType.Function,
                  num_params = [1],
-                 func = lambda _, args: time.strftime(args[0], time.localtime(read_file.get_mod_time())),
+                 func = lambda _, args: Functions.mod_time(read_file, args[0]),
                  overwrite = False)
 
         self.add('s.generated',
                  BindingType.Function,
                  num_params = [1],
-                 func = lambda _, args: time.strftime(args[0]))
+                 func = Functions.gen_time)
 
         self.add('s.code',
                  BindingType.Function,

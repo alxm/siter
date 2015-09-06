@@ -17,6 +17,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import time
+
 from siterlib.token import TokenType
 from siterlib.binding import BindingType
 
@@ -44,6 +46,17 @@ class Functions:
             return args[2]
         else:
             return ''
+
+    @staticmethod
+    def mod_time(read_file, fmt):
+        f_time = read_file.get_mod_time()
+        time_obj = time.localtime(f_time)
+
+        return time.strftime(fmt, time_obj)
+
+    @staticmethod
+    def gen_time(_, args):
+        return time.strftime(args[0])
 
     @staticmethod
     def highlight_code(siter, args):
