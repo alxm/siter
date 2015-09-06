@@ -183,15 +183,19 @@ class Tokenizer:
                         .format(name, binding.num_params, len(args), token))
                     continue
 
-                arguments = []
+                if name == 's.fun':
+                    binding.func(bindings, args)
+                else:
+                    arguments = []
 
-                # Evaluate each argument
-                for arg in args:
-                    arg = self.evaluate([arg], bindings)
-                    arguments.append(''.join([t.resolve() for t in arg]))
+                    # Evaluate each argument
+                    for arg in args:
+                        arg = self.evaluate([arg], bindings)
+                        arg_resolved = ''.join([t.resolve() for t in arg])
+                        arguments.append(arg_resolved)
 
-                body = binding.func(self.imports, arguments)
-                temp_tokens += self.tokenize(body)
+                    body = binding.func(self.imports, arguments)
+                    temp_tokens += self.tokenize(body)
             else:
                 Util.error('{} has an unknown binding type'.format(name))
 

@@ -80,6 +80,11 @@ class Bindings:
             Util.warning('Unknown binding block:\n{}'.format(b))
 
     def set_builtin(self, read_file, read_dir, dirs):
+        self.add('s.fun',
+                 BindingType.Function,
+                 num_params = [3],
+                 func = BuiltInFunctions.declare_function)
+
         self.add('s.if',
                  BindingType.Function,
                  num_params = [2, 3],
@@ -111,6 +116,14 @@ class Bindings:
                  overwrite = False)
 
 class BuiltInFunctions:
+    @staticmethod
+    def declare_function(bindings, args):
+        name = args[0].tokens[0].resolve()
+        params = [t for t in args[1].tokens if t.t_type is TokenType.Text]
+        body = [args[2]]
+
+        bindings.add(name, BindingType.Macro, params = params, tokens = body)
+
     @staticmethod
     def highlight_code(imports, args):
         if len(args) == 1:
