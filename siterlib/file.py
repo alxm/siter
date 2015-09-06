@@ -161,6 +161,5 @@ class Files:
     def __init__(self, dirs):
         self.defs = dirs.config.add_file('defs', FileMode.Optional)
         self.evalhint = dirs.config.add_file('eval', FileMode.Optional)
-        self.marker = dirs.config.add_file('marker', FileMode.Optional)
         self.tags = dirs.config.add_file('tags', FileMode.Optional)
         self.page_html = dirs.template.add_file('page.html', FileMode.Required)

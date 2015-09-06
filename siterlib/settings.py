@@ -31,9 +31,6 @@ class Settings:
         self.TagOpen = '{'
         self.TagClose = '}'
 
-        # Marks the beginning of page content
-        self.Marker = '~~~'
-
         # Load user settings
         self.from_args(argv)
         self.from_files(files)
@@ -55,6 +52,3 @@ class Settings:
 
             Util.info('Using {} and {} as block tags'
                 .format(self.TagOpen, self.TagClose))
-
-        if files.marker.test_line(0, 1):
-            self.Marker = files.marker.get_line(0)

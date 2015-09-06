@@ -88,23 +88,14 @@ class Bindings:
                  overwrite = False)
 
     def set_from_file(self, read_file):
-        start = 0
-        text = read_file.get_content()
-        marker = text.find(self.siter.settings.Marker)
-
-        if marker != -1:
-            declarations = text[: marker]
-            content = text[marker + len(self.siter.settings.Marker) :]
-        else:
-            declarations = text
-            content = ''
+        content = read_file.get_content()
 
         content_tokens = self.siter.tokenizer.tokenize(content)
         content_tokens = self.siter.evaluate(content_tokens)
 
         self.add('s.content', BindingType.Variable, tokens = content_tokens)
 
-        for b in [t for t in self.siter.tokenizer.tokenize(declarations) if t.t_type is TokenType.Block]:
+        for b in [t for t in self.siter.tokenizer.tokenize(content) if t.t_type is TokenType.Block]:
             results = b.capture_variable()
 
             if results:
