@@ -23,9 +23,8 @@ from siterlib.binding import BindingType, Binding
 from siterlib.functions import Functions
 
 class Bindings:
-    def __init__(self, settings, tokenizer):
-        self.settings = settings
-        self.tokenizer = tokenizer
+    def __init__(self, siter):
+        self.siter = siter
         self.bindings = {}
         self.stack = []
 
@@ -49,24 +48,24 @@ class Bindings:
     def pop(self):
         self.bindings = self.stack.pop()
 
-    def set_from_file(self, siter, read_file):
+    def set_from_file(self, read_file):
         start = 0
         text = read_file.get_content()
-        marker = text.find(self.settings.Marker)
+        marker = text.find(self.siter.settings.Marker)
 
         if marker != -1:
             declarations = text[: marker]
-            content = text[marker + len(self.settings.Marker) :]
+            content = text[marker + len(self.siter.settings.Marker) :]
         else:
             declarations = text
             content = ''
 
-        content_tokens = self.tokenizer.tokenize(content)
-        content_tokens = siter.evaluate(content_tokens)
+        content_tokens = self.siter.tokenizer.tokenize(content)
+        content_tokens = self.siter.evaluate(content_tokens)
 
         self.add('s.content', BindingType.Variable, tokens = content_tokens)
 
-        for b in [t for t in self.tokenizer.tokenize(declarations) if t.t_type is TokenType.Block]:
+        for b in [t for t in self.siter.tokenizer.tokenize(declarations) if t.t_type is TokenType.Block]:
             results = b.capture_variable()
 
             if results:

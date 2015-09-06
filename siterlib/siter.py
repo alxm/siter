@@ -90,10 +90,10 @@ class Siter:
         self.dirs.static.copy_to(self.dirs.out)
 
         # Variables, macros, and functions
-        self.bindings = Bindings(self.settings, self.tokenizer)
+        self.bindings = Bindings(self)
 
         if self.files.defs.exists():
-            self.bindings.set_from_file(self, self.files.defs)
+            self.bindings.set_from_file(self.files.defs)
 
     def evaluate(self, tokens):
         eval_tokens = []
@@ -226,7 +226,7 @@ class Siter:
             # + siter built-in bindings
             self.bindings.push()
             self.bindings.set_builtin(in_file, read_dir)
-            self.bindings.set_from_file(self, in_file)
+            self.bindings.set_from_file(in_file)
 
             # Load template and replace variables and functions with bindings
             final = self.__apply_template(self.files.page_html)
