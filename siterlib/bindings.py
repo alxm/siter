@@ -48,6 +48,45 @@ class Bindings:
     def pop(self):
         self.bindings = self.stack.pop()
 
+    def set_builtin_global(self):
+        self.add('s.var',
+                 BindingType.Function,
+                 num_params = [2],
+                 func = Functions.declare_variable)
+
+        self.add('s.fun',
+                 BindingType.Function,
+                 num_params = [3],
+                 func = Functions.declare_function)
+
+        self.add('s.if',
+                 BindingType.Function,
+                 num_params = [2, 3],
+                 func = Functions.if_check)
+
+        self.add('s.generated',
+                 BindingType.Function,
+                 num_params = [1],
+                 func = Functions.gen_time)
+
+        self.add('s.code',
+                 BindingType.Function,
+                 num_params = [1, 2, 3],
+                 func = Functions.highlight_code)
+
+    def set_builtin_local(self, read_file, read_dir):
+        self.add('s.modified',
+                 BindingType.Function,
+                 num_params = [1],
+                 func = lambda _, args: Functions.mod_time(read_file, args[0]),
+                 overwrite = False)
+
+        self.add('s.root',
+                 BindingType.Function,
+                 num_params = [0],
+                 func = lambda siter, _: read_dir.path_to(siter.dirs.pages),
+                 overwrite = False)
+
     def set_from_file(self, read_file):
         start = 0
         text = read_file.get_content()
@@ -81,41 +120,3 @@ class Bindings:
                 continue
 
             Util.warning('Unknown binding block:\n{}'.format(b))
-
-    def set_builtin(self, read_file, read_dir):
-        self.add('s.var',
-                 BindingType.Function,
-                 num_params = [2],
-                 func = Functions.declare_variable)
-
-        self.add('s.fun',
-                 BindingType.Function,
-                 num_params = [3],
-                 func = Functions.declare_function)
-
-        self.add('s.if',
-                 BindingType.Function,
-                 num_params = [2, 3],
-                 func = Functions.if_check)
-
-        self.add('s.modified',
-                 BindingType.Function,
-                 num_params = [1],
-                 func = lambda _, args: Functions.mod_time(read_file, args[0]),
-                 overwrite = False)
-
-        self.add('s.generated',
-                 BindingType.Function,
-                 num_params = [1],
-                 func = Functions.gen_time)
-
-        self.add('s.code',
-                 BindingType.Function,
-                 num_params = [1, 2, 3],
-                 func = Functions.highlight_code)
-
-        self.add('s.root',
-                 BindingType.Function,
-                 num_params = [0],
-                 func = lambda siter, _: read_dir.path_to(siter.dirs.pages),
-                 overwrite = False)

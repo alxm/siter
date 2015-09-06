@@ -53,6 +53,10 @@ class Siter:
         # Variables, macros, and functions
         self.bindings = Bindings(self)
 
+        # Set built-in global bindings
+        self.bindings.set_builtin_global()
+
+        # Get user global bindings, if any
         if self.files.defs.exists():
             self.bindings.set_from_file(self.files.defs)
 
@@ -182,11 +186,9 @@ class Siter:
 
             Util.message('Updating', out_file.get_path())
 
-            #   global bindings from the defs file
-            # + bindings declared by the current page file
-            # + siter built-in bindings
             self.bindings.push()
-            self.bindings.set_builtin(in_file, read_dir)
+
+            self.bindings.set_builtin_local(in_file, read_dir)
             self.bindings.set_from_file(in_file)
 
             # Load template and replace variables and functions with bindings
