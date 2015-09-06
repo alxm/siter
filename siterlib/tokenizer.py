@@ -202,16 +202,16 @@ class Tokenizer:
             end = len(temp_tokens)
 
             for t in temp_tokens:
-                if t.t_type is TokenType.Text:
-                    break
-                else:
+                if t.t_type in [TokenType.Whitespace, TokenType.Newline]:
                     start += 1
+                else:
+                    break
 
             for t in reversed(temp_tokens):
-                if t.t_type is TokenType.Text:
-                    break
-                else:
+                if t.t_type in [TokenType.Whitespace, TokenType.Newline]:
                     end -= 1
+                else:
+                    break
 
             eval_tokens += temp_tokens[start : end]
 
