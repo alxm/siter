@@ -51,7 +51,7 @@ class Settings:
     def from_args(self, argv):
         # Go through command line arguments
         for arg in argv:
-            if arg == '-f' or arg == '--force':
+            if arg in ['-f', '--force']:
                 self.ForceWrite = True
 
     def from_files(self, files):
