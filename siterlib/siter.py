@@ -174,7 +174,7 @@ class Siter:
                         arg_resolved = ''.join([t.resolve() for t in arg])
                         arguments.append(arg_resolved)
 
-                    body = binding.func(self.imports, arguments)
+                    body = binding.func(self, arguments)
                     temp_tokens += self.tokenizer.tokenize(body)
             else:
                 Util.error('{} has an unknown binding type'.format(name))

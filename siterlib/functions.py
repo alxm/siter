@@ -37,7 +37,7 @@ class Functions:
         bindings.add(name, BindingType.Macro, params = params, tokens = body)
 
     @staticmethod
-    def highlight_code(imports, args):
+    def highlight_code(siter, args):
         if len(args) == 1:
             lang = 'text'
             code = args[0]
@@ -64,11 +64,11 @@ class Functions:
             # This is a code block
             div_class = 'siter_code'
 
-            if imports.Pygments:
-                lexer = imports.PygmentsLexers.get_lexer_by_name(lang.lower())
-                formatter = imports.PygmentsFormatters.HtmlFormatter(
+            if siter.imports.Pygments:
+                lexer = siter.imports.PygmentsLexers.get_lexer_by_name(lang.lower())
+                formatter = siter.imports.PygmentsFormatters.HtmlFormatter(
                     linenos = True, cssclass = div_class, hl_lines=lines)
-                code = imports.Pygments.highlight(code, lexer, formatter)
+                code = siter.imports.Pygments.highlight(code, lexer, formatter)
             else:
                 code = '<div class="{}"><pre>{}</pre></div>' \
                     .format(div_class, clean_code(code))
