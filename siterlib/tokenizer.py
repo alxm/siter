@@ -183,7 +183,8 @@ class Tokenizer:
                         .format(name, binding.num_params, len(args), token))
                     continue
 
-                if name == 's.fun':
+                if name in ['s.var', 's.fun']:
+                    # Create a new user macro or variable
                     binding.func(bindings, args)
                 else:
                     arguments = []

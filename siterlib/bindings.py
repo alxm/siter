@@ -80,6 +80,11 @@ class Bindings:
             Util.warning('Unknown binding block:\n{}'.format(b))
 
     def set_builtin(self, read_file, read_dir, dirs):
+        self.add('s.var',
+                 BindingType.Function,
+                 num_params = [2],
+                 func = BuiltInFunctions.declare_variable)
+
         self.add('s.fun',
                  BindingType.Function,
                  num_params = [3],
@@ -116,6 +121,13 @@ class Bindings:
                  overwrite = False)
 
 class BuiltInFunctions:
+    @staticmethod
+    def declare_variable(bindings, args):
+        name = args[0].tokens[0].resolve()
+        body = [args[1]]
+
+        bindings.add(name, BindingType.Variable, tokens = body)
+
     @staticmethod
     def declare_function(bindings, args):
         name = args[0].tokens[0].resolve()
