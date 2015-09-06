@@ -18,7 +18,6 @@
 """
 
 from siterlib.util import Util
-from siterlib.token import TokenType
 from siterlib.binding import BindingType, Binding
 from siterlib.functions import Functions
 
@@ -94,20 +93,3 @@ class Bindings:
         content_tokens = self.siter.evaluate(content_tokens)
 
         self.add('s.content', BindingType.Variable, tokens = content_tokens)
-
-        for b in [t for t in self.siter.tokenizer.tokenize(content) if t.t_type is TokenType.Block]:
-            results = b.capture_variable()
-
-            if results:
-                name, body = results
-                self.add(name.resolve(), BindingType.Variable, tokens = body)
-                continue
-
-            results = b.capture_macro()
-
-            if results:
-                name, args, body = results
-                self.add(name.resolve(), BindingType.Macro, params = args, tokens = body)
-                continue
-
-            Util.warning('Unknown binding block:\n{}'.format(b))

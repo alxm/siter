@@ -72,31 +72,6 @@ class Token:
 
         return results
 
-    def capture_variable(self):
-        # {var name *}
-        results = self.__capture(TokenType.Text, TokenType.Text)
-
-        if results and results[0].resolve() == 'var':
-            name = results[1]
-            body = results[2]
-
-            return name, body
-
-        return None
-
-    def capture_macro(self):
-        # {fun name {args} body}
-        results = self.__capture(TokenType.Text, TokenType.Text, TokenType.Block)
-
-        if results and results[0].resolve() == 'fun':
-            name = results[1]
-            args = [t for t in results[2].tokens if t.t_type is TokenType.Text]
-            body = results[3]
-
-            return name, args, body
-
-        return None
-
     def capture_call(self):
         # {`name ...}
         results = self.__capture(TokenType.Eval, TokenType.Text, rest = False)
