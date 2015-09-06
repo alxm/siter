@@ -87,15 +87,15 @@ class Siter:
         # Copy static files
         self.dirs.static.copy_to(self.dirs.out)
 
-        # Global function and variable bindings
+        # Variables, macros, and functions
         self.bindings = Bindings(self.settings, self.tokenizer)
 
         if self.files.defs.exists():
             self.bindings.set_from_file(self.files.defs)
 
-    def __apply_template(self, template_file, bindings):
+    def __apply_template(self, template_file):
         tokens = self.tokenizer.tokenize(template_file.get_content())
-        tokens = self.tokenizer.evaluate(tokens, bindings)
+        tokens = self.tokenizer.evaluate(tokens, self.bindings)
 
         return ''.join([t.resolve() for t in tokens])
 
@@ -123,7 +123,7 @@ class Siter:
             self.bindings.set_from_file(in_file)
 
             # Load template and replace variables and functions with bindings
-            final = self.__apply_template(self.files.page_html, self.bindings)
+            final = self.__apply_template(self.files.page_html)
             out_file.write(final)
 
             self.bindings.pop()
