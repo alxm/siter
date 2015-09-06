@@ -40,9 +40,7 @@ class Tokenizer:
 
             previous_type = current_type
 
-            if c == '\n':
-                current_type = TokenType.Newline
-            elif c == ' ' or c == '\t':
+            if c in [' ', '\t', '\n']:
                 current_type = TokenType.Whitespace
             else:
                 current_type = TokenType.Text
@@ -202,13 +200,13 @@ class Tokenizer:
             end = len(temp_tokens)
 
             for t in temp_tokens:
-                if t.t_type in [TokenType.Whitespace, TokenType.Newline]:
+                if t.t_type is TokenType.Whitespace:
                     start += 1
                 else:
                     break
 
             for t in reversed(temp_tokens):
-                if t.t_type in [TokenType.Whitespace, TokenType.Newline]:
+                if t.t_type is TokenType.Whitespace:
                     end -= 1
                 else:
                     break

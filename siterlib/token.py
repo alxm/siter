@@ -21,7 +21,6 @@ import enum
 
 class TokenType(enum.Enum):
     Text = 1
-    Newline = 2
     Whitespace = 3
     TagOpen = 4
     TagClose = 5
@@ -61,8 +60,7 @@ class Token:
                     results.append(token)
                     break
 
-                if (token.t_type is not TokenType.Newline and
-                    token.t_type is not TokenType.Whitespace):
+                if token.t_type is not TokenType.Whitespace:
                     break
 
             if not found:
