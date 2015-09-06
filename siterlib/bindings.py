@@ -100,7 +100,7 @@ class Bindings:
         self.add('s.if',
                  BindingType.Function,
                  num_params = [2, 3],
-                 func = lambda _, args: args[1] if self.contains(args[0]) else args[2] if len(args) == 3 else '')
+                 func = Functions.if_check)
 
         self.add('s.modified',
                  BindingType.Function,

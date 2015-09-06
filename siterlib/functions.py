@@ -37,6 +37,15 @@ class Functions:
         bindings.add(name, BindingType.Macro, params = params, tokens = body)
 
     @staticmethod
+    def if_check(siter, args):
+        if siter.bindings.contains(args[0]):
+            return args[1]
+        elif len(args) == 3:
+            return args[2]
+        else:
+            return ''
+
+    @staticmethod
     def highlight_code(siter, args):
         if len(args) == 1:
             lang = 'text'
