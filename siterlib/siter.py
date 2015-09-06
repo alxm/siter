@@ -225,7 +225,7 @@ class Siter:
             # + bindings declared by the current page file
             # + siter built-in bindings
             self.bindings.push()
-            self.bindings.set_builtin(in_file, read_dir, self.dirs)
+            self.bindings.set_builtin(in_file, read_dir)
             self.bindings.set_from_file(self, in_file)
 
             # Load template and replace variables and functions with bindings

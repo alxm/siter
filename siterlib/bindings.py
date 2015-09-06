@@ -20,7 +20,6 @@
 from siterlib.util import Util
 from siterlib.token import TokenType
 from siterlib.binding import BindingType, Binding
-from siterlib.file import FileMode
 from siterlib.functions import Functions
 
 class Bindings:
@@ -84,7 +83,7 @@ class Bindings:
 
             Util.warning('Unknown binding block:\n{}'.format(b))
 
-    def set_builtin(self, read_file, read_dir, dirs):
+    def set_builtin(self, read_file, read_dir):
         self.add('s.var',
                  BindingType.Function,
                  num_params = [2],
@@ -116,11 +115,8 @@ class Bindings:
                  num_params = [1, 2, 3],
                  func = Functions.highlight_code)
 
-        current_subdir = dirs.pages.path_to(read_dir)
-        here = dirs.out.add_dir(current_subdir, FileMode.Optional)
-        rel_root_path = here.path_to(dirs.out)
-
         self.add('s.root',
-                 BindingType.Variable,
-                 tokens = self.tokenizer.tokenize(rel_root_path),
+                 BindingType.Function,
+                 num_params = [0],
+                 func = lambda siter, _: read_dir.path_to(siter.dirs.pages),
                  overwrite = False)
