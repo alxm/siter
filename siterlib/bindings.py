@@ -63,7 +63,10 @@ class Bindings:
             declarations = text
             content = ''
 
-        self.add('s.content', BindingType.Variable, tokens = self.tokenizer.tokenize(content))
+        content_tokens = self.tokenizer.tokenize(content)
+        content_tokens = self.tokenizer.evaluate(content_tokens, self)
+
+        self.add('s.content', BindingType.Variable, tokens = content_tokens)
 
         for b in [t for t in self.tokenizer.tokenize(declarations) if t.t_type is TokenType.Block]:
             results = b.capture_variable()

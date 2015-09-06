@@ -119,8 +119,8 @@ class Siter:
             # + bindings declared by the current page file
             # + siter built-in bindings
             self.bindings.push()
-            self.bindings.set_from_file(in_file)
             self.bindings.set_builtin(in_file, read_dir, self.dirs)
+            self.bindings.set_from_file(in_file)
 
             # Load template and replace variables and functions with bindings
             final = self.__apply_template(self.files.page_html, self.bindings)
