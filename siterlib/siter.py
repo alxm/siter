@@ -127,7 +127,7 @@ class Siter:
                         .format(name, binding.num_params, len(args), token))
                     continue
 
-                if name in ['s.var', 's.fun']:
+                if name == 's.def':
                     # Create a new user macro or variable
                     binding.func(self.bindings, args)
                 else:

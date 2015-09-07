@@ -48,15 +48,10 @@ class Bindings:
         self.bindings = self.stack.pop()
 
     def set_builtin_global(self):
-        self.add('s.var',
+        self.add('s.def',
                  BindingType.Function,
-                 num_params = [1, 2],
-                 func = Functions.declare_variable)
-
-        self.add('s.fun',
-                 BindingType.Function,
-                 num_params = [3],
-                 func = Functions.declare_function)
+                 num_params = [1, 2, 3],
+                 func = Functions.declare_binding)
 
         self.add('s.if',
                  BindingType.Function,

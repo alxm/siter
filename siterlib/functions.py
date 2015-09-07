@@ -24,19 +24,20 @@ from siterlib.binding import BindingType
 
 class Functions:
     @staticmethod
-    def declare_variable(bindings, args):
-        name = args[0].tokens[0].resolve()
-        body = [args[1]] if len(args) == 2 else []
+    def declare_binding(bindings, args):
+        if len(args) == 3:
+            # {name} {arg1 arg2 ...} {body}
+            name = args[0].tokens[0].resolve()
+            params = [t for t in args[1].tokens if t.t_type is TokenType.Text]
+            body = [args[2]]
 
-        bindings.add(name, BindingType.Variable, tokens = body)
+            bindings.add(name, BindingType.Macro, params = params, tokens = body)
+        else:
+            # {name} / {name} {body}
+            name = args[0].tokens[0].resolve()
+            body = [args[1]] if len(args) == 2 else []
 
-    @staticmethod
-    def declare_function(bindings, args):
-        name = args[0].tokens[0].resolve()
-        params = [t for t in args[1].tokens if t.t_type is TokenType.Text]
-        body = [args[2]]
-
-        bindings.add(name, BindingType.Macro, params = params, tokens = body)
+            bindings.add(name, BindingType.Variable, tokens = body)
 
     @staticmethod
     def if_check(siter, args):
