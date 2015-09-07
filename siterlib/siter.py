@@ -87,7 +87,7 @@ class Siter:
                 body_tokens = self.evaluate(binding.tokens)
 
                 # Run page content through Markdown
-                if name == 'content' and self.imports.Md:
+                if name == self.settings.Content and self.imports.Md:
                     content = ''.join([t.resolve() for t in body_tokens])
                     md = self.imports.Md.markdown(content, output_format = 'html5')
                     body_tokens = [Token(TokenType.Text, self.settings, text = md)]
@@ -127,7 +127,7 @@ class Siter:
                         .format(name, binding.num_params, len(args), token))
                     continue
 
-                if name == 'def':
+                if name == self.settings.Def:
                     # Create a new user macro or variable
                     binding.func(self.bindings, args)
                 else:

@@ -31,6 +31,15 @@ class Settings:
         self.TagOpen = '{'
         self.TagClose = '}'
 
+        # Built-in binding names
+        self.Def = 'def'
+        self.If = 'if'
+        self.Content = 'content'
+        self.Modified = 'modified'
+        self.Generated = 'generated'
+        self.Root = 'root'
+        self.Code = 'code'
+
         # Load user settings
         self.from_args(argv)
         self.from_files(files)
