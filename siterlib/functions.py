@@ -26,7 +26,7 @@ class Functions:
     @staticmethod
     def declare_variable(bindings, args):
         name = args[0].tokens[0].resolve()
-        body = [args[1]]
+        body = [args[1]] if len(args) == 2 else []
 
         bindings.add(name, BindingType.Variable, tokens = body)
 

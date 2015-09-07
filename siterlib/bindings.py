@@ -50,7 +50,7 @@ class Bindings:
     def set_builtin_global(self):
         self.add('s.var',
                  BindingType.Function,
-                 num_params = [2],
+                 num_params = [1, 2],
                  func = Functions.declare_variable)
 
         self.add('s.fun',
