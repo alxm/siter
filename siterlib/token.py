@@ -44,7 +44,7 @@ class Token:
         else:
             return self.text
 
-    def __capture(self, *args, rest = True):
+    def __capture(self, capture_rest, *args):
         i = 0
         results = []
 
@@ -66,20 +66,20 @@ class Token:
             if not found:
                 return None
 
-        if rest:
-            # Capture all the remaining tokens
+        if capture_rest:
+            # Capture all the remaining tokens into a list
             results.append(self.tokens[i:])
 
         return results
 
     def capture_call(self):
         # {`name ...}
-        results = self.__capture(TokenType.Eval, TokenType.Text, rest = False)
+        results = self.__capture(False, TokenType.Eval, TokenType.Text)
         return results[1].resolve() if results else None
 
     def capture_args(self, single_arg):
         # {`name {arg1} {arg2} ...}
-        results = self.__capture(TokenType.Eval, TokenType.Text)
+        results = self.__capture(True, TokenType.Eval, TokenType.Text)
 
         if results is None or len(results[2]) == 0:
             return []
