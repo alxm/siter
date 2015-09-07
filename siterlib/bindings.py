@@ -48,34 +48,34 @@ class Bindings:
         self.bindings = self.stack.pop()
 
     def set_builtin_global(self):
-        self.add('s.def',
+        self.add('def',
                  BindingType.Function,
                  num_params = [1, 2, 3],
                  func = Functions.declare_binding)
 
-        self.add('s.if',
+        self.add('if',
                  BindingType.Function,
                  num_params = [2, 3],
                  func = Functions.if_check)
 
-        self.add('s.generated',
+        self.add('generated',
                  BindingType.Function,
                  num_params = [1],
                  func = Functions.gen_time)
 
-        self.add('s.code',
+        self.add('code',
                  BindingType.Function,
                  num_params = [1, 2, 3],
                  func = Functions.highlight_code)
 
     def set_builtin_local(self, read_file, read_dir):
-        self.add('s.modified',
+        self.add('modified',
                  BindingType.Function,
                  num_params = [1],
                  func = lambda _, args: Functions.mod_time(read_file, args[0]),
                  overwrite = False)
 
-        self.add('s.root',
+        self.add('root',
                  BindingType.Function,
                  num_params = [0],
                  func = lambda siter, _: read_dir.path_to(siter.dirs.pages),
@@ -87,4 +87,4 @@ class Bindings:
         content_tokens = self.siter.tokenizer.tokenize(content)
         content_tokens = self.siter.evaluate(content_tokens)
 
-        self.add('s.content', BindingType.Variable, tokens = content_tokens)
+        self.add('content', BindingType.Variable, tokens = content_tokens)
