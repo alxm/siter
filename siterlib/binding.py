@@ -25,8 +25,9 @@ class BindingType(enum.Enum):
     Function = 2
 
 class Binding:
-    def __init__(self, b_type, tokens = None, num_params = None, params = None, func = None):
+    def __init__(self, b_type, protected, tokens = None, num_params = None, params = None, func = None):
         self.b_type = b_type
+        self.protected = protected
         self.tokens = tokens
         self.num_params = [len(params)] if params else num_params
         self.params = params

@@ -30,10 +30,12 @@ class Bindings:
     def contains(self, name):
         return name in self.bindings
 
-    def add(self, name, b_type, tokens = None, num_params = None, params = None, func = None, overwrite = True):
-        if overwrite or not self.contains(name):
-            binding = Binding(b_type, tokens, num_params, params, func)
-            self.bindings[name] = binding
+    def add(self, name, b_type, tokens = None, num_params = None, params = None, func = None, protected = False):
+        if self.contains(name) and self.get(name).protected:
+            Util.error('Cannot overwrite binding {}'.format(name))
+
+        binding = Binding(b_type, protected, tokens, num_params, params, func)
+        self.bindings[name] = binding
 
     def get(self, name):
         if name not in self.bindings:
@@ -51,35 +53,37 @@ class Bindings:
         self.add(self.siter.settings.Def,
                  BindingType.Function,
                  num_params = [1, 2, 3],
-                 func = Functions.declare_binding)
+                 func = Functions.declare_binding,
+                 protected = True)
 
         self.add(self.siter.settings.If,
                  BindingType.Function,
                  num_params = [2, 3],
-                 func = Functions.if_check)
+                 func = Functions.if_check,
+                 protected = True)
 
         self.add(self.siter.settings.Generated,
                  BindingType.Function,
                  num_params = [1],
-                 func = Functions.gen_time)
+                 func = Functions.gen_time,
+                 protected = True)
 
         self.add(self.siter.settings.Code,
                  BindingType.Function,
                  num_params = [1, 2, 3],
-                 func = Functions.highlight_code)
+                 func = Functions.highlight_code,
+                 protected = True)
 
     def set_builtin_local(self, read_file, read_dir):
         self.add(self.siter.settings.Modified,
                  BindingType.Function,
                  num_params = [1],
-                 func = lambda _, args: Functions.mod_time(read_file, args[0]),
-                 overwrite = False)
+                 func = lambda _, args: Functions.mod_time(read_file, args[0]))
 
         self.add(self.siter.settings.Root,
                  BindingType.Function,
                  num_params = [0],
-                 func = lambda siter, _: read_dir.path_to(siter.dirs.pages),
-                 overwrite = False)
+                 func = lambda siter, _: read_dir.path_to(siter.dirs.pages))
 
     def set_from_file(self, read_file):
         content = read_file.get_content()
