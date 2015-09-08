@@ -84,15 +84,7 @@ class Siter:
             temp_tokens = []
 
             if binding.b_type == BindingType.Variable:
-                body_tokens = self.evaluate(binding.tokens)
-
-                # Run page content through Markdown
-                if name == self.settings.Content and self.imports.Md:
-                    content = ''.join([t.resolve() for t in body_tokens])
-                    md = self.imports.Md.markdown(content, output_format = 'html5')
-                    body_tokens = [Token(TokenType.Text, self.settings, text = md)]
-
-                temp_tokens += body_tokens
+                temp_tokens += self.evaluate(binding.tokens)
             elif binding.b_type == BindingType.Macro:
                 args = token.capture_args(binding.num_params == [1])
 
@@ -160,7 +152,15 @@ class Siter:
                 else:
                     break
 
-            eval_tokens += temp_tokens[start : end]
+            temp_tokens = temp_tokens[start : end]
+
+            # Run page content through Markdown
+            if name == self.settings.Content and self.imports.Md:
+                content = ''.join([t.resolve() for t in temp_tokens])
+                md = self.imports.Md.markdown(content, output_format = 'html5')
+                temp_tokens = [Token(TokenType.Text, self.settings, text = md)]
+
+            eval_tokens += temp_tokens
 
         return eval_tokens
 
