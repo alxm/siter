@@ -83,9 +83,9 @@ class Siter:
             binding = self.bindings.get(name)
             temp_tokens = []
 
-            if binding.b_type == BindingType.Variable:
+            if binding.b_type is BindingType.Variable:
                 temp_tokens += self.evaluate(binding.tokens)
-            elif binding.b_type == BindingType.Macro:
+            elif binding.b_type is BindingType.Macro:
                 args = token.capture_args(binding.num_params == [1])
 
                 if len(args) not in binding.num_params:
@@ -111,7 +111,7 @@ class Siter:
                 temp_tokens += self.evaluate(binding.tokens)
 
                 self.bindings.pop()
-            elif binding.b_type == BindingType.Function:
+            elif binding.b_type is BindingType.Function:
                 args = token.capture_args(binding.num_params == [1])
 
                 if len(args) not in binding.num_params:
