@@ -155,7 +155,7 @@ class Siter:
             temp_tokens = temp_tokens[start : end]
 
             # Run page content through Markdown
-            if name == self.settings.Content and self.imports.Md:
+            if binding.protected and name == self.settings.Content and self.imports.Md:
                 content = ''.join([t.resolve() for t in temp_tokens])
                 md = self.imports.Md.markdown(content, output_format = 'html5')
                 temp_tokens = [Token(TokenType.Text, self.settings, text = md)]
