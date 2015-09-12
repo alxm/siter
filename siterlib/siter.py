@@ -58,7 +58,7 @@ class Siter:
 
         # Get user global bindings, if any
         if self.files.defs.exists():
-            self.bindings.set_from_file(self.files.defs)
+            self.bindings.set_from_file(self.files.defs, False)
 
     def evaluate(self, tokens):
         eval_tokens = []
@@ -189,7 +189,7 @@ class Siter:
             self.bindings.push()
 
             self.bindings.set_builtin_local(in_file, read_dir)
-            self.bindings.set_from_file(in_file)
+            self.bindings.set_from_file(in_file, True)
 
             # Load template and replace variables and functions with bindings
             final = self.__apply_template(self.files.page_html)

@@ -85,12 +85,13 @@ class Bindings:
                  num_params = [0],
                  func = lambda siter, _: read_dir.path_to(siter.dirs.pages))
 
-    def set_from_file(self, read_file):
+    def set_from_file(self, read_file, set_content):
         content = read_file.get_content()
 
         content_tokens = self.siter.tokenizer.tokenize(content)
         content_tokens = self.siter.evaluate(content_tokens)
 
-        self.add(self.siter.settings.Content,
-                 BindingType.Variable,
-                 tokens = content_tokens)
+        if set_content:
+            self.add(self.siter.settings.Content,
+                     BindingType.Variable,
+                     tokens = content_tokens)
