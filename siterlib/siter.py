@@ -61,11 +61,11 @@ class Siter:
             self.bindings.set_from_file(self.files.defs, False)
 
     def evaluate(self, tokens):
-        eval_tokens = []
+        eval_tokens = TokenCollection()
 
         for token in tokens:
             if token.t_type is not TokenType.Block:
-                eval_tokens.append(token)
+                eval_tokens.add_token(token)
                 continue
 
             # Get the binding's name
@@ -73,7 +73,8 @@ class Siter:
 
             if name is None:
                 # This block does not call a binding
-                eval_tokens += self.evaluate(token.tokens)
+                token_eval = self.evaluate(token.tokens)
+                eval_tokens.add_collection(token_eval)
                 continue
 
             if not self.bindings.contains(name):
@@ -84,7 +85,8 @@ class Siter:
             temp_tokens = TokenCollection()
 
             if binding.b_type is BindingType.Variable:
-                temp_tokens.add_tokens(self.evaluate(binding.tokens))
+                eval_binding = self.evaluate(binding.tokens)
+                temp_tokens.add_collection(eval_binding)
             elif binding.b_type is BindingType.Macro:
                 args = token.capture_args(binding.num_params == [1])
 
@@ -98,7 +100,7 @@ class Siter:
                 # Evaluate each argument
                 for arg in args:
                     arg = self.evaluate([arg])
-                    arguments.append(arg)
+                    arguments.append(arg.get_tokens())
 
                 self.bindings.push()
 
@@ -108,7 +110,8 @@ class Siter:
                                       BindingType.Variable,
                                       tokens = arguments[i])
 
-                temp_tokens.add_tokens(self.evaluate(binding.tokens))
+                eval_binding = self.evaluate(binding.tokens)
+                temp_tokens.add_collection(eval_binding)
 
                 self.bindings.pop()
             elif binding.b_type is BindingType.Function:
@@ -128,8 +131,7 @@ class Siter:
                     # Evaluate each argument
                     for arg in args:
                         arg = self.evaluate([arg])
-                        arg_resolved = ''.join([t.resolve() for t in arg])
-                        arguments.append(arg_resolved)
+                        arguments.append(arg.resolve())
 
                     body = binding.func(self, arguments)
                     temp_tokens.add_tokens(self.tokenizer.tokenize(body))
@@ -146,7 +148,7 @@ class Siter:
                 md_token = Token(TokenType.Text, self.settings, text = md)
                 temp_tokens = TokenCollection([md_token])
 
-            eval_tokens += temp_tokens.get_tokens()
+            eval_tokens.add_collection(temp_tokens)
 
         return eval_tokens
 
@@ -155,7 +157,7 @@ class Siter:
         tokens = self.tokenizer.tokenize(content)
         tokens = self.evaluate(tokens)
 
-        return TokenCollection(tokens).resolve()
+        return tokens.resolve()
 
     def run(self, read_dir = None, write_dir = None):
         if read_dir is None:

@@ -94,5 +94,5 @@ class Bindings:
         if set_content:
             self.add(self.siter.settings.Content,
                      BindingType.Variable,
-                     tokens = content_tokens,
+                     tokens = content_tokens.get_tokens(),
                      protected = True)
