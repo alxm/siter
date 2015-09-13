@@ -85,7 +85,7 @@ class Siter:
             temp_tokens = TokenCollection()
 
             if binding.b_type is BindingType.Variable:
-                eval_binding = self.evaluate(binding.tokens)
+                eval_binding = self.evaluate(binding.tokens.get_tokens())
                 temp_tokens.add_collection(eval_binding)
             elif binding.b_type is BindingType.Macro:
                 args = token.capture_args(binding.num_params == [1])
@@ -99,8 +99,7 @@ class Siter:
 
                 # Evaluate each argument
                 for arg in args:
-                    arg = self.evaluate([arg])
-                    arguments.append(arg.get_tokens())
+                    arguments.append(self.evaluate([arg]))
 
                 self.bindings.push()
 
@@ -110,7 +109,7 @@ class Siter:
                                       BindingType.Variable,
                                       tokens = arguments[i])
 
-                eval_binding = self.evaluate(binding.tokens)
+                eval_binding = self.evaluate(binding.tokens.get_tokens())
                 temp_tokens.add_collection(eval_binding)
 
                 self.bindings.pop()

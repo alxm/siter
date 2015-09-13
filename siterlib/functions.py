@@ -19,7 +19,7 @@
 
 import time
 
-from siterlib.token import TokenType
+from siterlib.token import TokenType, TokenCollection
 from siterlib.binding import BindingType
 
 class Functions:
@@ -31,13 +31,13 @@ class Functions:
             params = [t for t in args[1].tokens if t.t_type is TokenType.Text]
             body = [args[2]]
 
-            bindings.add(name, BindingType.Macro, params = params, tokens = body)
+            bindings.add(name, BindingType.Macro, params = params, tokens = TokenCollection(body))
         else:
             # {name} / {name} {body}
             name = args[0].tokens[0].resolve()
             body = [args[1]] if len(args) == 2 else []
 
-            bindings.add(name, BindingType.Variable, tokens = body)
+            bindings.add(name, BindingType.Variable, tokens = TokenCollection(body))
 
     @staticmethod
     def if_check(siter, args):
