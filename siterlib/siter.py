@@ -21,7 +21,7 @@ from siterlib.util import Util
 from siterlib.settings import Settings
 from siterlib.file import FileMode, Dirs, Files
 from siterlib.tokenizer import Tokenizer
-from siterlib.token import TokenType, Token
+from siterlib.token import TokenType, Token, TokenCollection
 from siterlib.bindings import Bindings
 from siterlib.binding import BindingType
 
@@ -81,10 +81,10 @@ class Siter:
                 continue
 
             binding = self.bindings.get(name)
-            temp_tokens = []
+            temp_tokens = TokenCollection()
 
             if binding.b_type is BindingType.Variable:
-                temp_tokens += self.evaluate(binding.tokens)
+                temp_tokens.add_tokens(self.evaluate(binding.tokens))
             elif binding.b_type is BindingType.Macro:
                 args = token.capture_args(binding.num_params == [1])
 
@@ -108,7 +108,7 @@ class Siter:
                                       BindingType.Variable,
                                       tokens = arguments[i])
 
-                temp_tokens += self.evaluate(binding.tokens)
+                temp_tokens.add_tokens(self.evaluate(binding.tokens))
 
                 self.bindings.pop()
             elif binding.b_type is BindingType.Function:
@@ -132,43 +132,30 @@ class Siter:
                         arguments.append(arg_resolved)
 
                     body = binding.func(self, arguments)
-                    temp_tokens += self.tokenizer.tokenize(body)
+                    temp_tokens.add_tokens(self.tokenizer.tokenize(body))
             else:
                 Util.error('{} has an unknown binding type'.format(name))
 
             # Trim leading and trailing whitespace
-            start = 0
-            end = len(temp_tokens)
-
-            for t in temp_tokens:
-                if t.t_type is TokenType.Whitespace:
-                    start += 1
-                else:
-                    break
-
-            for t in reversed(temp_tokens):
-                if t.t_type is TokenType.Whitespace:
-                    end -= 1
-                else:
-                    break
-
-            temp_tokens = temp_tokens[start : end]
+            temp_tokens.trim()
 
             # Run page content through Markdown
             if binding.protected and name == self.settings.Content and self.imports.Md:
-                content = ''.join([t.resolve() for t in temp_tokens])
+                content = temp_tokens.resolve()
                 md = self.imports.Md.markdown(content, output_format = 'html5')
-                temp_tokens = [Token(TokenType.Text, self.settings, text = md)]
+                md_token = Token(TokenType.Text, self.settings, text = md)
+                temp_tokens = TokenCollection([md_token])
 
-            eval_tokens += temp_tokens
+            eval_tokens += temp_tokens.get_tokens()
 
         return eval_tokens
 
     def __apply_template(self, template_file):
-        tokens = self.tokenizer.tokenize(template_file.get_content())
+        content = template_file.get_content()
+        tokens = self.tokenizer.tokenize(content)
         tokens = self.evaluate(tokens)
 
-        return ''.join([t.resolve() for t in tokens])
+        return TokenCollection(tokens).resolve()
 
     def run(self, read_dir = None, write_dir = None):
         if read_dir is None:

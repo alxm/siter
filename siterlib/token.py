@@ -92,3 +92,34 @@ class Token:
             args = [Token(TokenType.Block, self.settings, tokens = results[2])]
 
         return args
+
+class TokenCollection:
+    def __init__(self, tokens = None):
+        self.tokens = tokens if tokens else []
+
+    def get_tokens(self):
+        return self.tokens
+
+    def add_tokens(self, tokens):
+        self.tokens += tokens
+
+    def resolve(self):
+        return ''.join([t.resolve() for t in self.tokens])
+
+    def trim(self):
+        start = 0
+        end = len(self.tokens)
+
+        for t in self.tokens:
+            if t.t_type is TokenType.Whitespace:
+                start += 1
+            else:
+                break
+
+        for t in reversed(self.tokens):
+            if t.t_type is TokenType.Whitespace:
+                end -= 1
+            else:
+                break
+
+        self.tokens = self.tokens[start : end]
