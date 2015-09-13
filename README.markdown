@@ -51,7 +51,7 @@ Everything in a page file that is not a variable or macro definition.
 
 ### root
 
-Relative path from the current page to the website root.
+Relative path from the current page to the website root, so you can reference static files from nested pages.
 
 ### modified
 
@@ -92,7 +92,7 @@ For displaying code blocks and one-liners. See the [Pygments docs](http://pygmen
     website/
      |- siter-config/   # Optional config files
      |   '- ...
-     |- siter-out/      # Generated pages written here
+     |- siter-out/      # Pages and files get written here
      |   |- about.html
      |   |- index.html
      |   '- ...
@@ -115,7 +115,7 @@ For declaring global variables and macros visible to all pages.
 
 ##### siter-config/eval
 
-The default eval marker is \`, but you can declare a custom one like `!` in this file. Blocks that start with an eval mark are evaluated as variables or macros, while the rest expand to their literal selves. So `{!modified %Y}` would expand to `2015`, while `{modified}` would expand to `modified`.
+The default eval marker is `` ` ``, but you can declare a custom one like `!` in this file. Blocks that start with an eval mark are evaluated as variables or macros, while the rest expand to their literal selves. So `{!modified %Y}` would expand to `2015`, while `{modified}` would expand to `modified`.
 
 ##### siter-config/tags
 
