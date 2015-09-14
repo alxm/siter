@@ -63,7 +63,7 @@ class Siter:
     def evaluate(self, tokens):
         eval_tokens = TokenCollection()
 
-        for token in tokens:
+        for token in tokens.get_tokens():
             if token.t_type is not TokenType.Block:
                 eval_tokens.add_token(token)
                 continue
@@ -73,7 +73,7 @@ class Siter:
 
             if name is None:
                 # This block does not call a binding
-                token_eval = self.evaluate(token.tokens.get_tokens())
+                token_eval = self.evaluate(token.tokens)
                 eval_tokens.add_collection(token_eval)
                 continue
 
@@ -85,7 +85,7 @@ class Siter:
             temp_tokens = TokenCollection()
 
             if binding.b_type is BindingType.Variable:
-                eval_binding = self.evaluate(binding.tokens.get_tokens())
+                eval_binding = self.evaluate(binding.tokens)
                 temp_tokens.add_collection(eval_binding)
             elif binding.b_type is BindingType.Macro:
                 args = token.capture_args(binding.num_params == [1])
@@ -95,11 +95,7 @@ class Siter:
                         .format(name, binding.num_params, len(args), token))
                     continue
 
-                arguments = []
-
-                # Evaluate each argument
-                for arg in args:
-                    arguments.append(self.evaluate([arg]))
+                arguments = [self.evaluate(TokenCollection([a])) for a in args]
 
                 self.bindings.push()
 
@@ -109,7 +105,7 @@ class Siter:
                                       BindingType.Variable,
                                       tokens = arguments[i])
 
-                eval_binding = self.evaluate(binding.tokens.get_tokens())
+                eval_binding = self.evaluate(binding.tokens)
                 temp_tokens.add_collection(eval_binding)
 
                 self.bindings.pop()
@@ -129,7 +125,7 @@ class Siter:
 
                     # Evaluate each argument
                     for arg in args:
-                        arg = self.evaluate([arg])
+                        arg = self.evaluate(TokenCollection([arg]))
                         arguments.append(arg.resolve())
 
                     body = binding.func(self, arguments)
@@ -153,7 +149,7 @@ class Siter:
 
     def __apply_template(self, template_file):
         content = template_file.get_content()
-        tokens = self.tokenizer.tokenize(content).get_tokens()
+        tokens = self.tokenizer.tokenize(content)
         tokens = self.evaluate(tokens)
 
         return tokens.resolve()
