@@ -32,15 +32,14 @@ class Token:
         self.settings = settings
         self.t_type = t_type
         self.text = text
-        self.tokens = tokens if tokens else []
+        self.tokens = TokenCollection(tokens)
 
     def __str__(self):
         return self.resolve()
 
     def resolve(self):
         if self.t_type is TokenType.Block:
-            output = ''.join([t.resolve() for t in self.tokens])
-            return self.settings.TagOpen + output + self.settings.TagClose
+            return self.settings.TagOpen + self.tokens.resolve() + self.settings.TagClose
         else:
             return self.text
 
@@ -51,8 +50,8 @@ class Token:
         for arg in args:
             found = False
 
-            while i < len(self.tokens):
-                token = self.tokens[i]
+            while i < len(self.tokens.get_tokens()):
+                token = self.tokens.get_token(i)
                 i += 1
 
                 if token.t_type is arg:
@@ -68,7 +67,7 @@ class Token:
 
         if capture_rest:
             # Capture all the remaining tokens into a list
-            results.append(self.tokens[i:])
+            results.append(self.tokens.get_tokens()[i:])
 
         return results
 
@@ -97,6 +96,9 @@ class TokenCollection:
     def __init__(self, tokens = None):
         self.tokens = tokens if tokens else []
 
+    def get_token(self, i):
+        return self.tokens[i]
+
     def get_tokens(self):
         return self.tokens
 
@@ -111,6 +113,9 @@ class TokenCollection:
 
     def resolve(self):
         return ''.join([t.resolve() for t in self.tokens])
+
+    def filter(self, t_type):
+        return [t for t in self.tokens if t.t_type is t_type]
 
     def trim(self):
         start = 0

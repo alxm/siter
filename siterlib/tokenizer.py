@@ -47,7 +47,7 @@ class Tokenizer:
                 token += c
             else:
                 if len(token) > 0:
-                    flat_tokens.append(Token(previous_type, self.settings, token))
+                    flat_tokens.append(Token(previous_type, self.settings, text = token))
 
                 token = c
                 escaped_index = -1
@@ -71,15 +71,15 @@ class Tokenizer:
 
                 if len(token) > len(delim):
                     flat_tokens.append(
-                        Token(TokenType.Text, self.settings, token[: -len(delim)]))
+                        Token(TokenType.Text, self.settings, text = token[: -len(delim)]))
 
-                flat_tokens.append(Token(delim_type, self.settings, token[-len(delim) :]))
+                flat_tokens.append(Token(delim_type, self.settings, text = token[-len(delim) :]))
                 token = ''
                 escaped_index = -1
                 break
 
         if len(token) > 0:
-            flat_tokens.append(Token(current_type, self.settings, token))
+            flat_tokens.append(Token(current_type, self.settings, text = token))
 
         return flat_tokens
 
@@ -100,7 +100,7 @@ class Tokenizer:
                     token = stack.pop()
 
                 if len(stack) > 0:
-                    stack[-1].tokens.append(token)
+                    stack[-1].tokens.add_token(token)
                 else:
                     block_tokens.append(token)
 

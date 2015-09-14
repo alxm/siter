@@ -27,14 +27,14 @@ class Functions:
     def declare_binding(bindings, args):
         if len(args) == 3:
             # {name} {arg1 arg2 ...} {body}
-            name = args[0].tokens[0].resolve()
-            params = [t for t in args[1].tokens if t.t_type is TokenType.Text]
+            name = args[0].tokens.get_token(0).resolve()
+            params = args[1].tokens.filter(TokenType.Text)
             body = [args[2]]
 
             bindings.add(name, BindingType.Macro, params = params, tokens = TokenCollection(body))
         else:
             # {name} / {name} {body}
-            name = args[0].tokens[0].resolve()
+            name = args[0].tokens.get_token(0).resolve()
             body = [args[1]] if len(args) == 2 else []
 
             bindings.add(name, BindingType.Variable, tokens = TokenCollection(body))

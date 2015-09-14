@@ -73,7 +73,7 @@ class Siter:
 
             if name is None:
                 # This block does not call a binding
-                token_eval = self.evaluate(token.tokens)
+                token_eval = self.evaluate(token.tokens.get_tokens())
                 eval_tokens.add_collection(token_eval)
                 continue
 
