@@ -133,7 +133,7 @@ class Siter:
                         arguments.append(arg.resolve())
 
                     body = binding.func(self, arguments)
-                    temp_tokens.add_tokens(self.tokenizer.tokenize(body))
+                    temp_tokens.add_collection(self.tokenizer.tokenize(body))
             else:
                 Util.error('{} has an unknown binding type'.format(name))
 
@@ -153,7 +153,7 @@ class Siter:
 
     def __apply_template(self, template_file):
         content = template_file.get_content()
-        tokens = self.tokenizer.tokenize(content)
+        tokens = self.tokenizer.tokenize(content).get_tokens()
         tokens = self.evaluate(tokens)
 
         return tokens.resolve()

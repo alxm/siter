@@ -88,7 +88,7 @@ class Bindings:
     def set_from_file(self, read_file, set_content):
         content = read_file.get_content()
 
-        content_tokens = self.siter.tokenizer.tokenize(content)
+        content_tokens = self.siter.tokenizer.tokenize(content).get_tokens()
         content_tokens = self.siter.evaluate(content_tokens)
 
         if set_content:

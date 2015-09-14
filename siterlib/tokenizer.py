@@ -18,7 +18,7 @@
 """
 
 from siterlib.util import Util
-from siterlib.token import TokenType, Token
+from siterlib.token import TokenType, Token, TokenCollection
 
 class Tokenizer:
     def __init__(self, settings):
@@ -113,4 +113,4 @@ class Tokenizer:
         flat_tokens = self.__make_flat_tokens(text)
         block_tokens = self.__make_block_tokens(flat_tokens)
 
-        return block_tokens
+        return TokenCollection(block_tokens)
