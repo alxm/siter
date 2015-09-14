@@ -43,42 +43,14 @@ class Token:
         else:
             return self.text
 
-    def __capture(self, capture_rest, *args):
-        i = 0
-        results = []
-
-        for arg in args:
-            found = False
-
-            while i < len(self.tokens.get_tokens()):
-                token = self.tokens.get_token(i)
-                i += 1
-
-                if token.t_type is arg:
-                    found = True
-                    results.append(token)
-                    break
-
-                if token.t_type is not TokenType.Whitespace:
-                    break
-
-            if not found:
-                return None
-
-        if capture_rest:
-            # Capture all the remaining tokens into a list
-            results.append(self.tokens.get_tokens()[i:])
-
-        return results
-
     def capture_call(self):
         # {`name ...}
-        results = self.__capture(False, TokenType.Eval, TokenType.Text)
+        results = self.tokens.capture(TokenType.Eval, TokenType.Text)
         return results[1].resolve() if results else None
 
     def capture_args(self, single_arg):
         # {`name {arg1} {arg2} ...}
-        results = self.__capture(True, TokenType.Eval, TokenType.Text)
+        results = self.tokens.capture(TokenType.Eval, TokenType.Text, capture_rest = True)
 
         if results is None or len(results[2]) == 0:
             return []
@@ -134,3 +106,31 @@ class TokenCollection:
                 break
 
         self.tokens = self.tokens[start : end]
+
+    def capture(self, *args, capture_rest = False):
+        i = 0
+        results = []
+
+        for arg in args:
+            found = False
+
+            while i < len(self.tokens):
+                token = self.tokens[i]
+                i += 1
+
+                if token.t_type is arg:
+                    found = True
+                    results.append(token)
+                    break
+
+                if token.t_type is not TokenType.Whitespace:
+                    break
+
+            if not found:
+                return None
+
+        if capture_rest:
+            # Capture all the remaining tokens into a list
+            results.append(self.tokens[i:])
+
+        return results
