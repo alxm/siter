@@ -85,7 +85,7 @@ class Tokenizer:
 
     def __make_block_tokens(self, flat_tokens):
         stack = []
-        block_tokens = []
+        block_tokens = TokenCollection()
 
         for token in flat_tokens:
             if token.t_type is TokenType.TagOpen:
@@ -102,7 +102,7 @@ class Tokenizer:
                 if len(stack) > 0:
                     stack[-1].tokens.add_token(token)
                 else:
-                    block_tokens.append(token)
+                    block_tokens.add_token(token)
 
         if len(stack) > 0:
             Util.error("Missing closing tag")
@@ -113,4 +113,4 @@ class Tokenizer:
         flat_tokens = self.__make_flat_tokens(text)
         block_tokens = self.__make_block_tokens(flat_tokens)
 
-        return TokenCollection(block_tokens)
+        return block_tokens
