@@ -29,7 +29,13 @@ class Tokenizer:
         current_type = None
         escaped = False
         escaped_index = -1
-        token = ''
+        current_token = ''
+
+        delim_tokens = [
+            (TokenType.Eval, self.settings.EvalHint),
+            (TokenType.TagOpen, self.settings.TagOpen),
+            (TokenType.TagClose, self.settings.TagClose),
+        ]
 
         for c in text:
             if c == '\\' and not escaped:
@@ -44,42 +50,36 @@ class Tokenizer:
                 current_type = TokenType.Text
 
             if current_type is previous_type:
-                token += c
+                current_token += c
             else:
-                if len(token) > 0:
-                    flat_tokens.append(Token(previous_type, self.settings, text = token))
+                if len(current_token) > 0:
+                    flat_tokens.append(Token(previous_type, self.settings, text = current_token))
 
-                token = c
+                current_token = c
                 escaped_index = -1
 
             if escaped:
                 escaped = False
-                escaped_index = len(token) - 1
-
-            delim_tokens = [
-                (TokenType.Eval, self.settings.EvalHint),
-                (TokenType.TagOpen, self.settings.TagOpen),
-                (TokenType.TagClose, self.settings.TagClose),
-            ]
+                escaped_index = len(current_token) - 1
 
             for delim_type, delim in delim_tokens:
-                if len(token) - escaped_index <= len(delim):
+                if len(current_token) - escaped_index <= len(delim):
                     continue
 
-                if token[-len(delim) :] != delim:
+                if current_token[-len(delim) :] != delim:
                     continue
 
-                if len(token) > len(delim):
+                if len(current_token) > len(delim):
                     flat_tokens.append(
-                        Token(TokenType.Text, self.settings, text = token[: -len(delim)]))
+                        Token(TokenType.Text, self.settings, text = current_token[: -len(delim)]))
 
-                flat_tokens.append(Token(delim_type, self.settings, text = token[-len(delim) :]))
-                token = ''
+                flat_tokens.append(Token(delim_type, self.settings, text = current_token[-len(delim) :]))
+                current_token = ''
                 escaped_index = -1
                 break
 
-        if len(token) > 0:
-            flat_tokens.append(Token(current_type, self.settings, text = token))
+        if len(current_token) > 0:
+            flat_tokens.append(Token(current_type, self.settings, text = current_token))
 
         return flat_tokens
 
