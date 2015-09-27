@@ -19,7 +19,6 @@
 
 from siterlib.util import Util
 from siterlib.binding import BindingType, Binding
-from siterlib.functions import Functions
 
 class Bindings:
     def __init__(self, siter):
@@ -48,50 +47,3 @@ class Bindings:
 
     def pop(self):
         self.bindings = self.stack.pop()
-
-    def set_builtin_global(self):
-        self.add(self.siter.settings.Def,
-                 BindingType.Function,
-                 num_params = [1, 2, 3],
-                 func = Functions.declare_binding,
-                 protected = True)
-
-        self.add(self.siter.settings.If,
-                 BindingType.Function,
-                 num_params = [2, 3],
-                 func = Functions.if_check,
-                 protected = True)
-
-        self.add(self.siter.settings.Generated,
-                 BindingType.Function,
-                 num_params = [1],
-                 func = Functions.gen_time,
-                 protected = True)
-
-        self.add(self.siter.settings.Code,
-                 BindingType.Function,
-                 num_params = [1, 2, 3],
-                 func = Functions.highlight_code,
-                 protected = True)
-
-    def set_builtin_local(self, read_file, read_dir):
-        self.add(self.siter.settings.Modified,
-                 BindingType.Function,
-                 num_params = [1],
-                 func = lambda _, args: Functions.mod_time(read_file, args[0]))
-
-        self.add(self.siter.settings.Root,
-                 BindingType.Function,
-                 num_params = [0],
-                 func = lambda siter, _: read_dir.path_to(siter.dirs.pages))
-
-    def set_from_file(self, read_file, set_content):
-        content = read_file.get_content()
-        content_tokens = self.siter.tokenizer.tokenize(content)
-        content_tokens = self.siter.evaluate(content_tokens)
-
-        if set_content:
-            self.add(self.siter.settings.Content,
-                     BindingType.Variable,
-                     tokens = content_tokens,
-                     protected = True)

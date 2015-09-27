@@ -24,6 +24,7 @@ from siterlib.tokenizer import Tokenizer
 from siterlib.token import TokenType, Token, TokenCollection
 from siterlib.bindings import Bindings
 from siterlib.binding import BindingType
+from siterlib.functions import Functions
 
 class Imports:
     def __init__(self):
@@ -54,11 +55,58 @@ class Siter:
         self.bindings = Bindings(self)
 
         # Set built-in global bindings
-        self.bindings.set_builtin_global()
+        self.set_global_bindings()
 
         # Get user global bindings, if any
         if self.files.defs.exists():
-            self.bindings.set_from_file(self.files.defs, False)
+            self.set_file_bindings(self.files.defs, False)
+
+    def set_global_bindings(self):
+        self.bindings.add(self.settings.Def,
+                          BindingType.Function,
+                          num_params = [1, 2, 3],
+                          func = Functions.declare_binding,
+                          protected = True)
+
+        self.bindings.add(self.settings.If,
+                          BindingType.Function,
+                          num_params = [2, 3],
+                          func = Functions.if_check,
+                          protected = True)
+
+        self.bindings.add(self.settings.Generated,
+                          BindingType.Function,
+                          num_params = [1],
+                          func = Functions.gen_time,
+                          protected = True)
+
+        self.bindings.add(self.settings.Code,
+                          BindingType.Function,
+                          num_params = [1, 2, 3],
+                          func = Functions.highlight_code,
+                          protected = True)
+
+    def set_local_bindings(self, read_file, read_dir):
+        self.bindings.add(self.settings.Modified,
+                          BindingType.Function,
+                          num_params = [1],
+                          func = lambda _, args: Functions.mod_time(read_file, args[0]))
+
+        self.bindings.add(self.settings.Root,
+                          BindingType.Function,
+                          num_params = [0],
+                          func = lambda siter, _: read_dir.path_to(siter.dirs.pages))
+
+    def set_file_bindings(self, read_file, set_content):
+        content = read_file.get_content()
+        content_tokens = self.tokenizer.tokenize(content)
+        content_tokens = self.evaluate(content_tokens)
+
+        if set_content:
+            self.bindings.add(self.settings.Content,
+                              BindingType.Variable,
+                              tokens = content_tokens,
+                              protected = True)
 
     def evaluate(self, tokens):
         eval_tokens = TokenCollection()
@@ -172,8 +220,8 @@ class Siter:
 
             self.bindings.push()
 
-            self.bindings.set_builtin_local(in_file, read_dir)
-            self.bindings.set_from_file(in_file, True)
+            self.set_local_bindings(in_file, read_dir)
+            self.set_file_bindings(in_file, True)
 
             # Load template and replace variables and functions with bindings
             final = self.__apply_template(self.files.page_html)
