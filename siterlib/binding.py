@@ -35,7 +35,7 @@ class Binding:
         self.params = params
         self.func = func
 
-class Bindings:
+class BindingCollection:
     def __init__(self, siter):
         self.siter = siter
         self.bindings = {}

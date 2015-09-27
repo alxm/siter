@@ -22,7 +22,7 @@ from siterlib.settings import Settings
 from siterlib.file import FileMode, Dirs, Files
 from siterlib.tokenizer import Tokenizer
 from siterlib.token import TokenType, Token, TokenCollection
-from siterlib.binding import BindingType, Bindings
+from siterlib.binding import BindingType, BindingCollection
 from siterlib.functions import Functions
 
 class Imports:
@@ -51,7 +51,7 @@ class Siter:
         self.dirs.static.copy_to(self.dirs.out)
 
         # Variables, macros, and functions
-        self.bindings = Bindings(self)
+        self.bindings = BindingCollection(self)
 
         # Set built-in global bindings
         self.set_global_bindings()
