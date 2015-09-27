@@ -41,16 +41,16 @@ class Settings:
         self.Code = 'code'
 
         # Load user settings
-        self.from_args(argv)
-        self.from_files(files)
+        self.__from_args(argv)
+        self.__from_files(files)
 
-    def from_args(self, argv):
+    def __from_args(self, argv):
         # Go through command line arguments
         for arg in argv:
             if arg in ['-f', '--force']:
                 self.ForceWrite = True
 
-    def from_files(self, files):
+    def __from_files(self, files):
         if files.evalhint.test_line(0, 1, 1):
             self.EvalHint = files.evalhint.get_line(0)
             Util.info('Using {} as block eval hint'.format(self.EvalHint))

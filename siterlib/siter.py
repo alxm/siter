@@ -54,13 +54,13 @@ class Siter:
         self.bindings = BindingCollection(self)
 
         # Set built-in global bindings
-        self.set_global_bindings()
+        self.__set_global_bindings()
 
         # Get user global bindings, if any
         if self.files.defs.exists():
-            self.set_file_bindings(self.files.defs, False)
+            self.__set_file_bindings(self.files.defs, False)
 
-    def set_global_bindings(self):
+    def __set_global_bindings(self):
         self.bindings.add(self.settings.Def,
                           BindingType.Function,
                           num_params = [1, 2, 3],
@@ -85,7 +85,7 @@ class Siter:
                           func = Functions.highlight_code,
                           protected = True)
 
-    def set_local_bindings(self, read_file, read_dir):
+    def __set_local_bindings(self, read_file, read_dir):
         self.bindings.add(self.settings.Modified,
                           BindingType.Function,
                           num_params = [1],
@@ -96,10 +96,10 @@ class Siter:
                           num_params = [0],
                           func = lambda siter, _: read_dir.path_to(siter.dirs.pages))
 
-    def set_file_bindings(self, read_file, set_content):
+    def __set_file_bindings(self, read_file, set_content):
         content = read_file.get_content()
         content_tokens = self.tokenizer.tokenize(content)
-        content_tokens = self.evaluate(content_tokens)
+        content_tokens = self.__evaluate(content_tokens)
 
         if set_content:
             self.bindings.add(self.settings.Content,
@@ -107,7 +107,7 @@ class Siter:
                               tokens = content_tokens,
                               protected = True)
 
-    def evaluate(self, tokens):
+    def __evaluate(self, tokens):
         eval_tokens = TokenCollection()
 
         for token in tokens.get_tokens():
@@ -120,7 +120,7 @@ class Siter:
 
             if name is None:
                 # This block does not call a binding
-                token_eval = self.evaluate(token.tokens)
+                token_eval = self.__evaluate(token.tokens)
                 eval_tokens.add_collection(token_eval)
                 continue
 
@@ -132,7 +132,7 @@ class Siter:
             temp_tokens = TokenCollection()
 
             if binding.b_type is BindingType.Variable:
-                eval_binding = self.evaluate(binding.tokens)
+                eval_binding = self.__evaluate(binding.tokens)
                 temp_tokens.add_collection(eval_binding)
             elif binding.b_type is BindingType.Macro:
                 args = token.capture_args(binding.num_params == [1])
@@ -142,7 +142,7 @@ class Siter:
                         .format(name, binding.num_params, len(args), token))
                     continue
 
-                arguments = [self.evaluate(TokenCollection([a])) for a in args]
+                arguments = [self.__evaluate(TokenCollection([a])) for a in args]
 
                 self.bindings.push()
 
@@ -152,7 +152,7 @@ class Siter:
                                       BindingType.Variable,
                                       tokens = arguments[i])
 
-                eval_binding = self.evaluate(binding.tokens)
+                eval_binding = self.__evaluate(binding.tokens)
                 temp_tokens.add_collection(eval_binding)
 
                 self.bindings.pop()
@@ -172,7 +172,7 @@ class Siter:
 
                     # Evaluate each argument
                     for arg in args:
-                        arg = self.evaluate(TokenCollection([arg]))
+                        arg = self.__evaluate(TokenCollection([arg]))
                         arguments.append(arg.resolve())
 
                     body = binding.func(self, arguments)
@@ -197,7 +197,7 @@ class Siter:
     def __apply_template(self, template_file):
         content = template_file.get_content()
         tokens = self.tokenizer.tokenize(content)
-        tokens = self.evaluate(tokens)
+        tokens = self.__evaluate(tokens)
 
         return tokens.resolve()
 
@@ -219,8 +219,8 @@ class Siter:
 
             self.bindings.push()
 
-            self.set_local_bindings(in_file, read_dir)
-            self.set_file_bindings(in_file, True)
+            self.__set_local_bindings(in_file, read_dir)
+            self.__set_file_bindings(in_file, True)
 
             # Load template and replace variables and functions with bindings
             final = self.__apply_template(self.files.page_html)
