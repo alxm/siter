@@ -201,13 +201,7 @@ class Siter:
 
         return tokens.resolve()
 
-    def run(self, read_dir = None, write_dir = None):
-        if read_dir is None:
-            read_dir = self.dirs.pages
-
-        if write_dir is None:
-            write_dir = self.dirs.out
-
+    def __work(self, read_dir, write_dir):
         for in_file in read_dir.list_files():
             out_file = write_dir.add_file(in_file.get_name(), FileMode.Create)
 
@@ -230,4 +224,7 @@ class Siter:
 
         for read_subdir in read_dir.list_dirs():
             write_subdir = write_dir.add_dir(read_subdir.get_name(), FileMode.Create)
-            self.run(read_subdir, write_subdir)
+            self.__work(read_subdir, write_subdir)
+
+    def run(self):
+        self.__work(self.dirs.pages, self.dirs.out)
