@@ -19,6 +19,8 @@
 
 import enum
 
+from siterlib.util import Util
+
 class BindingType(enum.Enum):
     Variable = 0
     Macro = 1
@@ -32,3 +34,31 @@ class Binding:
         self.num_params = [len(params)] if params else num_params
         self.params = params
         self.func = func
+
+class Bindings:
+    def __init__(self, siter):
+        self.siter = siter
+        self.bindings = {}
+        self.stack = []
+
+    def contains(self, name):
+        return name in self.bindings
+
+    def add(self, name, b_type, tokens = None, num_params = None, params = None, func = None, protected = False):
+        if self.contains(name) and self.get(name).protected:
+            Util.error('Cannot overwrite binding {}'.format(name))
+
+        binding = Binding(b_type, protected, tokens, num_params, params, func)
+        self.bindings[name] = binding
+
+    def get(self, name):
+        if name not in self.bindings:
+            Util.error('{} not in bindings'.format(name))
+
+        return self.bindings[name]
+
+    def push(self):
+        self.stack.append(self.bindings.copy())
+
+    def pop(self):
+        self.bindings = self.stack.pop()

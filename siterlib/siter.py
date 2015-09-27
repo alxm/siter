@@ -22,8 +22,7 @@ from siterlib.settings import Settings
 from siterlib.file import FileMode, Dirs, Files
 from siterlib.tokenizer import Tokenizer
 from siterlib.token import TokenType, Token, TokenCollection
-from siterlib.bindings import Bindings
-from siterlib.binding import BindingType
+from siterlib.binding import BindingType, Bindings
 from siterlib.functions import Functions
 
 class Imports:
