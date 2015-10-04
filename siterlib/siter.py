@@ -168,12 +168,8 @@ class Siter:
                     # Create a new user macro or variable
                     binding.func(self.bindings, args)
                 else:
-                    arguments = []
-
-                    # Evaluate each argument
-                    for arg in args:
-                        arg = self.__evaluate(TokenCollection([arg]))
-                        arguments.append(arg.resolve())
+                    # Evaluate and resolve each argument
+                    arguments = [self.__evaluate(TokenCollection([a])).resolve() for a in args]
 
                     body = binding.func(self, arguments)
                     temp_tokens.add_collection(self.tokenizer.tokenize(body))
