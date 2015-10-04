@@ -142,15 +142,13 @@ class Siter:
                         .format(name, binding.num_params, len(args), token))
                     continue
 
-                arguments = [self.__evaluate(TokenCollection([a])) for a in args]
-
                 self.bindings.push()
 
                 # Bind each parameter to the supplied argument
                 for (i, param) in enumerate(binding.params):
                     self.bindings.add(param.resolve(),
                                       BindingType.Variable,
-                                      tokens = arguments[i])
+                                      tokens = TokenCollection([args[i]]))
 
                 eval_binding = self.__evaluate(binding.tokens)
                 temp_tokens.add_collection(eval_binding)
