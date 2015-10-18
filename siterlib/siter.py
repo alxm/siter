@@ -99,7 +99,7 @@ class Siter:
     def __set_file_bindings(self, read_file, set_content):
         content = read_file.get_content()
         content_tokens = self.tokenizer.tokenize(content)
-        content_tokens = self.__evaluate(content_tokens)
+        content_tokens = self.__evaluate_collection(content_tokens)
 
         if set_content:
             self.bindings.add(self.settings.Content,
@@ -107,91 +107,94 @@ class Siter:
                               tokens = content_tokens,
                               protected = True)
 
-    def __evaluate(self, tokens):
+    def __evaluate_collection(self, collection):
         eval_tokens = TokenCollection()
 
-        for token in tokens.get_tokens():
-            if token.t_type is not TokenType.Block:
-                eval_tokens.add_token(token)
-                continue
+        for token in collection.get_tokens():
+            if token.t_type is TokenType.Block:
+                evaluated = self.__evaluate_block(token)
 
-            # Get the binding's name
-            name = token.capture_call()
-
-            if name is None:
-                # This block does not call a binding
-                token_eval = self.__evaluate(token.tokens)
-                eval_tokens.add_collection(token_eval)
-                continue
-
-            if not self.bindings.contains(name):
-                # Name is unknown, discard block
-                continue
-
-            binding = self.bindings.get(name)
-            temp_tokens = TokenCollection()
-
-            if binding.b_type is BindingType.Variable:
-                eval_binding = self.__evaluate(binding.tokens)
-                temp_tokens.add_collection(eval_binding)
-            elif binding.b_type is BindingType.Macro:
-                args = token.capture_args(binding.num_params == [1])
-
-                if len(args) not in binding.num_params:
-                    Util.warning('Macro {} takes {} args, got {}:\n{}'
-                        .format(name, binding.num_params, len(args), token))
-                    continue
-
-                self.bindings.push()
-
-                # Bind each parameter to the supplied argument
-                for (i, param) in enumerate(binding.params):
-                    self.bindings.add(param.resolve(),
-                                      BindingType.Variable,
-                                      tokens = TokenCollection([args[i]]))
-
-                eval_binding = self.__evaluate(binding.tokens)
-                temp_tokens.add_collection(eval_binding)
-
-                self.bindings.pop()
-            elif binding.b_type is BindingType.Function:
-                args = token.capture_args(binding.num_params == [1])
-
-                if len(args) not in binding.num_params:
-                    Util.warning('Function {} takes {} args, got {}:\n{}'
-                        .format(name, binding.num_params, len(args), token))
-                    continue
-
-                if name == self.settings.Def:
-                    # Create a new user macro or variable
-                    binding.func(self.bindings, args)
-                else:
-                    # Evaluate and resolve each argument
-                    arguments = [self.__evaluate(TokenCollection([a])).resolve() for a in args]
-
-                    body = binding.func(self, arguments)
-                    temp_tokens.add_collection(self.tokenizer.tokenize(body))
+                if evaluated:
+                    eval_tokens.add_collection(evaluated)
             else:
-                Util.error('{} has an unknown binding type'.format(name))
+                eval_tokens.add_token(token)
 
-            # Trim leading and trailing whitespace
-            temp_tokens.trim()
+        return eval_tokens
 
-            # Run page content through Markdown
-            if binding.protected and name == self.settings.Content and self.imports.Md:
-                content = temp_tokens.resolve()
-                md = self.imports.Md.markdown(content, output_format = 'html5')
-                md_token = Token(TokenType.Text, self.settings, text = md)
-                temp_tokens = TokenCollection([md_token])
+    def __evaluate_block(self, block):
+        # Get the binding's name
+        name = block.capture_call()
 
-            eval_tokens.add_collection(temp_tokens)
+        if name is None:
+            # This block does not call a binding
+            return self.__evaluate_collection(block.tokens)
+
+        if not self.bindings.contains(name):
+            # Name is unknown, discard block
+            return None
+
+        binding = self.bindings.get(name)
+        eval_tokens = TokenCollection()
+
+        if binding.b_type is BindingType.Variable:
+            eval_binding = self.__evaluate_collection(binding.tokens)
+            eval_tokens.add_collection(eval_binding)
+        elif binding.b_type is BindingType.Macro:
+            args = block.capture_args(binding.num_params == [1])
+
+            if len(args) not in binding.num_params:
+                Util.warning('Macro {} takes {} args, got {}:\n{}'
+                    .format(name, binding.num_params, len(args), block))
+                return None
+
+            self.bindings.push()
+
+            # Bind each parameter to the supplied argument
+            for (i, param) in enumerate(binding.params):
+                self.bindings.add(param.resolve(),
+                                  BindingType.Variable,
+                                  tokens = TokenCollection([args[i]]))
+
+            eval_binding = self.__evaluate_collection(binding.tokens)
+            eval_tokens.add_collection(eval_binding)
+
+            self.bindings.pop()
+        elif binding.b_type is BindingType.Function:
+            args = block.capture_args(binding.num_params == [1])
+
+            if len(args) not in binding.num_params:
+                Util.warning('Function {} takes {} args, got {}:\n{}'
+                    .format(name, binding.num_params, len(args), block))
+                return None
+
+            if name == self.settings.Def:
+                # Create a new user macro or variable
+                binding.func(self.bindings, args)
+            else:
+                # Evaluate and resolve each argument
+                arguments = [self.__evaluate_block(a).resolve() for a in args]
+
+                body = binding.func(self, arguments)
+                eval_tokens.add_collection(self.tokenizer.tokenize(body))
+        else:
+            Util.error('{} has an unknown binding type'.format(name))
+
+        # Trim leading and trailing whitespace
+        eval_tokens.trim()
+
+        # Run page content through Markdown
+        if binding.protected and name == self.settings.Content and self.imports.Md:
+            content = eval_tokens.resolve()
+            md = self.imports.Md.markdown(content, output_format = 'html5')
+            md_token = Token(TokenType.Text, self.settings, text = md)
+            eval_tokens = TokenCollection([md_token])
 
         return eval_tokens
 
     def __apply_template(self, template_file):
         content = template_file.get_content()
         tokens = self.tokenizer.tokenize(content)
-        tokens = self.__evaluate(tokens)
+        tokens = self.__evaluate_collection(tokens)
 
         return tokens.resolve()
 
