@@ -46,27 +46,31 @@ class Token:
     def capture_call(self):
         # {`name ...}
         results = self.tokens.capture(TokenType.Eval, TokenType.Text)
-        return results[1].resolve() if results else None
+        return results.get_token(1).resolve() if results else None
 
     def capture_args(self, single_arg):
         # {`name {arg1} {arg2} ...}
         results = self.tokens.capture(TokenType.Eval, TokenType.Text, capture_rest = True)
 
-        if results is None or len(results[2]) == 0:
+        if results is None or results.num_tokens() < 3:
             return []
 
-        args = [t for t in results[2] if t.t_type is TokenType.Block]
+        arg_tokens = results.get_tokens()[2:]
+        args = [t for t in arg_tokens if t.t_type is TokenType.Block]
 
         if single_arg or len(args) == 0:
             # Put all the args in a parent block if we only want a single arg,
             # or if there were no blocks in the args.
-            args = [Token(TokenType.Block, self.settings, tokens = results[2])]
+            args = [Token(TokenType.Block, self.settings, tokens = arg_tokens)]
 
         return args
 
 class TokenCollection:
     def __init__(self, tokens = None):
         self.tokens = tokens if tokens else []
+
+    def num_tokens(self):
+        return len(self.tokens)
 
     def get_token(self, i):
         return self.tokens[i]
@@ -76,6 +80,9 @@ class TokenCollection:
 
     def add_token(self, token):
         self.tokens.append(token)
+
+    def add_tokens(self, tokens):
+        self.tokens += tokens
 
     def add_collection(self, collection):
         self.tokens += collection.tokens
@@ -106,7 +113,7 @@ class TokenCollection:
 
     def capture(self, *args, capture_rest = False):
         i = 0
-        results = []
+        results = TokenCollection()
 
         for arg in args:
             found = False
@@ -117,7 +124,7 @@ class TokenCollection:
 
                 if token.t_type is arg:
                     found = True
-                    results.append(token)
+                    results.add_token(token)
                     break
 
                 if token.t_type is not TokenType.Whitespace:
@@ -127,7 +134,7 @@ class TokenCollection:
                 return None
 
         if capture_rest:
-            # Capture all the remaining tokens into a list
-            results.append(self.tokens[i:])
+            # Capture all the remaining tokens
+            results.add_tokens(self.tokens[i:])
 
         return results
