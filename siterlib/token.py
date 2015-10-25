@@ -58,7 +58,7 @@ class Token:
         arg_tokens = results.get_tokens()[2:]
         args = [t for t in arg_tokens if t.t_type is TokenType.Block]
 
-        if single_arg or len(args) == 0:
+        if (single_arg and len(args) != 1) or len(args) == 0:
             # Put all the args in a parent block if we only want a single arg,
             # or if there were no blocks in the args.
             args = [Token(TokenType.Block, self.settings, tokens = arg_tokens)]
@@ -126,8 +126,7 @@ class TokenCollection:
                     found = True
                     results.add_token(token)
                     break
-
-                if token.t_type is not TokenType.Whitespace:
+                elif token.t_type is not TokenType.Whitespace:
                     break
 
             if not found:
