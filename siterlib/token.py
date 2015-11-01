@@ -45,23 +45,22 @@ class Token:
 
     def capture_call(self):
         # {`name ...}
-        results = self.tokens.capture(TokenType.Eval, TokenType.Text)
-        return results.get_token(1).resolve() if results else None
+        head, _ = self.tokens.capture(TokenType.Eval, TokenType.Text)
+        return head.get_token(1).resolve() if head else None
 
     def capture_args(self, single_arg):
         # {`name {arg1} {arg2} ...}
-        results = self.tokens.capture(TokenType.Eval, TokenType.Text, capture_rest = True)
+        _, tail = self.tokens.capture(TokenType.Eval, TokenType.Text)
 
-        if results is None or results.num_tokens() < 3:
+        if tail is None or tail.num_tokens() == 0:
             return []
 
-        arg_tokens = results.get_tokens()[2:]
-        args = [t for t in arg_tokens if t.t_type is TokenType.Block]
+        args = tail.filter(TokenType.Block)
 
         if (single_arg and len(args) != 1) or len(args) == 0:
             # Put all the args in a parent block if we only want a single arg,
             # or if there were no blocks in the args.
-            args = [Token(TokenType.Block, self.settings, tokens = arg_tokens)]
+            args = [Token(TokenType.Block, self.settings, tokens = tail.get_tokens())]
 
         return args
 
@@ -111,9 +110,9 @@ class TokenCollection:
 
         self.tokens = self.tokens[start : end]
 
-    def capture(self, *args, capture_rest = False):
+    def capture(self, *args):
         i = 0
-        results = TokenCollection()
+        head = TokenCollection()
 
         for arg in args:
             found = False
@@ -124,16 +123,15 @@ class TokenCollection:
 
                 if token.t_type is arg:
                     found = True
-                    results.add_token(token)
+                    head.add_token(token)
                     break
                 elif token.t_type is not TokenType.Whitespace:
                     break
 
             if not found:
-                return None
+                return None, None
 
-        if capture_rest:
-            # Capture all the remaining tokens
-            results.add_tokens(self.tokens[i:])
+        # Capture the remaining tokens
+        tail = TokenCollection(self.tokens[i:])
 
-        return results
+        return head, tail
