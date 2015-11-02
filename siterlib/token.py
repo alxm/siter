@@ -71,14 +71,14 @@ class TokenCollection:
     def __init__(self, tokens = None):
         self.tokens = tokens if tokens else []
 
+    def __iter__(self):
+        return self.tokens.__iter__()
+
     def num_tokens(self):
         return len(self.tokens)
 
     def get_token(self, i):
         return self.tokens[i]
-
-    def get_tokens(self):
-        return self.tokens
 
     def add_token(self, token):
         self.tokens.append(token)

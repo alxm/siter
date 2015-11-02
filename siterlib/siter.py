@@ -110,7 +110,7 @@ class Siter:
     def __evaluate_collection(self, collection):
         eval_tokens = TokenCollection()
 
-        for token in collection.get_tokens():
+        for token in collection:
             if token.t_type is TokenType.Block:
                 evaluated = self.__evaluate_block(token)
 
