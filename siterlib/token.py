@@ -32,7 +32,10 @@ class Token:
         self.settings = settings
         self.t_type = t_type
         self.text = text
-        self.tokens = TokenCollection(tokens)
+        self.tokens = tokens
+
+        if self.t_type is TokenType.Block and self.tokens is None:
+            self.tokens = TokenCollection()
 
     def __str__(self):
         return self.resolve()
@@ -60,7 +63,7 @@ class Token:
         if (single_arg and len(args) != 1) or len(args) == 0:
             # Put all the args in a parent block if we only want a single arg,
             # or if there were no blocks in the args.
-            args = [Token(TokenType.Block, self.settings, tokens = tail.get_tokens())]
+            args = [Token(TokenType.Block, self.settings, tokens = tail)]
 
         return args
 
