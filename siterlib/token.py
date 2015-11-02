@@ -28,23 +28,25 @@ class TokenType(enum.Enum):
     Eval = 7
 
 class Token:
-    def __init__(self, t_type, settings, text = None, tokens = None):
-        self.settings = settings
+    def __init__(self, t_type, text):
         self.t_type = t_type
         self.text = text
-        self.tokens = tokens
-
-        if self.t_type is TokenType.Block and self.tokens is None:
-            self.tokens = TokenCollection()
 
     def __str__(self):
         return self.resolve()
 
     def resolve(self):
-        if self.t_type is TokenType.Block:
-            return self.settings.TagOpen + self.tokens.resolve() + self.settings.TagClose
-        else:
-            return self.text
+        return self.text
+
+class BlockToken(Token):
+    def __init__(self, settings, tokens):
+        super().__init__(TokenType.Block, None)
+
+        self.settings = settings
+        self.tokens = tokens if tokens else TokenCollection()
+
+    def resolve(self):
+        return self.settings.TagOpen + self.tokens.resolve() + self.settings.TagClose
 
     def capture_call(self):
         # {`name ...}
@@ -63,7 +65,7 @@ class Token:
         if single_arg or len(args) == 0:
             # Put all the args in a parent block
             tail.trim()
-            args = [Token(TokenType.Block, self.settings, tokens = tail)]
+            args = [BlockToken(self.settings, tail)]
 
         return args
 

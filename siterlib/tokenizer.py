@@ -18,7 +18,7 @@
 """
 
 from siterlib.util import Util
-from siterlib.token import TokenType, Token, TokenCollection
+from siterlib.token import TokenType, Token, BlockToken, TokenCollection
 
 class Tokenizer:
     def __init__(self, settings):
@@ -53,7 +53,7 @@ class Tokenizer:
                 current_token += c
             else:
                 if len(current_token) > 0:
-                    flat_tokens.append(Token(previous_type, self.settings, text = current_token))
+                    flat_tokens.append(Token(previous_type, current_token))
 
                 current_token = c
                 escaped_index = -1
@@ -71,15 +71,15 @@ class Tokenizer:
 
                 if len(current_token) > len(delim):
                     flat_tokens.append(
-                        Token(TokenType.Text, self.settings, text = current_token[: -len(delim)]))
+                        Token(TokenType.Text, current_token[: -len(delim)]))
 
-                flat_tokens.append(Token(delim_type, self.settings, text = current_token[-len(delim) :]))
+                flat_tokens.append(Token(delim_type, current_token[-len(delim) :]))
                 current_token = ''
                 escaped_index = -1
                 break
 
         if len(current_token) > 0:
-            flat_tokens.append(Token(current_type, self.settings, text = current_token))
+            flat_tokens.append(Token(current_type, current_token))
 
         return flat_tokens
 
@@ -90,7 +90,7 @@ class Tokenizer:
         for token in flat_tokens:
             if token.t_type is TokenType.TagOpen:
                 # Subsequent tokens will be added to this new block
-                stack.append(Token(TokenType.Block, self.settings))
+                stack.append(BlockToken(self.settings, None))
             else:
                 if token.t_type is TokenType.TagClose:
                     if len(stack) == 0:

@@ -186,7 +186,7 @@ class Siter:
         if binding.protected and name == self.settings.Content and self.imports.Md:
             content = eval_tokens.resolve()
             md = self.imports.Md.markdown(content, output_format = 'html5')
-            md_token = Token(TokenType.Text, self.settings, text = md)
+            md_token = Token(TokenType.Text, md)
             eval_tokens = TokenCollection([md_token])
 
         return eval_tokens
