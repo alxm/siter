@@ -60,7 +60,7 @@ class Token:
 
         args = tail.filter(TokenType.Block)
 
-        if (single_arg and len(args) != 1) or len(args) == 0:
+        if single_arg or len(args) == 0:
             # Put all the args in a parent block
             tail.trim()
             args = [Token(TokenType.Block, self.settings, tokens = tail)]
