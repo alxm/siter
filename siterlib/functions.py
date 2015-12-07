@@ -97,3 +97,12 @@ class Functions:
                     .format(div_class, clean_code(code))
 
         return code
+
+    @staticmethod
+    def markdown(siter, args):
+        content = args[0]
+
+        if siter.imports.Md:
+            content = siter.imports.Md.markdown(content, output_format = 'html5')
+
+        return content

@@ -39,6 +39,7 @@ class Settings:
         self.Generated = 'generated'
         self.Root = 'root'
         self.Code = 'code'
+        self.Markdown = 'md'
 
         # Load user settings
         self.__from_args(argv)

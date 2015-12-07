@@ -85,6 +85,12 @@ class Siter:
                           func = Functions.highlight_code,
                           protected = True)
 
+        self.bindings.add(self.settings.Markdown,
+                          BindingType.Function,
+                          num_params = [1],
+                          func = Functions.markdown,
+                          protected = True)
+
     def __set_local_bindings(self, read_file, read_dir):
         self.bindings.add(self.settings.Modified,
                           BindingType.Function,
