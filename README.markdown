@@ -9,7 +9,10 @@ Content pages from `siter-pages/` are formatted with `siter-template/page.html` 
 A content page:
 
     {!def {title} {Home page}}
+
     Hello world!
+
+    This is my {!title}.
 
 And a page template:
 
@@ -26,6 +29,7 @@ Generate this:
         <body>
             <h1>Home page</h1>
             <p>Hello world!</p>
+            <p>This is my Home page.</p>
         </body>
     </html>
 
@@ -47,7 +51,7 @@ Will give you:
 
 ### content
 
-Everything in a page file that is not a variable or macro definition.
+Everything in a page file that is not a variable or macro definition, ran through Markdown.
 
 ### root
 
@@ -82,6 +86,10 @@ For displaying code blocks and one-liners. See the [Pygments docs](http://pygmen
     except FileNotFoundError:
         return None
     }}
+
+### md
+
+`{!md ...}` - Runs the supplied argument through Markdown.
 
 ### if
 
