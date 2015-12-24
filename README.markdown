@@ -34,18 +34,35 @@ Generate this:
     </html>
 
 
-# Variables and Macros
+# Blocks, Variables, Macros, and Functions
+
+A block is text enclosed in block tags. The default block tags are `{` and `}`, but you can override them with the `siter-config/tags` file which is described further down.
+
+A block may be used to define variables and macros, as well as to invoke them. A block that starts with the evaluation marker `!` is interpreted as a call to a particular definition.
+
+In the example below, we call the built-in `def` function to create a new variable `smile` and a new macro `format` that takes the arguments `tag` and `text`. Afterwards, we use them with `{!smile}` and `{!format ...}` respectively:
 
     {!def {smile} {:-)}}
     {!def {format} {tag text} {<{!tag}>{!text}</{!tag}>}}
 
     {!format {b} {This text is bold {!smile}}}
+
     {!format {i} {This text is italic}}
 
-Will give you:
+This will output:
 
-    <b>This text is bold :-)</b>
-    <i>This text is italic</i>
+    <p><b>This text is bold :-)</b></p>
+    <p><i>This text is italic</i></p>
+
+The `tag` and `text` arguments are defined as local variables in the context of `format`'s body. If a macro or function takes a single argument, you may ommit the block tags around the argument:
+
+    {!def
+        {bold}
+        {text}
+        {<b>{!text}</b>}
+    }
+    {!bold This line is bold}
+    {!bold {And so is this one}}
 
 # Special Macros and Variables
 
@@ -93,7 +110,7 @@ For displaying code blocks and one-liners. See the [Pygments docs](http://pygmen
 
 ### if
 
-`{!if {flag} {then} {else}}` - Expands to the `then` block if the `flag` variable has been declared somewhere (say with `{!def {flag}}`), or to the `else` block otherwise. The `else` block is optional.
+`{!if {flag} {then} {else}}` - Expands to the `then` block if the `flag` variable has been declared somewhere (say with `{!def flag}`), or to the `else` block otherwise. The `else` block is optional.
 
 # Project File Tree
 
