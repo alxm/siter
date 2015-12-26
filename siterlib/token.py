@@ -39,14 +39,15 @@ class Token:
         return self.text
 
 class BlockToken(Token):
-    def __init__(self, settings, tokens):
+    def __init__(self, tag_open, tag_close, tokens):
         super().__init__(TokenType.Block, None)
 
-        self.settings = settings
+        self.tag_open = tag_open
+        self.tag_close = tag_close
         self.tokens = tokens if tokens else TokenCollection()
 
     def resolve(self):
-        return self.settings.TagOpen + self.tokens.resolve() + self.settings.TagClose
+        return self.tag_open + self.tokens.resolve() + self.tag_close
 
     def capture_call(self):
         # {`name ...}
@@ -65,7 +66,7 @@ class BlockToken(Token):
         if single_arg or len(args) == 0:
             # Put all the args in a parent block
             tail.trim()
-            args = [BlockToken(self.settings, tail)]
+            args = [BlockToken(self.tag_open, self.tag_close, tail)]
 
         return args
 

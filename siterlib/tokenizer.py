@@ -21,8 +21,12 @@ from siterlib.util import Util
 from siterlib.token import TokenType, Token, BlockToken, TokenCollection
 
 class Tokenizer:
-    def __init__(self, settings):
-        self.settings = settings
+    def __init__(self, eval_hint, tag_open, tag_close):
+        self.special_tokens = {
+            TokenType.Eval: eval_hint,
+            TokenType.TagOpen: tag_open,
+            TokenType.TagClose: tag_close
+        }
 
     def __make_flat_tokens(self, text):
         flat_tokens = []
@@ -30,12 +34,6 @@ class Tokenizer:
         escaped = False
         escaped_index = -1
         current_token = ''
-
-        delim_tokens = [
-            (TokenType.Eval, self.settings.EvalHint),
-            (TokenType.TagOpen, self.settings.TagOpen),
-            (TokenType.TagClose, self.settings.TagClose),
-        ]
 
         for c in text:
             if c == '\\' and not escaped:
@@ -62,7 +60,9 @@ class Tokenizer:
                 escaped = False
                 escaped_index = len(current_token) - 1
 
-            for delim_type, delim in delim_tokens:
+            for delim_type in self.special_tokens:
+                delim = self.special_tokens[delim_type]
+
                 if len(current_token) - escaped_index <= len(delim):
                     continue
 
@@ -90,7 +90,9 @@ class Tokenizer:
         for token in flat_tokens:
             if token.t_type is TokenType.TagOpen:
                 # Subsequent tokens will be added to this new block
-                stack.append(BlockToken(self.settings, None))
+                stack.append(BlockToken(self.special_tokens[TokenType.TagOpen],
+                                        self.special_tokens[TokenType.TagClose],
+                                        None))
             else:
                 if token.t_type is TokenType.TagClose:
                     if len(stack) == 0:
