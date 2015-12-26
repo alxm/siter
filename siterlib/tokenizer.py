@@ -60,20 +60,20 @@ class Tokenizer:
                 escaped = False
                 escaped_index = len(current_token) - 1
 
-            for delim_type in self.special_tokens:
-                delim = self.special_tokens[delim_type]
+            for token_type in self.special_tokens:
+                token_text = self.special_tokens[token_type]
 
-                if len(current_token) - escaped_index <= len(delim):
+                if len(current_token) - escaped_index <= len(token_text):
                     continue
 
-                if current_token[-len(delim) :] != delim:
+                if current_token[-len(token_text) :] != token_text:
                     continue
 
-                if len(current_token) > len(delim):
+                if len(current_token) > len(token_text):
                     flat_tokens.append(
-                        Token(TokenType.Text, current_token[: -len(delim)]))
+                        Token(TokenType.Text, current_token[: -len(token_text)]))
 
-                flat_tokens.append(Token(delim_type, current_token[-len(delim) :]))
+                flat_tokens.append(Token(token_type, current_token[-len(token_text) :]))
                 current_token = ''
                 escaped_index = -1
                 break
