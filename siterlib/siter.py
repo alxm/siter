@@ -97,7 +97,7 @@ class Siter:
         self.bindings.add(self.settings.Modified,
                           BindingType.Function,
                           num_params = [1],
-                          func = lambda _, args: Functions.mod_time(read_file, args[0]))
+                          func = lambda _, args: Functions.mod_time(_, [read_file] + args))
 
         self.bindings.add(self.settings.Root,
                           BindingType.Function,

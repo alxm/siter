@@ -49,7 +49,10 @@ class Functions:
             return ''
 
     @staticmethod
-    def mod_time(read_file, fmt):
+    def mod_time(_, args):
+        read_file = args[0]
+        fmt = args[1]
+
         f_time = read_file.get_mod_time()
         time_obj = time.localtime(f_time)
 
