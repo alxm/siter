@@ -176,7 +176,7 @@ class Siter:
 
             if name == self.settings.Def:
                 # Create a new user macro or variable
-                binding.func(self.bindings, args)
+                binding.func(self, args)
             else:
                 # Evaluate and resolve each argument
                 arguments = [self.__evaluate_block(a).resolve() for a in args]
