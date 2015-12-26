@@ -100,9 +100,8 @@ class Siter:
                           func = lambda _, args: Functions.mod_time(_, [read_file] + args))
 
         self.bindings.add(self.settings.Root,
-                          BindingType.Function,
-                          num_params = [0],
-                          func = lambda siter, _: read_dir.path_to(siter.dirs.pages))
+                          BindingType.Variable,
+                          tokens = self.tokenizer.tokenize(read_dir.path_to(self.dirs.pages)))
 
     def __set_file_bindings(self, read_file, set_content):
         content = read_file.get_content()
