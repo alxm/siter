@@ -36,9 +36,10 @@ class MacroBinding(Binding):
         self.tokens = tokens
 
 class FunctionBinding(Binding):
-    def __init__(self, num_params, func):
+    def __init__(self, num_params, func, lazy):
         self.num_params = num_params
         self.func = func
+        self.lazy = lazy
 
 class BindingCollection:
     def __init__(self, siter):
@@ -64,8 +65,8 @@ class BindingCollection:
         binding = MacroBinding(params, tokens)
         self.__add(name, binding, protected)
 
-    def add_function(self, name, num_params, func, protected = False):
-        binding = FunctionBinding(num_params, func)
+    def add_function(self, name, num_params, func, protected = False, lazy = False):
+        binding = FunctionBinding(num_params, func, lazy)
         self.__add(name, binding, protected)
 
     def get(self, name):

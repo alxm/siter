@@ -66,7 +66,8 @@ class Siter:
         self.bindings.add_function(self.settings.Def,
                                    [1, 2, 3],
                                    Functions.declare_binding,
-                                   protected = True)
+                                   protected = True,
+                                   lazy = True)
 
         self.bindings.add_function(self.settings.If,
                                    [2, 3],
@@ -164,8 +165,7 @@ class Siter:
                     .format(name, binding.num_params, len(args), block))
                 return None
 
-            if name == self.settings.Def:
-                # Create a new user macro or variable
+            if binding.lazy:
                 binding.func(self, args)
             else:
                 # Evaluate and resolve each argument
