@@ -131,6 +131,7 @@ class Siter:
 
         if not self.bindings.contains(name):
             # Name is unknown, discard block
+            Util.warning('Use of unknown binding {}:\n{}'.format(name, block))
             return None
 
         binding = self.bindings.get(name)
