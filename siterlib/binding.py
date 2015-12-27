@@ -21,18 +21,23 @@ import enum
 
 from siterlib.util import Util
 
-class BindingType(enum.Enum):
-    Variable = 0
-    Macro = 1
-    Function = 2
-
 class Binding:
-    def __init__(self, b_type, protected, tokens, num_params, params, func):
-        self.b_type = b_type
-        self.protected = protected
+    def __init__(self):
+        self.protected = False
+
+class VariableBinding(Binding):
+    def __init__(self, tokens):
         self.tokens = tokens
-        self.num_params = [len(params)] if params else num_params
+
+class MacroBinding(Binding):
+    def __init__(self, params, tokens):
         self.params = params
+        self.num_params = len(params)
+        self.tokens = tokens
+
+class FunctionBinding(Binding):
+    def __init__(self, num_params, func):
+        self.num_params = num_params
         self.func = func
 
 class BindingCollection:
@@ -44,12 +49,24 @@ class BindingCollection:
     def contains(self, name):
         return name in self.bindings
 
-    def add(self, name, b_type, tokens = None, num_params = None, params = None, func = None, protected = False):
+    def __add(self, name, binding, protected):
         if self.contains(name) and self.get(name).protected:
             Util.error('Cannot overwrite binding {}'.format(name))
 
-        binding = Binding(b_type, protected, tokens, num_params, params, func)
+        binding.protected = protected
         self.bindings[name] = binding
+
+    def add_variable(self, name, tokens, protected = False):
+        binding = VariableBinding(tokens)
+        self.__add(name, binding, protected)
+
+    def add_macro(self, name, params, tokens, protected = False):
+        binding = MacroBinding(params, tokens)
+        self.__add(name, binding, protected)
+
+    def add_function(self, name, num_params, func, protected = False):
+        binding = FunctionBinding(num_params, func)
+        self.__add(name, binding, protected)
 
     def get(self, name):
         if name not in self.bindings:

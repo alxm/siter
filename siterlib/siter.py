@@ -22,7 +22,7 @@ from siterlib.settings import Settings
 from siterlib.file import FileMode, Dirs, Files
 from siterlib.tokenizer import Tokenizer
 from siterlib.token import TokenType, Token, TokenCollection
-from siterlib.binding import BindingType, BindingCollection
+from siterlib.binding import VariableBinding, MacroBinding, FunctionBinding, BindingCollection
 from siterlib.functions import Functions
 
 class Imports:
@@ -63,45 +63,38 @@ class Siter:
             self.__set_file_bindings(self.files.defs, False)
 
     def __set_global_bindings(self):
-        self.bindings.add(self.settings.Def,
-                          BindingType.Function,
-                          num_params = [1, 2, 3],
-                          func = Functions.declare_binding,
-                          protected = True)
+        self.bindings.add_function(self.settings.Def,
+                                   [1, 2, 3],
+                                   Functions.declare_binding,
+                                   protected = True)
 
-        self.bindings.add(self.settings.If,
-                          BindingType.Function,
-                          num_params = [2, 3],
-                          func = Functions.if_check,
-                          protected = True)
+        self.bindings.add_function(self.settings.If,
+                                   [2, 3],
+                                   Functions.if_check,
+                                   protected = True)
 
-        self.bindings.add(self.settings.Generated,
-                          BindingType.Function,
-                          num_params = [1],
-                          func = Functions.gen_time,
-                          protected = True)
+        self.bindings.add_function(self.settings.Generated,
+                                   [1],
+                                   Functions.gen_time,
+                                   protected = True)
 
-        self.bindings.add(self.settings.Code,
-                          BindingType.Function,
-                          num_params = [1, 2, 3],
-                          func = Functions.highlight_code,
-                          protected = True)
+        self.bindings.add_function(self.settings.Code,
+                                   [1, 2, 3],
+                                   Functions.highlight_code,
+                                   protected = True)
 
-        self.bindings.add(self.settings.Markdown,
-                          BindingType.Function,
-                          num_params = [1],
-                          func = Functions.markdown,
-                          protected = True)
+        self.bindings.add_function(self.settings.Markdown,
+                                   [1],
+                                   Functions.markdown,
+                                   protected = True)
 
     def __set_local_bindings(self, read_file, read_dir):
-        self.bindings.add(self.settings.Modified,
-                          BindingType.Function,
-                          num_params = [1],
-                          func = lambda _, args: Functions.mod_time(_, [read_file] + args))
+        self.bindings.add_function(self.settings.Modified,
+                                   [1],
+                                   lambda _, args: Functions.mod_time(_, [read_file] + args))
 
-        self.bindings.add(self.settings.Root,
-                          BindingType.Variable,
-                          tokens = self.tokenizer.tokenize(read_dir.path_to(self.dirs.pages)))
+        self.bindings.add_variable(self.settings.Root,
+                                   self.tokenizer.tokenize(read_dir.path_to(self.dirs.pages)))
 
     def __set_file_bindings(self, read_file, set_content):
         content = read_file.get_content()
@@ -109,10 +102,9 @@ class Siter:
         content_tokens = self.__evaluate_collection(content_tokens)
 
         if set_content:
-            self.bindings.add(self.settings.Content,
-                              BindingType.Variable,
-                              tokens = content_tokens,
-                              protected = True)
+            self.bindings.add_variable(self.settings.Content,
+                                       content_tokens,
+                                       protected = True)
 
     def __evaluate_collection(self, collection):
         eval_tokens = TokenCollection()
@@ -143,13 +135,13 @@ class Siter:
         binding = self.bindings.get(name)
         eval_tokens = TokenCollection()
 
-        if binding.b_type is BindingType.Variable:
+        if type(binding) is VariableBinding:
             eval_binding = self.__evaluate_collection(binding.tokens)
             eval_tokens.add_collection(eval_binding)
-        elif binding.b_type is BindingType.Macro:
-            args = block.capture_args(binding.num_params == [1])
+        elif type(binding) is MacroBinding:
+            args = block.capture_args(binding.num_params == 1)
 
-            if len(args) not in binding.num_params:
+            if len(args) != binding.num_params:
                 Util.warning('Macro {} takes {} args, got {}:\n{}'
                     .format(name, binding.num_params, len(args), block))
                 return None
@@ -158,15 +150,13 @@ class Siter:
 
             # Bind each parameter to the supplied argument
             for arg, param in zip(args, binding.params):
-                self.bindings.add(param.resolve(),
-                                  BindingType.Variable,
-                                  tokens = TokenCollection([arg]))
+                self.bindings.add_variable(param.resolve(), TokenCollection([arg]))
 
             eval_binding = self.__evaluate_collection(binding.tokens)
             eval_tokens.add_collection(eval_binding)
 
             self.bindings.pop()
-        elif binding.b_type is BindingType.Function:
+        elif type(binding) is FunctionBinding:
             args = block.capture_args(binding.num_params == [1])
 
             if len(args) not in binding.num_params:
