@@ -173,8 +173,6 @@ class Siter:
 
                 body = binding.func(self, arguments)
                 eval_tokens.add_collection(self.tokenizer.tokenize(body))
-        else:
-            Util.error('{} has an unknown binding type'.format(name))
 
         # Trim leading and trailing whitespace
         eval_tokens.trim()
