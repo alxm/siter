@@ -38,14 +38,18 @@ class Functions:
 
             siter.bindings.add_variable(name, TokenCollection(body))
 
+        return None
+
     @staticmethod
     def if_check(siter, args):
-        if siter.bindings.contains(args[0]):
+        clause = siter.evaluate_block(args[0]).resolve()
+
+        if siter.bindings.contains(clause):
             return args[1]
         elif len(args) == 3:
             return args[2]
         else:
-            return ''
+            return None
 
     @staticmethod
     def mod_time(_, args):

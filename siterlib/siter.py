@@ -72,7 +72,8 @@ class Siter:
         self.bindings.add_function(self.settings.If,
                                    [2, 3],
                                    Functions.if_check,
-                                   protected = True)
+                                   protected = True,
+                                   lazy = True)
 
         self.bindings.add_function(self.settings.Generated,
                                    [1],
@@ -112,7 +113,7 @@ class Siter:
 
         for token in collection:
             if token.t_type is TokenType.Block:
-                evaluated = self.__evaluate_block(token)
+                evaluated = self.evaluate_block(token)
 
                 if evaluated:
                     eval_tokens.add_collection(evaluated)
@@ -121,7 +122,7 @@ class Siter:
 
         return eval_tokens
 
-    def __evaluate_block(self, block):
+    def evaluate_block(self, block):
         # Get the binding's name
         name = block.capture_call()
 
@@ -167,10 +168,15 @@ class Siter:
                 return None
 
             if binding.lazy:
-                binding.func(self, args)
+                # Feed block tokens directly to function
+                result = binding.func(self, args)
+
+                if result:
+                    result = self.evaluate_block(result)
+                    eval_tokens.add_collection(result)
             else:
                 # Evaluate and resolve each argument
-                arguments = [self.__evaluate_block(a).resolve() for a in args]
+                arguments = [self.evaluate_block(a).resolve() for a in args]
 
                 body = binding.func(self, arguments)
                 eval_tokens.add_collection(self.tokenizer.tokenize(body))
