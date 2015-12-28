@@ -30,7 +30,6 @@ class FileMode(enum.Enum):
 class File:
     def __init__(self, path, mode):
         self.path = path
-        self.name = os.path.basename(self.path)
         self.mode = mode
 
         if self.mode is FileMode.Required and not self.exists():
@@ -43,7 +42,7 @@ class File:
         return self.path
 
     def get_name(self):
-        return self.name
+        return os.path.basename(self.path)
 
     def get_mod_time(self):
         return os.stat(self.path).st_mtime
