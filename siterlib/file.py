@@ -113,14 +113,14 @@ class TextFile(File):
         line = self.get_line(number)
 
         if line is None:
-            error = '{}:{} line not found'.format(self.path, number + 1)
+            error = '{}:{} line not found'.format(self.path, number)
         else:
             if min_len and len(line) < min_len:
                 error = '{}:{} length must be at least {}, is {}: "{}"' \
-                    .format(self.path, number + 1, min_len, len(line), line)
+                    .format(self.path, number, min_len, len(line), line)
             elif max_len and len(line) > max_len:
                 error = '{}:{} length must not exceed {}, is {}: "{}"' \
-                    .format(self.path, number + 1, max_len, len(line), line)
+                    .format(self.path, number, max_len, len(line), line)
 
         if error:
             if self.mode is FileMode.Optional:
