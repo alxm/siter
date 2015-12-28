@@ -105,7 +105,7 @@ class TextFile(File):
                 if self.mode is not FileMode.Optional:
                     Util.error('Required file {} not found'.format(self.path))
 
-    def test_line(self, number, min_len = -1, max_len = -1):
+    def test_line(self, number, min_len = None, max_len = None):
         if self.content is None:
             return False
 
@@ -113,12 +113,12 @@ class TextFile(File):
         line = self.get_line(number)
 
         if line is None:
-            error = '{}:{} line is missing'.format(self.path, number + 1)
+            error = '{}:{} line not found'.format(self.path, number + 1)
         else:
-            if min_len != -1 and len(line) < min_len:
+            if min_len and len(line) < min_len:
                 error = '{}:{} length must be at least {}, is {}: "{}"' \
                     .format(self.path, number + 1, min_len, len(line), line)
-            elif max_len != -1 and len(line) > max_len:
+            elif max_len and len(line) > max_len:
                 error = '{}:{} length must not exceed {}, is {}: "{}"' \
                     .format(self.path, number + 1, max_len, len(line), line)
 
