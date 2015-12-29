@@ -197,7 +197,13 @@ class Siter:
         return eval_tokens
 
     def __apply_template(self, template_file):
-        content = template_file.get_content()
+        if template_file.exists():
+            content = template_file.get_content()
+        else:
+            content = '<!DOCTYPE html><html><body>{}{}{}{}</body></html>' \
+                .format(self.settings.TagOpen, self.settings.EvalHint,
+                        self.settings.Content, self.settings.TagClose)
+
         tokens = self.tokenizer.tokenize(content)
         tokens = self.__evaluate_collection(tokens)
 
