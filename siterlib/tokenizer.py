@@ -70,10 +70,11 @@ class Tokenizer:
                     continue
 
                 if len(current_token) > len(token_text):
-                    flat_tokens.append(
-                        Token(TokenType.Text, current_token[: -len(token_text)]))
+                    flat_tokens.append(Token(TokenType.Text,
+                                             current_token[: -len(token_text)]))
 
-                flat_tokens.append(Token(token_type, current_token[-len(token_text) :]))
+                flat_tokens.append(Token(token_type,
+                                         current_token[-len(token_text) :]))
                 current_token = ''
                 escaped_index = -1
                 break

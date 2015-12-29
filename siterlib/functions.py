@@ -72,11 +72,11 @@ class Functions:
             code = args[0]
             lines = []
         elif len(args) == 2:
-            lang = args[0]
+            lang = args[0].lower()
             code = args[1]
             lines = []
         elif len(args) == 3:
-            lang = args[0]
+            lang = args[0].lower()
             code = args[2]
             lines = args[1].split()
 
@@ -94,7 +94,7 @@ class Functions:
             div_class = 'siter_code'
 
             if siter.imports.Pygments:
-                lexer = siter.imports.PygmentsLexers.get_lexer_by_name(lang.lower())
+                lexer = siter.imports.PygmentsLexers.get_lexer_by_name(lang)
                 formatter = siter.imports.PygmentsFormatters.HtmlFormatter(
                     linenos = True, cssclass = div_class, hl_lines=lines)
                 code = siter.imports.Pygments.highlight(code, lexer, formatter)
@@ -109,6 +109,7 @@ class Functions:
         content = args[0]
 
         if siter.imports.Md:
-            content = siter.imports.Md.markdown(content, output_format = 'html5')
+            content = siter.imports.Md.markdown(content,
+                                                output_format = 'html5')
 
         return content

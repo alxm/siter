@@ -65,7 +65,8 @@ class BindingCollection:
         binding = MacroBinding(params, tokens)
         self.__add(name, binding, protected)
 
-    def add_function(self, name, num_params, func, protected = False, lazy = False):
+    def add_function(self, name, num_params, func,
+                     protected = False, lazy = False):
         binding = FunctionBinding(num_params, func, lazy)
         self.__add(name, binding, protected)
 

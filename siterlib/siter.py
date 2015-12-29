@@ -24,7 +24,8 @@ from siterlib.settings import Settings
 from siterlib.file import FileMode, Dirs, Files
 from siterlib.tokenizer import Tokenizer
 from siterlib.token import TokenType, Token, TokenCollection
-from siterlib.binding import VariableBinding, MacroBinding, FunctionBinding, BindingCollection
+from siterlib.binding import VariableBinding, MacroBinding, FunctionBinding
+from siterlib.binding import BindingCollection
 from siterlib.functions import Functions
 
 class Imports:
@@ -96,10 +97,13 @@ class Siter:
     def __set_local_bindings(self, read_file, read_dir):
         self.bindings.add_function(self.settings.Modified,
                                    [1],
-                                   lambda _, args: Functions.mod_time(_, [read_file] + args))
+                                   lambda _, args: \
+                                       Functions.mod_time(_,
+                                                          [read_file] + args))
 
         self.bindings.add_variable(self.settings.Root,
-                                   self.tokenizer.tokenize(read_dir.path_to(self.dirs.pages)))
+                                   self.tokenizer.tokenize(
+                                       read_dir.path_to(self.dirs.pages)))
 
     def __set_file_bindings(self, read_file, set_content):
         content = read_file.get_content()
@@ -156,7 +160,8 @@ class Siter:
 
             # Bind each parameter to the supplied argument
             for arg, param in zip(args, binding.params):
-                self.bindings.add_variable(param.resolve(), TokenCollection([arg]))
+                self.bindings.add_variable(param.resolve(),
+                                           TokenCollection([arg]))
 
             eval_binding = self.__evaluate_collection(binding.tokens)
             eval_tokens.add_collection(eval_binding)
@@ -188,7 +193,10 @@ class Siter:
         eval_tokens.trim()
 
         # Run page content through Markdown
-        if binding.protected and name == self.settings.Content and self.imports.Md:
+        if binding.protected \
+            and name == self.settings.Content \
+            and self.imports.Md:
+
             content = eval_tokens.resolve()
             md = self.imports.Md.markdown(content, output_format = 'html5')
             md_token = Token(TokenType.Text, md)
@@ -229,7 +237,8 @@ class Siter:
             counter += 1
 
         for read_subdir in read_dir.list_dirs():
-            write_subdir = write_dir.add_dir(read_subdir.get_name(), FileMode.Create)
+            write_subdir = write_dir.add_dir(read_subdir.get_name(),
+                                             FileMode.Create)
             counter += self.__work(read_subdir, write_subdir)
 
         return counter
