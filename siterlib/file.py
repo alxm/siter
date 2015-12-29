@@ -30,7 +30,7 @@ class FileMode(enum.Enum):
 
 class File:
     def __init__(self, path, mode):
-        self.path = path
+        self.path = os.path.abspath(path)
         self.mode = mode
 
         if self.mode is FileMode.Required and not self.exists():
