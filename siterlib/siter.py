@@ -196,9 +196,9 @@ class Siter:
 
         return eval_tokens
 
-    def __apply_template(self, template_file):
-        if template_file.exists():
-            content = template_file.get_content()
+    def __apply_template(self):
+        if self.files.page_html.exists():
+            content = self.files.page_html.get_content()
         else:
             content = '<!DOCTYPE html><html><body>{}{}{}{}</body></html>' \
                 .format(self.settings.TagOpen, self.settings.EvalHint,
@@ -222,7 +222,7 @@ class Siter:
             self.__set_file_bindings(in_file, True)
 
             # Load template and replace variables and functions with bindings
-            final = self.__apply_template(self.files.page_html)
+            final = self.__apply_template()
             out_file.write(final)
 
             self.bindings.pop()
