@@ -171,9 +171,8 @@ This is the template for every page. Example:
 
 # Calling Siter
 
-    cd website
-    siter         # generate website
-    siter --force # regenerate all pages
+    $ cd website-project
+    $ siter
 
 # Optional Packages
 

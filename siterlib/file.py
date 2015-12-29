@@ -48,12 +48,6 @@ class File:
     def get_mod_time(self):
         return os.stat(self.path).st_mtime
 
-    def older_than(self, target):
-        if not target.exists():
-            return False
-
-        return self.get_mod_time() < target.get_mod_time()
-
 class Dir(File):
     def __init__(self, path, mode):
         File.__init__(self, path, mode)

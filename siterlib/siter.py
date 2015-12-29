@@ -203,12 +203,7 @@ class Siter:
     def __work(self, read_dir, write_dir):
         for in_file in read_dir.list_files():
             out_file = write_dir.add_file(in_file.get_name(), FileMode.Create)
-
-            if self.settings.ForceWrite is False and in_file.older_than(out_file):
-                Util.message('Up to date', out_file.get_path())
-                continue
-
-            Util.message('Updating', out_file.get_path())
+            Util.message('Writing', out_file.get_path())
 
             self.bindings.push()
 

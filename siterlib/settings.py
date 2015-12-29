@@ -21,9 +21,6 @@ from siterlib.util import Util
 
 class Settings:
     def __init__(self, argv, files):
-        # Whether to re-generate up-to-date files
-        self.ForceWrite = False
-
         # Blocks that start with this are evaluated; must be exactly 1 char
         self.EvalHint = '`'
 
@@ -49,7 +46,7 @@ class Settings:
         # Go through command line arguments
         for arg in argv:
             if arg in ['-f', '--force']:
-                self.ForceWrite = True
+                pass
 
     def __from_files(self, files):
         if files.evalhint.test_line(0, 1, 1):
