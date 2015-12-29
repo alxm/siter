@@ -17,6 +17,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import time
+
 from siterlib.util import Util
 from siterlib.settings import Settings
 from siterlib.file import FileMode, Dirs, Files
@@ -201,6 +203,8 @@ class Siter:
         return tokens.resolve()
 
     def __work(self, read_dir, write_dir):
+        counter = 0
+
         for in_file in read_dir.list_files():
             out_file = write_dir.add_file(in_file.get_name(), FileMode.Create)
             Util.message('Writing', out_file.get_path())
@@ -215,10 +219,18 @@ class Siter:
             out_file.write(final)
 
             self.bindings.pop()
+            counter += 1
 
         for read_subdir in read_dir.list_dirs():
             write_subdir = write_dir.add_dir(read_subdir.get_name(), FileMode.Create)
-            self.__work(read_subdir, write_subdir)
+            counter += self.__work(read_subdir, write_subdir)
+
+        return counter
 
     def run(self):
-        self.__work(self.dirs.pages, self.dirs.out)
+        start = time.perf_counter()
+        count = self.__work(self.dirs.pages, self.dirs.out)
+        elapsed = round(time.perf_counter() - start, 1)
+
+        Util.message('Done', '{} {} in {}s' \
+            .format(count, 'page' if count == 1 else 'pages', elapsed))
