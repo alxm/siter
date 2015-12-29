@@ -18,6 +18,7 @@
 """
 
 import importlib
+import sys
 
 class Util:
     @staticmethod
@@ -32,7 +33,7 @@ class Util:
     @staticmethod
     def error(e):
         Util.message('Error', e, 1)
-        raise RuntimeError('Siter')
+        sys.exit(1)
 
     @staticmethod
     def warning(w):
