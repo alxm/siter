@@ -52,7 +52,8 @@ class Siter:
                                    self.settings.TagClose)
 
         # Copy static files
-        self.dirs.static.copy_to(self.dirs.out)
+        if self.dirs.static.exists():
+            self.dirs.static.copy_to(self.dirs.out)
 
         # Variables, macros, and functions
         self.bindings = BindingCollection(self)
