@@ -19,6 +19,7 @@
 
 import enum
 import os
+import shutil
 
 from siterlib.util import Util
 
@@ -84,11 +85,13 @@ class Dir(File):
         return os.path.relpath(target.get_path(), start = self.path)
 
     def copy_to(self, dst_dir):
-        src = self.path + '/'
+        src = self.path
         dst = dst_dir.path
 
         Util.message('Copy files', 'From {} to {}'.format(src, dst))
-        os.system('rsync -r --delete {} {}'.format(src, dst))
+
+        shutil.rmtree(dst)
+        shutil.copytree(src, dst)
 
 class TextFile(File):
     def __init__(self, path, mode):
