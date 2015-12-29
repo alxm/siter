@@ -140,11 +140,11 @@ For declaring global variables and macros visible to all pages.
 
 ##### siter-config/eval
 
-The default eval marker is `` ` ``, but you can declare a custom one like `!` in this file. Blocks that start with an eval mark are evaluated as variables or macros, while the rest expand to their literal selves. So `{!modified %Y}` would expand to `2015`, while `{modified}` would expand to `modified`.
+The default eval marker is `!`, but you can declare a custom one like `` ` `` in this file. Blocks that start with an eval mark are evaluated as variables or macros, while the rest expand to their literal selves. So `{!modified %Y}` would expand to `2016`, while `{modified}` would expand to `modified`.
 
 ##### siter-config/tags
 
-Tags are used to delimitate blocks. `{` and `}` are the default, but you can specify your own in this file, each on a separate line. The two tags must be different: `[` and `]` are ok, but `%` and `%` are not. Multi-character tags like like `{{` and `}}` are valid too.
+Tags are used to delimitate blocks. `{` and `}` are the default, but you can specify your own in this file, each on a separate line. The two tags must be different: `[` and `]` are ok, but `%` and `%` are not. Multi-character tags like like `{{` and `}}` or `{%` and `%}` are valid too.
 
 ### siter-pages/
 
