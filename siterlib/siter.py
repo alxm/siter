@@ -246,7 +246,7 @@ class Siter:
     def run(self):
         start = time.perf_counter()
         count = self.__work(self.dirs.pages, self.dirs.out)
-        elapsed = round(time.perf_counter() - start, 1)
+        elapsed = round(time.perf_counter() - start + 0.05, 1)
 
         Util.message('Done', '{} {} in {}s' \
             .format(count, 'page' if count == 1 else 'pages', elapsed))
