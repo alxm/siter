@@ -22,7 +22,7 @@ from siterlib.util import Util
 class Settings:
     def __init__(self, argv, files):
         # Blocks that start with this are evaluated; must be exactly 1 char
-        self.EvalHint = '`'
+        self.EvalHint = '!'
 
         # Block delimiters
         self.TagOpen = '{'
