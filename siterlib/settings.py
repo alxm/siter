@@ -37,6 +37,7 @@ class Settings:
         self.Root = 'root'
         self.Code = 'code'
         self.Markdown = 'md'
+        self.Lowercase = 'lowercase'
 
         # Load user settings
         self.__from_args(argv)

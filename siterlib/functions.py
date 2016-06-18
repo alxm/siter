@@ -113,3 +113,8 @@ class Functions:
                                                 output_format = 'html5')
 
         return content
+
+
+    @staticmethod
+    def lowercase(_, args):
+        return args[0].lower()

@@ -94,6 +94,11 @@ class Siter:
                                    Functions.markdown,
                                    protected = True)
 
+        self.bindings.add_function(self.settings.Lowercase,
+                                   [1],
+                                   Functions.lowercase,
+                                   protected = True)
+
     def __set_local_bindings(self, read_file, read_dir):
         self.bindings.add_function(self.settings.Modified,
                                    [1],
