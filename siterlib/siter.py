@@ -192,7 +192,7 @@ class Siter:
                 arguments = [self.evaluate_block(a).resolve() for a in args]
 
                 body = binding.func(self, arguments)
-                eval_tokens.add_collection(self.tokenizer.tokenize(body))
+                eval_tokens.add_token(Token(TokenType.Text, body))
 
         # Trim leading and trailing whitespace
         eval_tokens.trim()
