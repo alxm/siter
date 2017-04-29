@@ -104,6 +104,11 @@ class Siter:
                                    Functions.lowercase,
                                    protected = True)
 
+        self.bindings.add_function(self.settings.Anchor,
+                                   [1],
+                                   Functions.anchor,
+                                   protected = True)
+
     def __set_local_bindings(self, read_file, read_dir):
         self.bindings.add_function(self.settings.Modified,
                                    [1],
