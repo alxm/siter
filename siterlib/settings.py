@@ -34,6 +34,7 @@ class Settings:
         self.Content = 'content'
         self.Modified = 'modified'
         self.Generated = 'generated'
+        self.Datefmt = 'datefmt'
         self.Root = 'root'
         self.Code = 'code'
         self.Markdown = 'md'

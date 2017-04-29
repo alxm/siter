@@ -84,6 +84,11 @@ class Siter:
                                    Functions.gen_time,
                                    protected = True)
 
+        self.bindings.add_function(self.settings.Datefmt,
+                                   [2],
+                                   Functions.datefmt,
+                                   protected = True)
+
         self.bindings.add_function(self.settings.Code,
                                    [1, 2, 3],
                                    Functions.highlight_code,

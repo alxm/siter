@@ -20,6 +20,7 @@
 import time
 
 from siterlib.token import TokenType, TokenCollection
+from siterlib.util import Util
 
 class Functions:
     @staticmethod
@@ -64,6 +65,19 @@ class Functions:
     @staticmethod
     def gen_time(_, args):
         return time.strftime(args[0])
+
+    @staticmethod
+    def datefmt(_, args):
+        iso_date = args[0]
+        fmt_string = args[1]
+
+        try:
+            time_obj = time.strptime(iso_date, '%Y-%m-%d')
+        except ValueError:
+            Util.warning('Date not in YYYY-MM-DD format: {}'.format(iso_date))
+            return iso_date
+
+        return time.strftime(fmt_string, time_obj)
 
     @staticmethod
     def highlight_code(siter, args):
