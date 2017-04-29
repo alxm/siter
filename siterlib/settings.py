@@ -38,7 +38,6 @@ class Settings:
         self.Root = 'root'
         self.Code = 'code'
         self.Markdown = 'md'
-        self.Lowercase = 'lowercase'
         self.Anchor = 'anchor'
 
         # Load user settings

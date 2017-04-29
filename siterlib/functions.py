@@ -129,9 +129,5 @@ class Functions:
         return content
 
     @staticmethod
-    def lowercase(_, args):
-        return args[0].lower()
-
-    @staticmethod
     def anchor(_, args):
         return args[0].lower().replace(' ', '-')

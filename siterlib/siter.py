@@ -99,11 +99,6 @@ class Siter:
                                    Functions.markdown,
                                    protected = True)
 
-        self.bindings.add_function(self.settings.Lowercase,
-                                   [1],
-                                   Functions.lowercase,
-                                   protected = True)
-
         self.bindings.add_function(self.settings.Anchor,
                                    [1],
                                    Functions.anchor,
