@@ -1,20 +1,26 @@
 # Siter
 
-Siter is a static website generator written in Python 3. I made it for my own simple needs and as a way to play with Python.
+Siter is a static website generator written in Python 3.
 
-Content pages from `siter-pages/` are formatted with `siter-template/page.html` and written to `siter-out/`. Files from `siter-static/` are copied to `siter-out/` as they are. You can define variables and macros to avoid content and markup duplication.
+I made it for my own [simple needs](https://www.alxm.org/ "My personal website is made with Siter") and as a way to play with Python. One of the goals was to generate websites that are fully usable locally without needing a web server.
 
-# Quick Example
+## How Does It Work?
 
-A content page:
+1. Files and folders from `siter-static/` are copied to `siter-out/` as they are.
+
+2. Files from `siter-pages/` are processed, formatted with Markdown, styled with `siter-template/page.html`, and finally written to `siter-out/`.
+
+3. You can define variables and macros to avoid content and markup duplication.
+
+## Quick Example
+
+A content page `siter-pages/index.html`:
 
     {!def {title} {Home page}}
-
     Hello world!
-
     This is my {!title}.
 
-And a page template:
+And the page template `siter-template/page.html`:
 
     <html>
         <body>
@@ -23,7 +29,7 @@ And a page template:
         </body>
     </html>
 
-Generate this:
+Result in `siter-out/index.html`:
 
     <html>
         <body>
@@ -34,7 +40,7 @@ Generate this:
     </html>
 
 
-# Blocks, Variables, Macros, and Functions
+## Blocks, Variables, Macros, and Functions
 
 A block is text enclosed in block tags. The default block tags are `{` and `}`, but you can override them with the `siter-config/tags` file which is described further down.
 
@@ -46,7 +52,6 @@ In the example below, we call the built-in `def` function to create a new variab
     {!def {format} {tag text} {<{!tag}>{!text}</{!tag}>}}
 
     {!format {b} {This text is bold {!smile}}}
-
     {!format {i} {This text is italic}}
 
 This will output:
@@ -64,7 +69,7 @@ The `tag` and `text` arguments are defined as local variables in the context of 
     {!bold This line is bold}
     {!bold {And so is this one}}
 
-# Special Macros and Variables
+## Special Macros and Variables
 
 ### content
 
@@ -112,7 +117,7 @@ For displaying code blocks and one-liners. See the [Pygments docs](http://pygmen
 
 `{!if {flag} {then} {else}}` - Expands to the `then` block if the `flag` variable has been declared somewhere (say with `{!def flag}`), or to the `else` block otherwise. The `else` block is optional.
 
-# Project File Tree
+## Project File Tree
 
     website/
      |- siter-config/   # Optional config files
@@ -169,20 +174,20 @@ This is the template for every page. Example:
         </body>
     </html>
 
-# Calling Siter
+## Calling Siter
 
     $ cd website-project
     $ siter
 
-# Optional Packages
+## Optional Packages
 
 Siter uses [Markdown](https://pythonhosted.org/Markdown/) for text formatting and [Pygments](http://pygments.org/) for code syntax highlighting, if they are available.
 
     apt-get install python3-markdown
     apt-get install python3-pygments
 
-# License
+## License
 
-Copyright 2011 Alex Margarit (alex@alxm.org)
+Copyright 2011-2018 Alex Margarit (alex@alxm.org)
 
-Licensed under GNU GPL3.
+Licensed under [GNU GPL3](https://www.gnu.org/licenses/gpl.html) (see `COPYING`).
