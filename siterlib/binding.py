@@ -30,9 +30,18 @@ class VariableBinding(Binding):
         self.tokens = tokens
 
 class MacroBinding(Binding):
-    def __init__(self, params, tokens):
+    def __init__(self, siter, params, tokens):
+        num_required = len(params)
+
+        for i, p in enumerate(params):
+            if p.resolve() == siter.settings.OptDelimiter:
+                num_required = i
+                del params[i]
+                break
+
         self.params = params
         self.num_params = len(params)
+        self.num_params_req = num_required
         self.tokens = tokens
 
 class FunctionBinding(Binding):
@@ -62,7 +71,7 @@ class BindingCollection:
         self.__add(name, binding, protected)
 
     def add_macro(self, name, params, tokens, protected = False):
-        binding = MacroBinding(params, tokens)
+        binding = MacroBinding(self.siter, params, tokens)
         self.__add(name, binding, protected)
 
     def add_function(self, name, num_params, func,

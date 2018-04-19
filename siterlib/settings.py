@@ -28,6 +28,9 @@ class Settings:
         self.TagOpen = '{'
         self.TagClose = '}'
 
+        # Macro args following this delimiter are optional
+        self.OptDelimiter = '/'
+
         # Built-in binding names
         self.Def = 'def'
         self.If = 'if'

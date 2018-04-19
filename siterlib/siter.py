@@ -161,9 +161,10 @@ class Siter:
         elif type(binding) is MacroBinding:
             args = block.capture_args(binding.num_params == 1)
 
-            if len(args) != binding.num_params:
-                Util.warning('Macro {} takes {} args, got {}:\n{}'
-                    .format(name, binding.num_params, len(args), block))
+            if len(args) < binding.num_params_req or len(args) > binding.num_params:
+                Util.warning('Macro {} takes {}-{} args, got {}:\n{}'
+                    .format(name, binding.num_params_req, binding.num_params,
+                            len(args), block))
                 return None
 
             self.bindings.push()
@@ -172,6 +173,10 @@ class Siter:
             for arg, param in zip(args, binding.params):
                 self.bindings.add_variable(param.resolve(),
                                            TokenCollection([arg]))
+
+            # Fill in missing optional arguments
+            for param in binding.params[len(args) :]:
+                self.bindings.add_variable(param.resolve(), TokenCollection())
 
             eval_binding = self.__evaluate_collection(binding.tokens)
             eval_tokens.add_collection(eval_binding)
