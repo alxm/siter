@@ -104,6 +104,11 @@ class Siter:
                                    Functions.anchor,
                                    protected = True)
 
+        self.bindings.add_function(self.settings.Apply,
+                                   [2],
+                                   Functions.apply_template,
+                                   protected = True)
+
     def __set_local_bindings(self, read_file, read_dir):
         self.bindings.add_function(self.settings.Modified,
                                    [1],
@@ -232,12 +237,15 @@ class Siter:
 
         return tokens.resolve()
 
-    def process_file(self, in_file, read_dir, template_file):
+    def process_file(self, in_file, read_dir, template_file, is_stub = False):
         Util.message('Process', in_file.get_path())
 
         self.bindings.push()
 
-        self.__set_local_bindings(in_file, read_dir)
+        # Keep root path relative to the file that invoked the stub
+        if not is_stub:
+            self.__set_local_bindings(in_file, read_dir)
+
         self.__set_file_bindings(in_file, True)
 
         # Load template and replace variables and functions with bindings

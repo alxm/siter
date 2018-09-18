@@ -19,6 +19,7 @@
 
 import time
 
+from siterlib.file import FileMode
 from siterlib.token import TokenType, TokenCollection
 from siterlib.util import Util
 
@@ -131,3 +132,15 @@ class Functions:
     @staticmethod
     def anchor(_, args):
         return args[0].lower().replace(' ', '-')
+
+    @staticmethod
+    def apply_template(siter, args):
+        out = ''
+
+        templateFile = siter.dirs.template.add_file(args[0], FileMode.Optional)
+        stubsSubDir = siter.dirs.stubs.add_dir(args[1], FileMode.Required)
+
+        for f in stubsSubDir.get_files():
+            out += siter.process_file(f, stubsSubDir, templateFile, True)
+
+        return out

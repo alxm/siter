@@ -42,6 +42,7 @@ class Settings:
         self.Code = 'code'
         self.Markdown = 'md'
         self.Anchor = 'anchor'
+        self.Apply = 'apply'
 
         # Load user settings
         self.__from_args(argv)

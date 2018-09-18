@@ -167,6 +167,7 @@ class Dirs:
         self.template = Dir('siter-template', FileMode.Required)
         self.config = Dir('siter-config', FileMode.Optional)
         self.static = Dir('siter-static', FileMode.Optional)
+        self.stubs = Dir('siter-stubs', FileMode.Optional, True)
         self.out = Dir('siter-out', FileMode.Create)
 
 class Files:
