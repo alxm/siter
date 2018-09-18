@@ -235,7 +235,7 @@ class Siter:
     def __work(self, read_dir, write_dir):
         counter = 0
 
-        for in_file in read_dir.list_files():
+        for in_file in read_dir.get_files():
             out_file = write_dir.add_file(in_file.get_name(), FileMode.Create)
             Util.message('Writing', out_file.get_path())
 
@@ -251,7 +251,7 @@ class Siter:
             self.bindings.pop()
             counter += 1
 
-        for read_subdir in read_dir.list_dirs():
+        for read_subdir in read_dir.get_dirs():
             write_subdir = write_dir.add_dir(read_subdir.get_name(),
                                              FileMode.Create)
             counter += self.__work(read_subdir, write_subdir)

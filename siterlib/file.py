@@ -49,31 +49,47 @@ class File:
         return os.stat(self.path).st_mtime
 
 class Dir(File):
-    def __init__(self, path, mode):
+    def __init__(self, path, mode, read_contents = False):
         File.__init__(self, path, mode)
+
+        self.files = {}
+        self.dirs = {}
 
         if self.mode is FileMode.Create:
             os.makedirs(self.path, exist_ok = True)
 
-        if self.exists():
-            self.files = [os.path.join(self.path, f)
-                for f in sorted(os.listdir(self.path))]
+        if not self.exists() or not read_contents:
+            return
 
-    def list_dirs(self):
-        return [Dir(path, FileMode.Required)
-            for path in [f for f in self.files if os.path.isdir(f)]]
+        for path in [os.path.join(self.path, p) for p in os.listdir(self.path)]:
+            if os.path.isfile(path):
+                self.files[path] = TextFile(path, FileMode.Required)
+            elif os.path.isdir(path):
+                self.dirs[path] = Dir(path, FileMode.Required, True)
+            else:
+                Util.error('Invalid file {}'.format(path))
 
-    def list_files(self):
-        return [TextFile(path, FileMode.Required)
-            for path in [f for f in self.files if os.path.isfile(f)]]
+    def get_dirs(self):
+        return self.dirs.values()
+
+    def get_files(self):
+        return self.files.values()
 
     def add_dir(self, subdir, mode):
         path = os.path.join(self.path, subdir)
-        return Dir(path, mode)
+
+        if path not in self.dirs:
+            self.dirs[path] = Dir(path, mode)
+
+        return self.dirs[path]
 
     def add_file(self, name, mode):
         path = os.path.join(self.path, name)
-        return TextFile(path, mode)
+
+        if path not in self.files:
+            self.files[path] = TextFile(path, mode)
+
+        return self.files[path]
 
     def path_to(self, target):
         return os.path.relpath(target.get_path(), start = self.path)
@@ -147,7 +163,7 @@ class TextFile(File):
 
 class Dirs:
     def __init__(self):
-        self.pages = Dir('siter-pages', FileMode.Required)
+        self.pages = Dir('siter-pages', FileMode.Required, True)
         self.template = Dir('siter-template', FileMode.Required)
         self.config = Dir('siter-config', FileMode.Optional)
         self.static = Dir('siter-static', FileMode.Optional)
