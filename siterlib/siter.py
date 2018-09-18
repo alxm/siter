@@ -219,9 +219,9 @@ class Siter:
 
         return eval_tokens
 
-    def __apply_template(self):
-        if self.files.page_html.exists():
-            content = self.files.page_html.get_content()
+    def __apply_template(self, template_file):
+        if template_file.exists():
+            content = template_file.get_content()
         else:
             content = '<!DOCTYPE html><html><body>{}{}{}{}</body></html>' \
                 .format(self.settings.TagOpen, self.settings.EvalHint,
@@ -232,23 +232,28 @@ class Siter:
 
         return tokens.resolve()
 
+    def process_file(self, in_file, read_dir, template_file):
+        Util.message('Process', in_file.get_path())
+
+        self.bindings.push()
+
+        self.__set_local_bindings(in_file, read_dir)
+        self.__set_file_bindings(in_file, True)
+
+        # Load template and replace variables and functions with bindings
+        final = self.__apply_template(template_file)
+
+        self.bindings.pop()
+
+        return final
+
     def __work(self, read_dir, write_dir):
         counter = 0
 
         for in_file in read_dir.get_files():
             out_file = write_dir.add_file(in_file.get_name(), FileMode.Create)
-            Util.message('Writing', out_file.get_path())
-
-            self.bindings.push()
-
-            self.__set_local_bindings(in_file, read_dir)
-            self.__set_file_bindings(in_file, True)
-
-            # Load template and replace variables and functions with bindings
-            final = self.__apply_template()
-            out_file.write(final)
-
-            self.bindings.pop()
+            output = self.process_file(in_file, read_dir, self.files.page_html)
+            out_file.write(output)
             counter += 1
 
         for read_subdir in read_dir.get_dirs():
