@@ -105,7 +105,7 @@ class Siter:
                                    protected = True)
 
         self.bindings.add_function(self.settings.Apply,
-                                   [2],
+                                   [2, 3],
                                    Functions.apply_template,
                                    protected = True)
 

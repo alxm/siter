@@ -140,9 +140,14 @@ class Functions:
         templateFile = siter.dirs.template.add_file(args[0], FileMode.Optional)
         stubsSubDir = siter.dirs.stubs.add_dir(args[1], FileMode.Required)
 
-        for f in sorted(stubsSubDir.get_files(),
-                        key = lambda f: f.get_name(),
-                        reverse = True):
+        stubFiles = sorted(stubsSubDir.get_files(),
+                           key = lambda f: f.get_name(),
+                           reverse = True)
+
+        if len(args) == 3:
+            stubFiles = stubFiles[: int(args[2])]
+
+        for f in stubFiles:
             out += siter.process_file(f, stubsSubDir, templateFile, True)
 
         return out
