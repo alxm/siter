@@ -123,9 +123,8 @@ class Functions:
     def markdown(siter, args):
         content = args[0]
 
-        if siter.imports.Md:
-            content = siter.imports.Md.markdown(content,
-                                                output_format = 'html5')
+        if siter.md:
+            content = siter.md.reset().convert(content)
 
         return content
 

@@ -19,6 +19,9 @@
 
 import time
 
+from markdown.extensions.codehilite import CodeHiliteExtension
+from markdown.extensions.fenced_code import FencedCodeExtension
+
 from siterlib.util import Util
 from siterlib.settings import Settings
 from siterlib.file import FileMode, Dirs, Files
@@ -46,6 +49,17 @@ class Siter:
 
         # Optional packages
         self.imports = Imports()
+
+        if self.imports.Md:
+            self.md = self.imports.Md.Markdown(
+                        output_format = 'html5',
+                        extensions = [
+                            CodeHiliteExtension(
+                                css_class = 'siter_code', linenums = True),
+                            FencedCodeExtension()
+                        ])
+        else:
+            self.md = None
 
         # Token processing utilities
         self.tokenizer = Tokenizer(self.settings.EvalHint,
@@ -213,12 +227,9 @@ class Siter:
         eval_tokens.trim()
 
         # Run page content through Markdown
-        if binding.protected \
-            and name == self.settings.Content \
-            and self.imports.Md:
-
+        if binding.protected and name == self.settings.Content and self.md:
             content = eval_tokens.resolve()
-            md = self.imports.Md.markdown(content, output_format = 'html5')
+            md = self.md.reset().convert(content)
             md_token = Token(TokenType.Text, md)
             eval_tokens = TokenCollection([md_token])
 
