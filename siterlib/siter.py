@@ -23,23 +23,23 @@ import markdown
 from markdown.extensions.codehilite import CodeHiliteExtension
 from markdown.extensions.fenced_code import FencedCodeExtension
 
-from siterlib.util import Util
-from siterlib.settings import Settings
-from siterlib.file import FileMode, Dirs, Files
-from siterlib.tokenizer import Tokenizer
-from siterlib.token import TokenType, Token, TokenCollection
-from siterlib.binding import VariableBinding, MacroBinding, FunctionBinding
-from siterlib.binding import BindingCollection
-from siterlib.functions import Functions
+from siterlib.util import CUtil
+from siterlib.settings import CSettings
+from siterlib.file import CFileMode, CDirs, CFiles
+from siterlib.tokenizer import CTokenizer
+from siterlib.token import CTokenType, CToken, CTokenCollection
+from siterlib.binding import CVariableBinding, CMacroBinding, CFunctionBinding
+from siterlib.binding import CBindingCollection
+from siterlib.functions import CFunctions
 
-class Siter:
+class CSiter:
     def __init__(self, Argv):
         # Declare and optionally create the dirs and files Siter uses
-        self.dirs = Dirs()
-        self.files = Files(self.dirs)
+        self.dirs = CDirs()
+        self.files = CFiles(self.dirs)
 
         # Set defaults and load user settings from args and config files
-        self.settings = Settings(Argv, self.files)
+        self.settings = CSettings()
 
         self.md = markdown.Markdown(
                     output_format = 'html5',
@@ -51,16 +51,16 @@ class Siter:
                     ])
 
         # Token processing utilities
-        self.tokenizer = Tokenizer(self.settings.EvalHint,
-                                   self.settings.TagOpen,
-                                   self.settings.TagClose)
+        self.tokenizer = CTokenizer(self.settings.EvalHint,
+                                    self.settings.TagOpen,
+                                    self.settings.TagClose)
 
         # Copy static files
         if self.dirs.static.exists():
             self.dirs.static.copy_to(self.dirs.out)
 
         # Variables, macros, and functions
-        self.bindings = BindingCollection(self)
+        self.bindings = CBindingCollection(self)
 
         # Set built-in global bindings
         self.__set_global_bindings()
@@ -72,52 +72,52 @@ class Siter:
     def __set_global_bindings(self):
         self.bindings.add_function(self.settings.Def,
                                    [1, 2, 3],
-                                   Functions.declare_binding,
+                                   CFunctions.declare_binding,
                                    Protected = True,
                                    Lazy = True)
 
         self.bindings.add_function(self.settings.If,
                                    [2, 3],
-                                   Functions.if_check,
+                                   CFunctions.if_check,
                                    Protected = True,
                                    Lazy = True)
 
         self.bindings.add_function(self.settings.Generated,
                                    [1],
-                                   Functions.gen_time,
+                                   CFunctions.gen_time,
                                    Protected = True)
 
         self.bindings.add_function(self.settings.Datefmt,
                                    [2],
-                                   Functions.datefmt,
+                                   CFunctions.datefmt,
                                    Protected = True)
 
         self.bindings.add_function(self.settings.Code,
                                    [1, 2, 3],
-                                   Functions.highlight_code,
+                                   CFunctions.highlight_code,
                                    Protected = True)
 
         self.bindings.add_function(self.settings.Markdown,
                                    [1],
-                                   Functions.markdown,
+                                   CFunctions.markdown,
                                    Protected = True)
 
         self.bindings.add_function(self.settings.Anchor,
                                    [1],
-                                   Functions.anchor,
+                                   CFunctions.anchor,
                                    Protected = True)
 
         self.bindings.add_function(self.settings.Apply,
                                    [2, 3],
-                                   Functions.apply_template,
+                                   CFunctions.apply_template,
                                    Protected = True)
 
     def __set_local_bindings(self, ReadFile, ReadDir):
         self.bindings.add_function(self.settings.Modified,
                                    [1],
                                    lambda _, args: \
-                                       Functions.mod_time(_,
-                                                          [ReadFile] + args))
+                                       CFunctions.mod_time(
+                                        _, [ReadFile] + args))
 
         self.bindings.add_variable(self.settings.Root,
                                    self.tokenizer.tokenize(
@@ -134,10 +134,10 @@ class Siter:
                                        Protected = True)
 
     def __evaluate_collection(self, Collection):
-        eval_tokens = TokenCollection()
+        eval_tokens = CTokenCollection()
 
         for token in Collection:
-            if token.t_type is TokenType.Block:
+            if token.t_type is CTokenType.Block:
                 evaluated = self.evaluate_block(token)
 
                 if evaluated:
@@ -157,23 +157,26 @@ class Siter:
 
         if not self.bindings.contains(name):
             # Name is unknown, discard Block
-            Util.warning(f'Use of unknown binding {name}:\n{Block}')
+            CUtil.warning(f'Use of unknown binding {name}:\n{Block}')
 
             return None
 
         binding = self.bindings.get(name)
-        eval_tokens = TokenCollection()
+        eval_tokens = CTokenCollection()
 
-        if type(binding) is VariableBinding:
+        if type(binding) is CVariableBinding:
             eval_binding = self.__evaluate_collection(binding.tokens)
             eval_tokens.add_collection(eval_binding)
-        elif type(binding) is MacroBinding:
+        elif type(binding) is CMacroBinding:
             args = Block.capture_args(binding.num_params == 1)
 
-            if len(args) < binding.num_params_req or len(args) > binding.num_params:
-                Util.warning(f'Macro {name} takes ' \
-                             f'{binding.num_params_req}-{binding.num_params} ' \
-                             f'args, got {len(args)}:\n{Block}')
+            if len(args) < binding.num_params_req or \
+                len(args) > binding.num_params:
+
+                CUtil.warning(
+                    f'Macro {name} takes ' \
+                    f'{binding.num_params_req}-{binding.num_params} ' \
+                    f'args, got {len(args)}:\n{Block}')
 
                 return None
 
@@ -182,23 +185,23 @@ class Siter:
             # Bind each parameter to the supplied argument
             for arg, param in zip(args, binding.params):
                 self.bindings.add_variable(param.resolve(),
-                                           TokenCollection([arg]))
+                                           CTokenCollection([arg]))
 
             # Fill in missing optional arguments
             for param in binding.params[len(args) :]:
-                self.bindings.add_variable(param.resolve(), TokenCollection())
+                self.bindings.add_variable(param.resolve(), CTokenCollection())
 
             eval_binding = self.__evaluate_collection(binding.tokens)
             eval_tokens.add_collection(eval_binding)
 
             self.bindings.pop()
-        elif type(binding) is FunctionBinding:
+        elif type(binding) is CFunctionBinding:
             args = Block.capture_args(binding.num_params == [1])
 
             if len(args) not in binding.num_params:
-                Util.warning(f'Function {name} takes ' \
-                             f'{binding.num_params} args, ' \
-                             f'got {len(args)}:\n{Block}')
+                CUtil.warning(f'Function {name} takes ' \
+                              f'{binding.num_params} args, ' \
+                              f'got {len(args)}:\n{Block}')
 
                 return None
 
@@ -214,7 +217,7 @@ class Siter:
                 arguments = [self.evaluate_block(a).resolve() for a in args]
 
                 body = binding.func(self, arguments)
-                eval_tokens.add_token(Token(TokenType.Text, body))
+                eval_tokens.add_token(CToken(CTokenType.Text, body))
 
         # Trim leading and trailing whitespace
         eval_tokens.trim()
@@ -222,8 +225,8 @@ class Siter:
         # Run page content through Markdown
         if binding.protected and name == self.settings.Content:
             md_content = self.md.reset().convert(eval_tokens.resolve())
-            md_token = Token(TokenType.Text, md_content)
-            eval_tokens = TokenCollection([md_token])
+            md_token = CToken(CTokenType.Text, md_content)
+            eval_tokens = CTokenCollection([md_token])
 
         return eval_tokens
 
@@ -235,7 +238,7 @@ class Siter:
         return tokens.resolve()
 
     def process_file(self, InFile, ReadDir, TemplateFile, IsStub = False):
-        Util.message('Process', InFile.get_path())
+        CUtil.message('Process', InFile.get_path())
 
         self.bindings.push()
 
@@ -256,14 +259,14 @@ class Siter:
         counter = 0
 
         for in_file in ReadDir.get_files():
-            out_file = WriteDir.add_file(in_file.get_name(), FileMode.Create)
+            out_file = WriteDir.add_file(in_file.get_name(), CFileMode.Create)
             output = self.process_file(in_file, ReadDir, self.files.page_html)
             out_file.write(output)
             counter += 1
 
         for read_subdir in ReadDir.get_dirs():
             write_subdir = WriteDir.add_dir(read_subdir.get_name(),
-                                             FileMode.Create)
+                                             CFileMode.Create)
             counter += self.__work(read_subdir, write_subdir)
 
         return counter
@@ -273,4 +276,4 @@ class Siter:
         count = self.__work(self.dirs.pages, self.dirs.out)
         elapsed = round(time.perf_counter() - start + 0.05, 1)
 
-        Util.message('Done', f'{count} pages in {elapsed}s')
+        CUtil.message('Done', f'{count} pages in {elapsed}s')

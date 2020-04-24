@@ -17,10 +17,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from siterlib.util import Util
+from siterlib.util import CUtil
 
-class Settings:
-    def __init__(self, Argv, Files):
+class CSettings:
+    def __init__(self):
         # Blocks that start with this are evaluated; must be exactly 1 char
         self.EvalHint = '!'
 

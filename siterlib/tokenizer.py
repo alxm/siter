@@ -17,15 +17,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from siterlib.util import Util
-from siterlib.token import TokenType, Token, BlockToken, TokenCollection
+from siterlib.util import CUtil
+from siterlib.token import CTokenType, CToken, CBlockToken, CTokenCollection
 
-class Tokenizer:
+class CTokenizer:
     def __init__(self, Eval, TagOpen, TagClose):
         self.special_tokens = {
-            TokenType.Eval: Eval,
-            TokenType.TagOpen: TagOpen,
-            TokenType.TagClose: TagClose
+            CTokenType.Eval: Eval,
+            CTokenType.TagOpen: TagOpen,
+            CTokenType.TagClose: TagClose
         }
 
     def __make_flat_tokens(self, Text):
@@ -44,15 +44,15 @@ class Tokenizer:
             previous_type = current_type
 
             if c in [' ', '\t', '\n']:
-                current_type = TokenType.Whitespace
+                current_type = CTokenType.Whitespace
             else:
-                current_type = TokenType.Text
+                current_type = CTokenType.Text
 
             if current_type is previous_type:
                 current_token += c
             else:
                 if len(current_token) > 0:
-                    flat_tokens.append(Token(previous_type, current_token))
+                    flat_tokens.append(CToken(previous_type, current_token))
 
                 current_token = c
                 escaped_index = -1
@@ -71,35 +71,37 @@ class Tokenizer:
                     continue
 
                 if len(current_token) > len(token_text):
-                    flat_tokens.append(Token(TokenType.Text,
-                                             current_token[: -len(token_text)]))
+                    text = current_token[: -len(token_text)]
 
-                flat_tokens.append(Token(token_type,
-                                         current_token[-len(token_text) :]))
+                    flat_tokens.append(CToken(CTokenType.Text, text))
+
+                flat_tokens.append(CToken(token_type,
+                                          current_token[-len(token_text) :]))
                 current_token = ''
                 escaped_index = -1
 
                 break
 
         if len(current_token) > 0:
-            flat_tokens.append(Token(current_type, current_token))
+            flat_tokens.append(CToken(current_type, current_token))
 
         return flat_tokens
 
     def __make_block_tokens(self, FlatTokens):
         stack = []
-        block_tokens = TokenCollection()
+        block_tokens = CTokenCollection()
 
         for token in FlatTokens:
-            if token.t_type is TokenType.TagOpen:
+            if token.t_type is CTokenType.TagOpen:
                 # Subsequent tokens will be added to this new block
-                stack.append(BlockToken(self.special_tokens[TokenType.TagOpen],
-                                        self.special_tokens[TokenType.TagClose],
-                                        None))
+                stack.append(CBlockToken(
+                                self.special_tokens[CTokenType.TagOpen],
+                                self.special_tokens[CTokenType.TagClose],
+                                None))
             else:
-                if token.t_type is TokenType.TagClose:
+                if token.t_type is CTokenType.TagClose:
                     if len(stack) == 0:
-                        Util.error("Found extra closing tag")
+                        CUtil.error("Found extra closing tag")
 
                     # Got the closing tag, pop the block from the stack
                     token = stack.pop()
@@ -110,7 +112,7 @@ class Tokenizer:
                     block_tokens.add_token(token)
 
         if len(stack) > 0:
-            Util.error("Missing closing tag")
+            CUtil.error("Missing closing tag")
 
         return block_tokens
 

@@ -23,26 +23,26 @@ import pygments
 import pygments.lexers
 import pygments.formatters
 
-from siterlib.file import FileMode
-from siterlib.token import TokenType, TokenCollection
-from siterlib.util import Util
+from siterlib.file import CFileMode
+from siterlib.token import CTokenType, CTokenCollection
+from siterlib.util import CUtil
 
-class Functions:
+class CFunctions:
     @staticmethod
     def declare_binding(Siter, Args):
         if len(Args) == 3:
             # {name} {arg1 arg2 ...} {body}
             name = Args[0].tokens.get_token(0).resolve()
-            params = Args[1].tokens.filter(TokenType.Text)
+            params = Args[1].tokens.filter(CTokenType.Text)
             body = [Args[2]]
 
-            Siter.bindings.add_macro(name, params, TokenCollection(body))
+            Siter.bindings.add_macro(name, params, CTokenCollection(body))
         else:
             # {name} / {name} {body}
             name = Args[0].tokens.get_token(0).resolve()
             body = [Args[1]] if len(Args) == 2 else []
 
-            Siter.bindings.add_variable(name, TokenCollection(body))
+            Siter.bindings.add_variable(name, CTokenCollection(body))
 
         return None
 
@@ -79,7 +79,7 @@ class Functions:
         try:
             time_obj = time.strptime(iso_date, '%Y-%m-%d')
         except ValueError:
-            Util.warning(f'Date not in YYYY-MM-DD format: {iso_date}')
+            CUtil.warning(f'Date not in YYYY-MM-DD format: {iso_date}')
 
             return iso_date
 
@@ -133,8 +133,8 @@ class Functions:
     def apply_template(Siter, Args):
         out = ''
 
-        templateFile = Siter.dirs.template.add_file(Args[0], FileMode.Optional)
-        stubsSubDir = Siter.dirs.stubs.add_dir(Args[1], FileMode.Required)
+        templateFile = Siter.dirs.template.add_file(Args[0], CFileMode.Optional)
+        stubsSubDir = Siter.dirs.stubs.add_dir(Args[1], CFileMode.Required)
 
         stubFiles = sorted(stubsSubDir.get_files(),
                            key = lambda f: f.get_name(),

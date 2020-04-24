@@ -19,7 +19,7 @@
 
 import enum
 
-class TokenType(enum.Enum):
+class CTokenType(enum.Enum):
     Text = 1
     Whitespace = 3
     TagOpen = 4
@@ -27,7 +27,7 @@ class TokenType(enum.Enum):
     Block = 6
     Eval = 7
 
-class Token:
+class CToken:
     def __init__(self, Type, Text):
         self.t_type = Type
         self.text = Text
@@ -38,40 +38,40 @@ class Token:
     def resolve(self):
         return self.text
 
-class BlockToken(Token):
+class CBlockToken(CToken):
     def __init__(self, TagOpen, TagClose, Tokens):
-        super().__init__(TokenType.Block, None)
+        super().__init__(CTokenType.Block, None)
 
         self.tag_open = TagOpen
         self.tag_close = TagClose
-        self.tokens = Tokens if Tokens else TokenCollection()
+        self.tokens = Tokens if Tokens else CTokenCollection()
 
     def resolve(self):
         return self.tag_open + self.tokens.resolve() + self.tag_close
 
     def capture_call(self):
         # {{!name ...}}
-        head, _ = self.tokens.capture(TokenType.Eval, TokenType.Text)
+        head, _ = self.tokens.capture(CTokenType.Eval, CTokenType.Text)
 
         return head.get_token(1).resolve() if head else None
 
     def capture_args(self, SingleArg):
         # {{!name {{arg1}} {{arg2}} ...}}
-        _, tail = self.tokens.capture(TokenType.Eval, TokenType.Text)
+        _, tail = self.tokens.capture(CTokenType.Eval, CTokenType.Text)
 
         if tail is None or tail.num_tokens() == 0:
             return []
 
-        args = tail.filter(TokenType.Block)
+        args = tail.filter(CTokenType.Block)
 
         if SingleArg or len(args) == 0:
             # Put all the args in a parent block
             tail.trim()
-            args = [BlockToken(self.tag_open, self.tag_close, tail)]
+            args = [CBlockToken(self.tag_open, self.tag_close, tail)]
 
         return args
 
-class TokenCollection:
+class CTokenCollection:
     def __init__(self, Tokens = None):
         self.tokens = Tokens if Tokens else []
 
@@ -104,13 +104,13 @@ class TokenCollection:
         end = len(self.tokens)
 
         for t in self.tokens:
-            if t.t_type is TokenType.Whitespace:
+            if t.t_type is CTokenType.Whitespace:
                 start += 1
             else:
                 break
 
         for t in reversed(self.tokens):
-            if t.t_type is TokenType.Whitespace:
+            if t.t_type is CTokenType.Whitespace:
                 end -= 1
             else:
                 break
@@ -119,7 +119,7 @@ class TokenCollection:
 
     def capture(self, *Args):
         i = 0
-        head = TokenCollection()
+        head = CTokenCollection()
 
         for arg in Args:
             found = False
@@ -133,13 +133,13 @@ class TokenCollection:
                     head.add_token(token)
 
                     break
-                elif token.t_type is not TokenType.Whitespace:
+                elif token.t_type is not CTokenType.Whitespace:
                     break
 
             if not found:
                 return None, None
 
         # Capture the remaining tokens
-        tail = TokenCollection(self.tokens[i:])
+        tail = CTokenCollection(self.tokens[i:])
 
         return head, tail

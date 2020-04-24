@@ -19,7 +19,7 @@
 
 import sys
 
-class Util:
+class CUtil:
     @staticmethod
     def message(Title, Content, Color = 2):
         space = max(2, 12 - len(Title))
@@ -30,13 +30,13 @@ class Util:
 
     @staticmethod
     def error(Message):
-        Util.message('Error', Message, 1)
+        CUtil.message('Error', Message, 1)
         sys.exit(1)
 
     @staticmethod
     def warning(Message):
-        Util.message('Warning', Message, 3)
+        CUtil.message('Warning', Message, 3)
 
     @staticmethod
     def info(Message):
-        Util.message('Info', Message, 4)
+        CUtil.message('Info', Message, 4)

@@ -19,17 +19,17 @@
 
 import enum
 
-from siterlib.util import Util
+from siterlib.util import CUtil
 
-class Binding:
+class CBinding:
     def __init__(self):
         self.protected = False
 
-class VariableBinding(Binding):
+class CVariableBinding(CBinding):
     def __init__(self, Tokens):
         self.tokens = Tokens
 
-class MacroBinding(Binding):
+class CMacroBinding(CBinding):
     def __init__(self, Siter, Params, Tokens):
         num_required = len(Params)
 
@@ -45,13 +45,13 @@ class MacroBinding(Binding):
         self.num_params_req = num_required
         self.tokens = Tokens
 
-class FunctionBinding(Binding):
+class CFunctionBinding(CBinding):
     def __init__(self, NumParams, Func, Lazy):
         self.num_params = NumParams
         self.func = Func
         self.lazy = Lazy
 
-class BindingCollection:
+class CBindingCollection:
     def __init__(self, Siter):
         self.siter = Siter
         self.bindings = {}
@@ -62,27 +62,27 @@ class BindingCollection:
 
     def __add(self, Name, Binding, Protected):
         if self.contains(Name) and self.get(Name).protected:
-            Util.error(f'Cannot overwrite binding {Name}')
+            CUtil.error(f'Cannot overwrite binding {Name}')
 
         Binding.protected = Protected
         self.bindings[Name] = Binding
 
     def add_variable(self, Name, Tokens, Protected = False):
-        binding = VariableBinding(Tokens)
+        binding = CVariableBinding(Tokens)
         self.__add(Name, binding, Protected)
 
     def add_macro(self, Name, params, Tokens, Protected = False):
-        binding = MacroBinding(self.siter, params, Tokens)
+        binding = CMacroBinding(self.siter, params, Tokens)
         self.__add(Name, binding, Protected)
 
     def add_function(self, Name, NumParams, Func,
                      Protected = False, Lazy = False):
-        binding = FunctionBinding(NumParams, Func, Lazy)
+        binding = CFunctionBinding(NumParams, Func, Lazy)
         self.__add(Name, binding, Protected)
 
     def get(self, Name):
         if Name not in self.bindings:
-            Util.error(f'{Name} not in bindings')
+            CUtil.error(f'{Name} not in bindings')
 
         return self.bindings[Name]
 

@@ -21,20 +21,20 @@ import enum
 import os
 import shutil
 
-from siterlib.util import Util
+from siterlib.util import CUtil
 
-class FileMode(enum.Enum):
+class CFileMode(enum.Enum):
     Optional = 0
     Create = 1
     Required = 2
 
-class File:
+class CFile:
     def __init__(self, Path, Mode):
         self.path = os.path.abspath(Path)
         self.mode = Mode
 
-        if self.mode is FileMode.Required and not self.exists():
-            Util.error(f'Required file {self.path} not found')
+        if self.mode is CFileMode.Required and not self.exists():
+            CUtil.error(f'Required file {self.path} not found')
 
     def exists(self):
         return os.path.exists(self.path)
@@ -48,14 +48,14 @@ class File:
     def get_mod_time(self):
         return os.stat(self.path).st_mtime
 
-class Dir(File):
+class CDir(CFile):
     def __init__(self, Path, Mode, ReadContents = False):
-        File.__init__(self, Path, Mode)
+        CFile.__init__(self, Path, Mode)
 
         self.files = {}
         self.dirs = {}
 
-        if self.mode is FileMode.Create:
+        if self.mode is CFileMode.Create:
             os.makedirs(self.path, exist_ok = True)
 
         if not self.exists() or not ReadContents:
@@ -63,11 +63,11 @@ class Dir(File):
 
         for Path in [os.path.join(self.path, p) for p in os.listdir(self.path)]:
             if os.path.isfile(Path):
-                self.files[Path] = TextFile(Path, FileMode.Required)
+                self.files[Path] = CTextFile(Path, CFileMode.Required)
             elif os.path.isdir(Path):
-                self.dirs[Path] = Dir(Path, FileMode.Required, True)
+                self.dirs[Path] = CDir(Path, CFileMode.Required, True)
             else:
-                Util.error(f'Invalid file {Path}')
+                CUtil.error(f'Invalid file {Path}')
 
     def get_dirs(self):
         return self.dirs.values()
@@ -79,7 +79,7 @@ class Dir(File):
         path = os.path.join(self.path, SubDir)
 
         if path not in self.dirs:
-            self.dirs[path] = Dir(path, Mode)
+            self.dirs[path] = CDir(path, Mode)
 
         return self.dirs[path]
 
@@ -87,7 +87,7 @@ class Dir(File):
         path = os.path.join(self.path, Name)
 
         if path not in self.files:
-            self.files[path] = TextFile(path, Mode)
+            self.files[path] = CTextFile(path, Mode)
 
         return self.files[path]
 
@@ -98,25 +98,25 @@ class Dir(File):
         src = self.path
         dst = DstDir.path
 
-        Util.message('Copy files', f'From {src} to {dst}')
+        CUtil.message('Copy files', f'From {src} to {dst}')
 
         shutil.rmtree(dst)
         shutil.copytree(src, dst)
 
-class TextFile(File):
+class CTextFile(CFile):
     def __init__(self, Path, Mode):
-        File.__init__(self, Path, Mode)
+        CFile.__init__(self, Path, Mode)
 
         self.content = None
         self.lines = None
 
-        if self.mode is not FileMode.Create:
+        if self.mode is not CFileMode.Create:
             try:
                 with open(self.path, 'rU') as f:
                     self.content = f.read()
             except FileNotFoundError:
-                if self.mode is not FileMode.Optional:
-                    Util.error(f'Required file {self.path} not found')
+                if self.mode is not CFileMode.Optional:
+                    CUtil.error(f'Required file {self.path} not found')
 
     def test_line(self, Number, MinLen = None, MaxLen = None):
         if self.content is None:
@@ -136,10 +136,10 @@ class TextFile(File):
                         f'{MaxLen}, is {len(line)}: "{line}"'
 
         if error:
-            if self.mode is FileMode.Optional:
-                Util.warning(error)
+            if self.mode is CFileMode.Optional:
+                CUtil.warning(error)
             else:
-                Util.error(error)
+                CUtil.error(error)
 
             return False
 
@@ -161,18 +161,18 @@ class TextFile(File):
         with open(self.path, 'w') as f:
             f.write(Text)
 
-class Dirs:
+class CDirs:
     def __init__(self):
-        self.pages = Dir('siter-pages', FileMode.Required, True)
-        self.template = Dir('siter-template', FileMode.Required)
-        self.config = Dir('siter-config', FileMode.Optional)
-        self.static = Dir('siter-static', FileMode.Optional)
-        self.stubs = Dir('siter-stubs', FileMode.Optional, True)
-        self.out = Dir('siter-out', FileMode.Create)
+        self.pages = CDir('siter-pages', CFileMode.Required, True)
+        self.template = CDir('siter-template', CFileMode.Required)
+        self.config = CDir('siter-config', CFileMode.Optional)
+        self.static = CDir('siter-static', CFileMode.Optional)
+        self.stubs = CDir('siter-stubs', CFileMode.Optional, True)
+        self.out = CDir('siter-out', CFileMode.Create)
 
-class Files:
+class CFiles:
     def __init__(self, Dirs):
-        self.defs = Dirs.config.add_file('defs', FileMode.Optional)
-        self.evalhint = Dirs.config.add_file('eval', FileMode.Optional)
-        self.tags = Dirs.config.add_file('tags', FileMode.Optional)
-        self.page_html = Dirs.template.add_file('page.html', FileMode.Optional)
+        self.defs = Dirs.config.add_file('defs', CFileMode.Optional)
+        self.evalhint = Dirs.config.add_file('eval', CFileMode.Optional)
+        self.tags = Dirs.config.add_file('tags', CFileMode.Optional)
+        self.page_html = Dirs.template.add_file('page.html', CFileMode.Optional)
