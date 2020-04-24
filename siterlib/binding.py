@@ -62,7 +62,7 @@ class BindingCollection:
 
     def __add(self, Name, Binding, Protected):
         if self.contains(Name) and self.get(Name).protected:
-            Util.error('Cannot overwrite binding {}'.format(Name))
+            Util.error(f'Cannot overwrite binding {Name}')
 
         Binding.protected = Protected
         self.bindings[Name] = Binding
@@ -82,7 +82,7 @@ class BindingCollection:
 
     def get(self, Name):
         if Name not in self.bindings:
-            Util.error('{} not in bindings'.format(Name))
+            Util.error(f'{Name} not in bindings')
 
         return self.bindings[Name]
 

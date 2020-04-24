@@ -157,7 +157,7 @@ class Siter:
 
         if not self.bindings.contains(name):
             # Name is unknown, discard Block
-            Util.warning('Use of unknown binding {}:\n{}'.format(name, Block))
+            Util.warning(f'Use of unknown binding {name}:\n{Block}')
 
             return None
 
@@ -171,9 +171,9 @@ class Siter:
             args = Block.capture_args(binding.num_params == 1)
 
             if len(args) < binding.num_params_req or len(args) > binding.num_params:
-                Util.warning('Macro {} takes {}-{} args, got {}:\n{}'
-                    .format(name, binding.num_params_req, binding.num_params,
-                            len(args), Block))
+                Util.warning(f'Macro {name} takes ' \
+                             f'{binding.num_params_req}-{binding.num_params} ' \
+                             f'args, got {len(args)}:\n{Block}')
 
                 return None
 
@@ -196,8 +196,9 @@ class Siter:
             args = Block.capture_args(binding.num_params == [1])
 
             if len(args) not in binding.num_params:
-                Util.warning('Function {} takes {} args, got {}:\n{}'
-                    .format(name, binding.num_params, len(args), Block))
+                Util.warning(f'Function {name} takes ' \
+                             f'{binding.num_params} args, ' \
+                             f'got {len(args)}:\n{Block}')
 
                 return None
 
@@ -227,13 +228,7 @@ class Siter:
         return eval_tokens
 
     def __apply_template(self, TemplateFile):
-        if TemplateFile.exists():
-            content = TemplateFile.get_content()
-        else:
-            content = '<!DOCTYPE html><html><body>{}{}{}{}</body></html>' \
-                .format(self.settings.TagOpen, self.settings.EvalHint,
-                        self.settings.Content, self.settings.TagClose)
-
+        content = TemplateFile.get_content()
         tokens = self.tokenizer.tokenize(content)
         tokens = self.__evaluate_collection(tokens)
 
@@ -278,5 +273,4 @@ class Siter:
         count = self.__work(self.dirs.pages, self.dirs.out)
         elapsed = round(time.perf_counter() - start + 0.05, 1)
 
-        Util.message('Done', '{} {} in {}s' \
-            .format(count, 'page' if count == 1 else 'pages', elapsed))
+        Util.message('Done', f'{count} pages in {elapsed}s')

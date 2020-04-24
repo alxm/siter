@@ -34,7 +34,7 @@ class File:
         self.mode = Mode
 
         if self.mode is FileMode.Required and not self.exists():
-            Util.error('Required file {} not found'.format(self.path))
+            Util.error(f'Required file {self.path} not found')
 
     def exists(self):
         return os.path.exists(self.path)
@@ -67,7 +67,7 @@ class Dir(File):
             elif os.path.isdir(Path):
                 self.dirs[Path] = Dir(Path, FileMode.Required, True)
             else:
-                Util.error('Invalid file {}'.format(Path))
+                Util.error(f'Invalid file {Path}')
 
     def get_dirs(self):
         return self.dirs.values()
@@ -98,7 +98,7 @@ class Dir(File):
         src = self.path
         dst = DstDir.path
 
-        Util.message('Copy files', 'From {} to {}'.format(src, dst))
+        Util.message('Copy files', f'From {src} to {dst}')
 
         shutil.rmtree(dst)
         shutil.copytree(src, dst)
@@ -116,7 +116,7 @@ class TextFile(File):
                     self.content = f.read()
             except FileNotFoundError:
                 if self.mode is not FileMode.Optional:
-                    Util.error('Required file {} not found'.format(self.path))
+                    Util.error(f'Required file {self.path} not found')
 
     def test_line(self, Number, MinLen = None, MaxLen = None):
         if self.content is None:
@@ -126,14 +126,14 @@ class TextFile(File):
         line = self.get_line(Number)
 
         if line is None:
-            error = '{}:{} line not found'.format(self.path, Number)
+            error = f'{self.path}:{Number} line not found'
         else:
             if MinLen and len(line) < MinLen:
-                error = '{}:{} length must be at least {}, is {}: "{}"' \
-                    .format(self.path, Number, MinLen, len(line), line)
+                error = f'{self.path}:{Number} length must be at least ' \
+                        f'{MinLen}, is {len(line)}: "{line}"'
             elif MaxLen and len(line) > MaxLen:
-                error = '{}:{} length must not exceed {}, is {}: "{}"' \
-                    .format(self.path, Number, MaxLen, len(line), line)
+                error = f'{self.path}:{Number} length must not exceed ' \
+                        f'{MaxLen}, is {len(line)}: "{line}"'
 
         if error:
             if self.mode is FileMode.Optional:

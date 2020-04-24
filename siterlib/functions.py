@@ -79,7 +79,7 @@ class Functions:
         try:
             time_obj = time.strptime(iso_date, '%Y-%m-%d')
         except ValueError:
-            Util.warning('Date not in YYYY-MM-DD format: {}'.format(iso_date))
+            Util.warning(f'Date not in YYYY-MM-DD format: {iso_date}')
 
             return iso_date
 
@@ -109,7 +109,7 @@ class Functions:
 
         if code.find('\n') == -1:
             # This is a one-liner
-            code = '<code>{}</code>'.format(clean_code(code))
+            code = f'<code>{clean_code(code)}</code>'
         else:
             # This is a code block
             lexer = pygments.lexers.get_lexer_by_name(lang)
