@@ -43,3 +43,5 @@ class Settings:
         self.Markdown = 'md'
         self.Anchor = 'anchor'
         self.Apply = 'apply'
+
+        self.PygmentsDiv = 'siter_code'

@@ -17,7 +17,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import importlib
 import sys
 
 class Util:
@@ -42,10 +41,3 @@ class Util:
     @staticmethod
     def info(m):
         Util.message('Info', m, 4)
-
-    @staticmethod
-    def try_import(module):
-        try:
-            return importlib.import_module(module)
-        except ImportError:
-            return None

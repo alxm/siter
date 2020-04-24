@@ -19,6 +19,10 @@
 
 import time
 
+import pygments
+import pygments.lexers
+import pygments.formatters
+
 from siterlib.file import FileMode
 from siterlib.token import TokenType, TokenCollection
 from siterlib.util import Util
@@ -106,27 +110,18 @@ class Functions:
             code = '<code>{}</code>'.format(clean_code(code))
         else:
             # This is a code block
-            div_class = 'siter_code'
-
-            if siter.imports.Pygments:
-                lexer = siter.imports.PygmentsLexers.get_lexer_by_name(lang)
-                formatter = siter.imports.PygmentsFormatters.HtmlFormatter(
-                    linenos = True, cssclass = div_class, hl_lines=lines)
-                code = siter.imports.Pygments.highlight(code, lexer, formatter)
-            else:
-                code = '<div class="{}"><pre>{}</pre></div>' \
-                    .format(div_class, clean_code(code))
+            lexer = pygments.lexers.get_lexer_by_name(lang)
+            formatter = pygments.formatters.HtmlFormatter(
+                            linenos = True,
+                            cssclass = siter.settings.PygmentsDiv,
+                            hl_lines=lines)
+            code = pygments.highlight(code, lexer, formatter)
 
         return code
 
     @staticmethod
     def markdown(siter, args):
-        content = args[0]
-
-        if siter.md:
-            content = siter.md.reset().convert(content)
-
-        return content
+        return siter.md.reset().convert(args[0])
 
     @staticmethod
     def anchor(_, args):

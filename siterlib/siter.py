@@ -19,6 +19,7 @@
 
 import time
 
+import markdown
 from markdown.extensions.codehilite import CodeHiliteExtension
 from markdown.extensions.fenced_code import FencedCodeExtension
 
@@ -31,13 +32,6 @@ from siterlib.binding import VariableBinding, MacroBinding, FunctionBinding
 from siterlib.binding import BindingCollection
 from siterlib.functions import Functions
 
-class Imports:
-    def __init__(self):
-        self.Md = Util.try_import('markdown')
-        self.Pygments = Util.try_import('pygments')
-        self.PygmentsLexers = Util.try_import('pygments.lexers')
-        self.PygmentsFormatters = Util.try_import('pygments.formatters')
-
 class Siter:
     def __init__(self, argv):
         # Declare and optionally create the dirs and files Siter uses
@@ -47,19 +41,14 @@ class Siter:
         # Set defaults and load user settings from args and config files
         self.settings = Settings(argv, self.files)
 
-        # Optional packages
-        self.imports = Imports()
-
-        if self.imports.Md:
-            self.md = self.imports.Md.Markdown(
-                        output_format = 'html5',
-                        extensions = [
-                            CodeHiliteExtension(
-                                css_class = 'siter_code', linenums = True),
-                            FencedCodeExtension()
-                        ])
-        else:
-            self.md = None
+        self.md = markdown.Markdown(
+                    output_format = 'html5',
+                    extensions = [
+                        CodeHiliteExtension(
+                            css_class = self.settings.PygmentsDiv,
+                            linenums = True),
+                        FencedCodeExtension()
+                    ])
 
         # Token processing utilities
         self.tokenizer = Tokenizer(self.settings.EvalHint,
@@ -227,10 +216,9 @@ class Siter:
         eval_tokens.trim()
 
         # Run page content through Markdown
-        if binding.protected and name == self.settings.Content and self.md:
-            content = eval_tokens.resolve()
-            md = self.md.reset().convert(content)
-            md_token = Token(TokenType.Text, md)
+        if binding.protected and name == self.settings.Content:
+            md_content = self.md.reset().convert(eval_tokens.resolve())
+            md_token = Token(TokenType.Text, md_content)
             eval_tokens = TokenCollection([md_token])
 
         return eval_tokens
