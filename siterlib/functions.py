@@ -29,38 +29,38 @@ from siterlib.util import Util
 
 class Functions:
     @staticmethod
-    def declare_binding(siter, args):
-        if len(args) == 3:
+    def declare_binding(Siter, Args):
+        if len(Args) == 3:
             # {name} {arg1 arg2 ...} {body}
-            name = args[0].tokens.get_token(0).resolve()
-            params = args[1].tokens.filter(TokenType.Text)
-            body = [args[2]]
+            name = Args[0].tokens.get_token(0).resolve()
+            params = Args[1].tokens.filter(TokenType.Text)
+            body = [Args[2]]
 
-            siter.bindings.add_macro(name, params, TokenCollection(body))
+            Siter.bindings.add_macro(name, params, TokenCollection(body))
         else:
             # {name} / {name} {body}
-            name = args[0].tokens.get_token(0).resolve()
-            body = [args[1]] if len(args) == 2 else []
+            name = Args[0].tokens.get_token(0).resolve()
+            body = [Args[1]] if len(Args) == 2 else []
 
-            siter.bindings.add_variable(name, TokenCollection(body))
+            Siter.bindings.add_variable(name, TokenCollection(body))
 
         return None
 
     @staticmethod
-    def if_check(siter, args):
-        clause = siter.evaluate_block(args[0]).resolve()
+    def if_check(Siter, Args):
+        clause = Siter.evaluate_block(Args[0]).resolve()
 
-        if siter.bindings.contains(clause):
-            return args[1]
-        elif len(args) == 3:
-            return args[2]
+        if Siter.bindings.contains(clause):
+            return Args[1]
+        elif len(Args) == 3:
+            return Args[2]
         else:
             return None
 
     @staticmethod
-    def mod_time(_, args):
-        read_file = args[0]
-        fmt = args[1]
+    def mod_time(_, Args):
+        read_file = Args[0]
+        fmt = Args[1]
 
         f_time = read_file.get_mod_time()
         time_obj = time.localtime(f_time)
@@ -68,42 +68,44 @@ class Functions:
         return time.strftime(fmt, time_obj)
 
     @staticmethod
-    def gen_time(_, args):
-        return time.strftime(args[0])
+    def gen_time(_, Args):
+        return time.strftime(Args[0])
 
     @staticmethod
-    def datefmt(_, args):
-        iso_date = args[0]
-        fmt_string = args[1]
+    def datefmt(_, Args):
+        iso_date = Args[0]
+        fmt_string = Args[1]
 
         try:
             time_obj = time.strptime(iso_date, '%Y-%m-%d')
         except ValueError:
             Util.warning('Date not in YYYY-MM-DD format: {}'.format(iso_date))
+
             return iso_date
 
         return time.strftime(fmt_string, time_obj)
 
     @staticmethod
-    def highlight_code(siter, args):
-        if len(args) == 1:
+    def highlight_code(Siter, Args):
+        if len(Args) == 1:
             lang = 'text'
-            code = args[0]
+            code = Args[0]
             lines = []
-        elif len(args) == 2:
-            lang = args[0].lower()
-            code = args[1]
+        elif len(Args) == 2:
+            lang = Args[0].lower()
+            code = Args[1]
             lines = []
-        elif len(args) == 3:
-            lang = args[0].lower()
-            code = args[2]
-            lines = args[1].split()
+        elif len(Args) == 3:
+            lang = Args[0].lower()
+            code = Args[2]
+            lines = Args[1].split()
 
         def clean_code(code):
             # Replace < and > with HTML entities
-            code = code.replace('<', '&lt;')
-            code = code.replace('>', '&gt;')
-            return code
+            Code = Code.replace('<', '&lt;')
+            Code = Code.replace('>', '&gt;')
+
+            return Code
 
         if code.find('\n') == -1:
             # This is a one-liner
@@ -113,35 +115,35 @@ class Functions:
             lexer = pygments.lexers.get_lexer_by_name(lang)
             formatter = pygments.formatters.HtmlFormatter(
                             linenos = True,
-                            cssclass = siter.settings.PygmentsDiv,
+                            cssclass = Siter.settings.PygmentsDiv,
                             hl_lines=lines)
             code = pygments.highlight(code, lexer, formatter)
 
         return code
 
     @staticmethod
-    def markdown(siter, args):
-        return siter.md.reset().convert(args[0])
+    def markdown(Siter, Args):
+        return Siter.md.reset().convert(Args[0])
 
     @staticmethod
-    def anchor(_, args):
-        return args[0].lower().replace(' ', '-')
+    def anchor(_, Args):
+        return Args[0].lower().replace(' ', '-')
 
     @staticmethod
-    def apply_template(siter, args):
+    def apply_template(Siter, Args):
         out = ''
 
-        templateFile = siter.dirs.template.add_file(args[0], FileMode.Optional)
-        stubsSubDir = siter.dirs.stubs.add_dir(args[1], FileMode.Required)
+        templateFile = Siter.dirs.template.add_file(Args[0], FileMode.Optional)
+        stubsSubDir = Siter.dirs.stubs.add_dir(Args[1], FileMode.Required)
 
         stubFiles = sorted(stubsSubDir.get_files(),
                            key = lambda f: f.get_name(),
                            reverse = True)
 
-        if len(args) == 3:
-            stubFiles = stubFiles[: int(args[2])]
+        if len(Args) == 3:
+            stubFiles = stubFiles[: int(Args[2])]
 
         for f in stubFiles:
-            out += siter.process_file(f, stubsSubDir, templateFile, True)
+            out += Siter.process_file(f, stubsSubDir, templateFile, True)
 
         return out

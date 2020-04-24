@@ -21,23 +21,24 @@ from siterlib.util import Util
 from siterlib.token import TokenType, Token, BlockToken, TokenCollection
 
 class Tokenizer:
-    def __init__(self, eval_hint, tag_open, tag_close):
+    def __init__(self, Eval, TagOpen, TagClose):
         self.special_tokens = {
-            TokenType.Eval: eval_hint,
-            TokenType.TagOpen: tag_open,
-            TokenType.TagClose: tag_close
+            TokenType.Eval: Eval,
+            TokenType.TagOpen: TagOpen,
+            TokenType.TagClose: TagClose
         }
 
-    def __make_flat_tokens(self, text):
+    def __make_flat_tokens(self, Text):
         flat_tokens = []
         current_type = None
         escaped = False
         escaped_index = -1
         current_token = ''
 
-        for c in text:
+        for c in Text:
             if c == '\\' and not escaped:
                 escaped = True
+
                 continue
 
             previous_type = current_type
@@ -77,6 +78,7 @@ class Tokenizer:
                                          current_token[-len(token_text) :]))
                 current_token = ''
                 escaped_index = -1
+
                 break
 
         if len(current_token) > 0:
@@ -84,11 +86,11 @@ class Tokenizer:
 
         return flat_tokens
 
-    def __make_block_tokens(self, flat_tokens):
+    def __make_block_tokens(self, FlatTokens):
         stack = []
         block_tokens = TokenCollection()
 
-        for token in flat_tokens:
+        for token in FlatTokens:
             if token.t_type is TokenType.TagOpen:
                 # Subsequent tokens will be added to this new block
                 stack.append(BlockToken(self.special_tokens[TokenType.TagOpen],
@@ -112,8 +114,8 @@ class Tokenizer:
 
         return block_tokens
 
-    def tokenize(self, text):
-        flat_tokens = self.__make_flat_tokens(text)
+    def tokenize(self, Text):
+        flat_tokens = self.__make_flat_tokens(Text)
         block_tokens = self.__make_block_tokens(flat_tokens)
 
         return block_tokens

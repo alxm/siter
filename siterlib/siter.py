@@ -33,13 +33,13 @@ from siterlib.binding import BindingCollection
 from siterlib.functions import Functions
 
 class Siter:
-    def __init__(self, argv):
+    def __init__(self, Argv):
         # Declare and optionally create the dirs and files Siter uses
         self.dirs = Dirs()
         self.files = Files(self.dirs)
 
         # Set defaults and load user settings from args and config files
-        self.settings = Settings(argv, self.files)
+        self.settings = Settings(Argv, self.files)
 
         self.md = markdown.Markdown(
                     output_format = 'html5',
@@ -73,70 +73,70 @@ class Siter:
         self.bindings.add_function(self.settings.Def,
                                    [1, 2, 3],
                                    Functions.declare_binding,
-                                   protected = True,
-                                   lazy = True)
+                                   Protected = True,
+                                   Lazy = True)
 
         self.bindings.add_function(self.settings.If,
                                    [2, 3],
                                    Functions.if_check,
-                                   protected = True,
-                                   lazy = True)
+                                   Protected = True,
+                                   Lazy = True)
 
         self.bindings.add_function(self.settings.Generated,
                                    [1],
                                    Functions.gen_time,
-                                   protected = True)
+                                   Protected = True)
 
         self.bindings.add_function(self.settings.Datefmt,
                                    [2],
                                    Functions.datefmt,
-                                   protected = True)
+                                   Protected = True)
 
         self.bindings.add_function(self.settings.Code,
                                    [1, 2, 3],
                                    Functions.highlight_code,
-                                   protected = True)
+                                   Protected = True)
 
         self.bindings.add_function(self.settings.Markdown,
                                    [1],
                                    Functions.markdown,
-                                   protected = True)
+                                   Protected = True)
 
         self.bindings.add_function(self.settings.Anchor,
                                    [1],
                                    Functions.anchor,
-                                   protected = True)
+                                   Protected = True)
 
         self.bindings.add_function(self.settings.Apply,
                                    [2, 3],
                                    Functions.apply_template,
-                                   protected = True)
+                                   Protected = True)
 
-    def __set_local_bindings(self, read_file, read_dir):
+    def __set_local_bindings(self, ReadFile, ReadDir):
         self.bindings.add_function(self.settings.Modified,
                                    [1],
                                    lambda _, args: \
                                        Functions.mod_time(_,
-                                                          [read_file] + args))
+                                                          [ReadFile] + args))
 
         self.bindings.add_variable(self.settings.Root,
                                    self.tokenizer.tokenize(
-                                       read_dir.path_to(self.dirs.pages)))
+                                       ReadDir.path_to(self.dirs.pages)))
 
-    def __set_file_bindings(self, read_file, set_content):
-        content = read_file.get_content()
+    def __set_file_bindings(self, ReadFile, SetContent):
+        content = ReadFile.get_content()
         content_tokens = self.tokenizer.tokenize(content)
         content_tokens = self.__evaluate_collection(content_tokens)
 
-        if set_content:
+        if SetContent:
             self.bindings.add_variable(self.settings.Content,
                                        content_tokens,
-                                       protected = True)
+                                       Protected = True)
 
-    def __evaluate_collection(self, collection):
+    def __evaluate_collection(self, Collection):
         eval_tokens = TokenCollection()
 
-        for token in collection:
+        for token in Collection:
             if token.t_type is TokenType.Block:
                 evaluated = self.evaluate_block(token)
 
@@ -147,17 +147,18 @@ class Siter:
 
         return eval_tokens
 
-    def evaluate_block(self, block):
+    def evaluate_block(self, Block):
         # Get the binding's name
-        name = block.capture_call()
+        name = Block.capture_call()
 
         if name is None:
-            # This block does not call a binding
-            return self.__evaluate_collection(block.tokens)
+            # This Block does not call a binding
+            return self.__evaluate_collection(Block.tokens)
 
         if not self.bindings.contains(name):
-            # Name is unknown, discard block
-            Util.warning('Use of unknown binding {}:\n{}'.format(name, block))
+            # Name is unknown, discard Block
+            Util.warning('Use of unknown binding {}:\n{}'.format(name, Block))
+
             return None
 
         binding = self.bindings.get(name)
@@ -167,12 +168,13 @@ class Siter:
             eval_binding = self.__evaluate_collection(binding.tokens)
             eval_tokens.add_collection(eval_binding)
         elif type(binding) is MacroBinding:
-            args = block.capture_args(binding.num_params == 1)
+            args = Block.capture_args(binding.num_params == 1)
 
             if len(args) < binding.num_params_req or len(args) > binding.num_params:
                 Util.warning('Macro {} takes {}-{} args, got {}:\n{}'
                     .format(name, binding.num_params_req, binding.num_params,
-                            len(args), block))
+                            len(args), Block))
+
                 return None
 
             self.bindings.push()
@@ -191,11 +193,12 @@ class Siter:
 
             self.bindings.pop()
         elif type(binding) is FunctionBinding:
-            args = block.capture_args(binding.num_params == [1])
+            args = Block.capture_args(binding.num_params == [1])
 
             if len(args) not in binding.num_params:
                 Util.warning('Function {} takes {} args, got {}:\n{}'
-                    .format(name, binding.num_params, len(args), block))
+                    .format(name, binding.num_params, len(args), Block))
+
                 return None
 
             if binding.lazy:
@@ -223,9 +226,9 @@ class Siter:
 
         return eval_tokens
 
-    def __apply_template(self, template_file):
-        if template_file.exists():
-            content = template_file.get_content()
+    def __apply_template(self, TemplateFile):
+        if TemplateFile.exists():
+            content = TemplateFile.get_content()
         else:
             content = '<!DOCTYPE html><html><body>{}{}{}{}</body></html>' \
                 .format(self.settings.TagOpen, self.settings.EvalHint,
@@ -236,35 +239,35 @@ class Siter:
 
         return tokens.resolve()
 
-    def process_file(self, in_file, read_dir, template_file, is_stub = False):
-        Util.message('Process', in_file.get_path())
+    def process_file(self, InFile, ReadDir, TemplateFile, IsStub = False):
+        Util.message('Process', InFile.get_path())
 
         self.bindings.push()
 
         # Keep root path relative to the file that invoked the stub
-        if not is_stub:
-            self.__set_local_bindings(in_file, read_dir)
+        if not IsStub:
+            self.__set_local_bindings(InFile, ReadDir)
 
-        self.__set_file_bindings(in_file, True)
+        self.__set_file_bindings(InFile, True)
 
         # Load template and replace variables and functions with bindings
-        final = self.__apply_template(template_file)
+        final = self.__apply_template(TemplateFile)
 
         self.bindings.pop()
 
         return final
 
-    def __work(self, read_dir, write_dir):
+    def __work(self, ReadDir, WriteDir):
         counter = 0
 
-        for in_file in read_dir.get_files():
-            out_file = write_dir.add_file(in_file.get_name(), FileMode.Create)
-            output = self.process_file(in_file, read_dir, self.files.page_html)
+        for in_file in ReadDir.get_files():
+            out_file = WriteDir.add_file(in_file.get_name(), FileMode.Create)
+            output = self.process_file(in_file, ReadDir, self.files.page_html)
             out_file.write(output)
             counter += 1
 
-        for read_subdir in read_dir.get_dirs():
-            write_subdir = write_dir.add_dir(read_subdir.get_name(),
+        for read_subdir in ReadDir.get_dirs():
+            write_subdir = WriteDir.add_dir(read_subdir.get_name(),
                                              FileMode.Create)
             counter += self.__work(read_subdir, write_subdir)
 

@@ -21,23 +21,22 @@ import sys
 
 class Util:
     @staticmethod
-    def message(title, content, color = 2):
-        space = max(2, 12 - len(title))
+    def message(Title, Content, Color = 2):
+        space = max(2, 12 - len(Title))
         head = '■' * (space // 2)
         tail = '■' * (space - space // 2)
 
-        print('\033[{};1m{} {} {}\033[0m {}'
-            .format(30 + color, head, title, tail, content))
+        print(f'\033[{30 + Color};1m{head} {Title} {tail}\033[0m {Content}')
 
     @staticmethod
-    def error(e):
-        Util.message('Error', e, 1)
+    def error(Message):
+        Util.message('Error', Message, 1)
         sys.exit(1)
 
     @staticmethod
-    def warning(w):
-        Util.message('Warning', w, 3)
+    def warning(Message):
+        Util.message('Warning', Message, 3)
 
     @staticmethod
-    def info(m):
-        Util.message('Info', m, 4)
+    def info(Message):
+        Util.message('Info', Message, 4)

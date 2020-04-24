@@ -26,64 +26,65 @@ class Binding:
         self.protected = False
 
 class VariableBinding(Binding):
-    def __init__(self, tokens):
-        self.tokens = tokens
+    def __init__(self, Tokens):
+        self.tokens = Tokens
 
 class MacroBinding(Binding):
-    def __init__(self, siter, params, tokens):
-        num_required = len(params)
+    def __init__(self, Siter, Params, Tokens):
+        num_required = len(Params)
 
-        for i, p in enumerate(params):
-            if p.resolve() == siter.settings.OptDelimiter:
+        for i, p in enumerate(Params):
+            if p.resolve() == Siter.settings.OptDelimiter:
                 num_required = i
-                del params[i]
+                del Params[i]
+
                 break
 
-        self.params = params
-        self.num_params = len(params)
+        self.params = Params
+        self.num_params = len(Params)
         self.num_params_req = num_required
-        self.tokens = tokens
+        self.tokens = Tokens
 
 class FunctionBinding(Binding):
-    def __init__(self, num_params, func, lazy):
-        self.num_params = num_params
-        self.func = func
-        self.lazy = lazy
+    def __init__(self, NumParams, Func, Lazy):
+        self.num_params = NumParams
+        self.func = Func
+        self.lazy = Lazy
 
 class BindingCollection:
-    def __init__(self, siter):
-        self.siter = siter
+    def __init__(self, Siter):
+        self.siter = Siter
         self.bindings = {}
         self.stack = []
 
-    def contains(self, name):
-        return name in self.bindings
+    def contains(self, Name):
+        return Name in self.bindings
 
-    def __add(self, name, binding, protected):
-        if self.contains(name) and self.get(name).protected:
-            Util.error('Cannot overwrite binding {}'.format(name))
+    def __add(self, Name, Binding, Protected):
+        if self.contains(Name) and self.get(Name).protected:
+            Util.error('Cannot overwrite binding {}'.format(Name))
 
-        binding.protected = protected
-        self.bindings[name] = binding
+        Binding.protected = Protected
+        self.bindings[Name] = Binding
 
-    def add_variable(self, name, tokens, protected = False):
-        binding = VariableBinding(tokens)
-        self.__add(name, binding, protected)
+    def add_variable(self, Name, Tokens, Protected = False):
+        binding = VariableBinding(Tokens)
+        self.__add(Name, binding, Protected)
 
-    def add_macro(self, name, params, tokens, protected = False):
-        binding = MacroBinding(self.siter, params, tokens)
-        self.__add(name, binding, protected)
+    def add_macro(self, Name, params, Tokens, Protected = False):
+        binding = MacroBinding(self.siter, params, Tokens)
+        self.__add(Name, binding, Protected)
 
-    def add_function(self, name, num_params, func,
-                     protected = False, lazy = False):
-        binding = FunctionBinding(num_params, func, lazy)
-        self.__add(name, binding, protected)
+    def add_function(self, Name, NumParams, Func,
+                     Protected = False, Lazy = False):
+        binding = FunctionBinding(NumParams, Func, Lazy)
+        self.__add(Name, binding, Protected)
 
-    def get(self, name):
-        if name not in self.bindings:
-            Util.error('{} not in bindings'.format(name))
+    def get(self, Name):
+        if Name not in self.bindings:
+            Util.error('{} not in bindings'.format(Name))
 
-        return self.bindings[name]
+        return self.bindings[Name]
 
     def push(self):
         self.stack.append(self.bindings.copy())

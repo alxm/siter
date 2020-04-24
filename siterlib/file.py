@@ -29,9 +29,9 @@ class FileMode(enum.Enum):
     Required = 2
 
 class File:
-    def __init__(self, path, mode):
-        self.path = os.path.abspath(path)
-        self.mode = mode
+    def __init__(self, Path, Mode):
+        self.path = os.path.abspath(Path)
+        self.mode = Mode
 
         if self.mode is FileMode.Required and not self.exists():
             Util.error('Required file {} not found'.format(self.path))
@@ -49,8 +49,8 @@ class File:
         return os.stat(self.path).st_mtime
 
 class Dir(File):
-    def __init__(self, path, mode, read_contents = False):
-        File.__init__(self, path, mode)
+    def __init__(self, Path, Mode, ReadContents = False):
+        File.__init__(self, Path, Mode)
 
         self.files = {}
         self.dirs = {}
@@ -58,16 +58,16 @@ class Dir(File):
         if self.mode is FileMode.Create:
             os.makedirs(self.path, exist_ok = True)
 
-        if not self.exists() or not read_contents:
+        if not self.exists() or not ReadContents:
             return
 
-        for path in [os.path.join(self.path, p) for p in os.listdir(self.path)]:
-            if os.path.isfile(path):
-                self.files[path] = TextFile(path, FileMode.Required)
-            elif os.path.isdir(path):
-                self.dirs[path] = Dir(path, FileMode.Required, True)
+        for Path in [os.path.join(self.path, p) for p in os.listdir(self.path)]:
+            if os.path.isfile(Path):
+                self.files[Path] = TextFile(Path, FileMode.Required)
+            elif os.path.isdir(Path):
+                self.dirs[Path] = Dir(Path, FileMode.Required, True)
             else:
-                Util.error('Invalid file {}'.format(path))
+                Util.error('Invalid file {}'.format(Path))
 
     def get_dirs(self):
         return self.dirs.values()
@@ -75,28 +75,28 @@ class Dir(File):
     def get_files(self):
         return self.files.values()
 
-    def add_dir(self, subdir, mode):
-        path = os.path.join(self.path, subdir)
+    def add_dir(self, SubDir, Mode):
+        path = os.path.join(self.path, SubDir)
 
         if path not in self.dirs:
-            self.dirs[path] = Dir(path, mode)
+            self.dirs[path] = Dir(path, Mode)
 
         return self.dirs[path]
 
-    def add_file(self, name, mode):
-        path = os.path.join(self.path, name)
+    def add_file(self, Name, Mode):
+        path = os.path.join(self.path, Name)
 
         if path not in self.files:
-            self.files[path] = TextFile(path, mode)
+            self.files[path] = TextFile(path, Mode)
 
         return self.files[path]
 
-    def path_to(self, target):
-        return os.path.relpath(target.get_path(), start = self.path)
+    def path_to(self, Target):
+        return os.path.relpath(Target.get_path(), start = self.path)
 
-    def copy_to(self, dst_dir):
+    def copy_to(self, DstDir):
         src = self.path
-        dst = dst_dir.path
+        dst = DstDir.path
 
         Util.message('Copy files', 'From {} to {}'.format(src, dst))
 
@@ -104,8 +104,8 @@ class Dir(File):
         shutil.copytree(src, dst)
 
 class TextFile(File):
-    def __init__(self, path, mode):
-        File.__init__(self, path, mode)
+    def __init__(self, Path, Mode):
+        File.__init__(self, Path, Mode)
 
         self.content = None
         self.lines = None
@@ -118,22 +118,22 @@ class TextFile(File):
                 if self.mode is not FileMode.Optional:
                     Util.error('Required file {} not found'.format(self.path))
 
-    def test_line(self, number, min_len = None, max_len = None):
+    def test_line(self, Number, MinLen = None, MaxLen = None):
         if self.content is None:
             return False
 
         error = None
-        line = self.get_line(number)
+        line = self.get_line(Number)
 
         if line is None:
-            error = '{}:{} line not found'.format(self.path, number)
+            error = '{}:{} line not found'.format(self.path, Number)
         else:
-            if min_len and len(line) < min_len:
+            if MinLen and len(line) < MinLen:
                 error = '{}:{} length must be at least {}, is {}: "{}"' \
-                    .format(self.path, number, min_len, len(line), line)
-            elif max_len and len(line) > max_len:
+                    .format(self.path, Number, MinLen, len(line), line)
+            elif MaxLen and len(line) > MaxLen:
                 error = '{}:{} length must not exceed {}, is {}: "{}"' \
-                    .format(self.path, number, max_len, len(line), line)
+                    .format(self.path, Number, MaxLen, len(line), line)
 
         if error:
             if self.mode is FileMode.Optional:
@@ -145,21 +145,21 @@ class TextFile(File):
 
         return True
 
-    def get_line(self, number):
+    def get_line(self, Number):
         if self.lines is None:
             self.lines = self.content.splitlines()
 
-        if number < len(self.lines):
-            return self.lines[number].strip()
+        if Number < len(self.lines):
+            return self.lines[Number].strip()
 
         return None
 
     def get_content(self):
         return self.content
 
-    def write(self, text):
+    def write(self, Text):
         with open(self.path, 'w') as f:
-            f.write(text)
+            f.write(Text)
 
 class Dirs:
     def __init__(self):
@@ -171,8 +171,8 @@ class Dirs:
         self.out = Dir('siter-out', FileMode.Create)
 
 class Files:
-    def __init__(self, dirs):
-        self.defs = dirs.config.add_file('defs', FileMode.Optional)
-        self.evalhint = dirs.config.add_file('eval', FileMode.Optional)
-        self.tags = dirs.config.add_file('tags', FileMode.Optional)
-        self.page_html = dirs.template.add_file('page.html', FileMode.Optional)
+    def __init__(self, Dirs):
+        self.defs = Dirs.config.add_file('defs', FileMode.Optional)
+        self.evalhint = Dirs.config.add_file('eval', FileMode.Optional)
+        self.tags = Dirs.config.add_file('tags', FileMode.Optional)
+        self.page_html = Dirs.template.add_file('page.html', FileMode.Optional)

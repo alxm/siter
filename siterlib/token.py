@@ -28,9 +28,9 @@ class TokenType(enum.Enum):
     Eval = 7
 
 class Token:
-    def __init__(self, t_type, text):
-        self.t_type = t_type
-        self.text = text
+    def __init__(self, Type, Text):
+        self.t_type = Type
+        self.text = Text
 
     def __str__(self):
         return self.resolve()
@@ -39,12 +39,12 @@ class Token:
         return self.text
 
 class BlockToken(Token):
-    def __init__(self, tag_open, tag_close, tokens):
+    def __init__(self, TagOpen, TagClose, Tokens):
         super().__init__(TokenType.Block, None)
 
-        self.tag_open = tag_open
-        self.tag_close = tag_close
-        self.tokens = tokens if tokens else TokenCollection()
+        self.tag_open = TagOpen
+        self.tag_close = TagClose
+        self.tokens = Tokens if Tokens else TokenCollection()
 
     def resolve(self):
         return self.tag_open + self.tokens.resolve() + self.tag_close
@@ -52,9 +52,10 @@ class BlockToken(Token):
     def capture_call(self):
         # {{!name ...}}
         head, _ = self.tokens.capture(TokenType.Eval, TokenType.Text)
+
         return head.get_token(1).resolve() if head else None
 
-    def capture_args(self, single_arg):
+    def capture_args(self, SingleArg):
         # {{!name {{arg1}} {{arg2}} ...}}
         _, tail = self.tokens.capture(TokenType.Eval, TokenType.Text)
 
@@ -63,7 +64,7 @@ class BlockToken(Token):
 
         args = tail.filter(TokenType.Block)
 
-        if single_arg or len(args) == 0:
+        if SingleArg or len(args) == 0:
             # Put all the args in a parent block
             tail.trim()
             args = [BlockToken(self.tag_open, self.tag_close, tail)]
@@ -71,8 +72,8 @@ class BlockToken(Token):
         return args
 
 class TokenCollection:
-    def __init__(self, tokens = None):
-        self.tokens = tokens if tokens else []
+    def __init__(self, Tokens = None):
+        self.tokens = Tokens if Tokens else []
 
     def __iter__(self):
         return self.tokens.__iter__()
@@ -80,23 +81,23 @@ class TokenCollection:
     def num_tokens(self):
         return len(self.tokens)
 
-    def get_token(self, i):
-        return self.tokens[i]
+    def get_token(self, Index):
+        return self.tokens[Index]
 
-    def add_token(self, token):
-        self.tokens.append(token)
+    def add_token(self, Token):
+        self.tokens.append(Token)
 
-    def add_tokens(self, tokens):
-        self.tokens += tokens
+    def add_tokens(self, Tokens):
+        self.tokens += Tokens
 
-    def add_collection(self, collection):
-        self.tokens += collection.tokens
+    def add_collection(self, Collection):
+        self.tokens += Collection.tokens
 
     def resolve(self):
         return ''.join([t.resolve() for t in self.tokens])
 
-    def filter(self, t_type):
-        return [t for t in self.tokens if t.t_type is t_type]
+    def filter(self, Type):
+        return [t for t in self.tokens if t.t_type is Type]
 
     def trim(self):
         start = 0
@@ -116,11 +117,11 @@ class TokenCollection:
 
         self.tokens = self.tokens[start : end]
 
-    def capture(self, *args):
+    def capture(self, *Args):
         i = 0
         head = TokenCollection()
 
-        for arg in args:
+        for arg in Args:
             found = False
 
             while i < len(self.tokens):
@@ -130,6 +131,7 @@ class TokenCollection:
                 if token.t_type is arg:
                     found = True
                     head.add_token(token)
+
                     break
                 elif token.t_type is not TokenType.Whitespace:
                     break
