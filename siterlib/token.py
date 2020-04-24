@@ -50,12 +50,12 @@ class BlockToken(Token):
         return self.tag_open + self.tokens.resolve() + self.tag_close
 
     def capture_call(self):
-        # {`name ...}
+        # {{!name ...}}
         head, _ = self.tokens.capture(TokenType.Eval, TokenType.Text)
         return head.get_token(1).resolve() if head else None
 
     def capture_args(self, single_arg):
-        # {`name {arg1} {arg2} ...}
+        # {{!name {{arg1}} {{arg2}} ...}}
         _, tail = self.tokens.capture(TokenType.Eval, TokenType.Text)
 
         if tail is None or tail.num_tokens() == 0:

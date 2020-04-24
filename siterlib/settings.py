@@ -25,8 +25,8 @@ class Settings:
         self.EvalHint = '!'
 
         # Block delimiters
-        self.TagOpen = '{'
-        self.TagClose = '}'
+        self.TagOpen = '{{'
+        self.TagClose = '}}'
 
         # Macro args following this delimiter are optional
         self.OptDelimiter = '/'
@@ -43,25 +43,3 @@ class Settings:
         self.Markdown = 'md'
         self.Anchor = 'anchor'
         self.Apply = 'apply'
-
-        # Load user settings
-        self.__from_args(argv)
-        self.__from_files(files)
-
-    def __from_args(self, argv):
-        # Go through command line arguments
-        for arg in argv:
-            if arg in ['-f', '--force']:
-                pass
-
-    def __from_files(self, files):
-        if files.evalhint.test_line(0, 1, 1):
-            self.EvalHint = files.evalhint.get_line(0)
-            Util.info('Using {} as block eval hint'.format(self.EvalHint))
-
-        if files.tags.test_line(0, 1) and files.tags.test_line(1, 1):
-            self.TagOpen = files.tags.get_line(0)
-            self.TagClose = files.tags.get_line(1)
-
-            Util.info('Using {} and {} as block tags'
-                .format(self.TagOpen, self.TagClose))
