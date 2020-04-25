@@ -17,11 +17,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import enum
-import os
-import shutil
+import enum, os, shutil
 
-from siterlib.util import CUtil
+from .util import *
 
 class CFileMode(enum.Enum):
     Optional = 0

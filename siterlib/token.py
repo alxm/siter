@@ -19,7 +19,7 @@
 
 import enum
 
-from siterlib.settings import CSettings
+from .settings import *
 
 class CTokenType(enum.Enum):
     Text = 1

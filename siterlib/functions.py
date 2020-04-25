@@ -19,14 +19,12 @@
 
 import time
 
-import pygments
-import pygments.lexers
-import pygments.formatters
+import pygments, pygments.lexers, pygments.formatters
 
-from siterlib.file import CFileMode
-from siterlib.settings import CSettings
-from siterlib.token import CTokenType, CTokenCollection
-from siterlib.util import CUtil
+from .file import *
+from .settings import *
+from .token import *
+from .util import *
 
 class CFunctions:
     @staticmethod

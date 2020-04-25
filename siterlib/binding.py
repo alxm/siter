@@ -19,8 +19,8 @@
 
 import enum
 
-from siterlib.settings import CSettings
-from siterlib.util import CUtil
+from .settings import *
+from .util import *
 
 class CBinding:
     def __init__(self):

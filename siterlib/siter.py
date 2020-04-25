@@ -23,13 +23,13 @@ import markdown
 from markdown.extensions.codehilite import CodeHiliteExtension
 from markdown.extensions.fenced_code import FencedCodeExtension
 
-from siterlib.binding import CVariableBinding, CMacroBinding, CFunctionBinding, CBindingCollection
-from siterlib.file import CFileMode, CDirs, CFiles
-from siterlib.functions import CFunctions
-from siterlib.settings import CSettings
-from siterlib.token import CTokenType, CToken, CTokenCollection
-from siterlib.tokenizer import CTokenizer
-from siterlib.util import CUtil
+from .binding import *
+from .file import *
+from .functions import *
+from .settings import *
+from .token import *
+from .tokenizer import *
+from .util import *
 
 class CSiter:
     def __init__(self, Argv):

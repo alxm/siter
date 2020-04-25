@@ -17,9 +17,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from siterlib.settings import CSettings
-from siterlib.token import CTokenType, CToken, CBlockToken, CTokenCollection
-from siterlib.util import CUtil
+from .settings import *
+from .token import *
+from .util import *
 
 class CTokenizer:
     def __make_flat_tokens(Text):
