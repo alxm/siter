@@ -17,23 +17,23 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from siterlib.util import CUtil
+from siterlib.settings import CSettings
 from siterlib.token import CTokenType, CToken, CBlockToken, CTokenCollection
+from siterlib.util import CUtil
 
 class CTokenizer:
-    def __init__(self, Eval, TagOpen, TagClose):
-        self.special_tokens = {
-            CTokenType.Eval: Eval,
-            CTokenType.TagOpen: TagOpen,
-            CTokenType.TagClose: TagClose
-        }
-
-    def __make_flat_tokens(self, Text):
+    def __make_flat_tokens(Text):
         flat_tokens = []
         current_type = None
         escaped = False
         escaped_index = -1
         current_token = ''
+
+        special_tokens = {
+            CTokenType.Eval: CSettings.EvalHint,
+            CTokenType.TagOpen: CSettings.TagOpen,
+            CTokenType.TagClose: CSettings.TagClose
+        }
 
         for c in Text:
             if c == '\\' and not escaped:
@@ -61,8 +61,8 @@ class CTokenizer:
                 escaped = False
                 escaped_index = len(current_token) - 1
 
-            for token_type in self.special_tokens:
-                token_text = self.special_tokens[token_type]
+            for token_type in special_tokens:
+                token_text = special_tokens[token_type]
 
                 if len(current_token) - escaped_index <= len(token_text):
                     continue
@@ -87,17 +87,14 @@ class CTokenizer:
 
         return flat_tokens
 
-    def __make_block_tokens(self, FlatTokens):
+    def __make_block_tokens(FlatTokens):
         stack = []
         block_tokens = CTokenCollection()
 
         for token in FlatTokens:
             if token.t_type is CTokenType.TagOpen:
                 # Subsequent tokens will be added to this new block
-                stack.append(CBlockToken(
-                                self.special_tokens[CTokenType.TagOpen],
-                                self.special_tokens[CTokenType.TagClose],
-                                None))
+                stack.append(CBlockToken(CTokenCollection()))
             else:
                 if token.t_type is CTokenType.TagClose:
                     if len(stack) == 0:
@@ -116,8 +113,8 @@ class CTokenizer:
 
         return block_tokens
 
-    def tokenize(self, Text):
-        flat_tokens = self.__make_flat_tokens(Text)
-        block_tokens = self.__make_block_tokens(flat_tokens)
+    def tokenize(Text):
+        flat_tokens = CTokenizer.__make_flat_tokens(Text)
+        block_tokens = CTokenizer.__make_block_tokens(flat_tokens)
 
         return block_tokens

@@ -19,6 +19,7 @@
 
 import enum
 
+from siterlib.settings import CSettings
 from siterlib.util import CUtil
 
 class CBinding:
@@ -34,7 +35,7 @@ class CMacroBinding(CBinding):
         num_required = len(Params)
 
         for i, p in enumerate(Params):
-            if p.resolve() == Siter.settings.OptDelimiter:
+            if p.resolve() == CSettings.OptDelimiter:
                 num_required = i
                 del Params[i]
 

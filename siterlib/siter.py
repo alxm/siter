@@ -23,14 +23,13 @@ import markdown
 from markdown.extensions.codehilite import CodeHiliteExtension
 from markdown.extensions.fenced_code import FencedCodeExtension
 
-from siterlib.util import CUtil
-from siterlib.settings import CSettings
+from siterlib.binding import CVariableBinding, CMacroBinding, CFunctionBinding, CBindingCollection
 from siterlib.file import CFileMode, CDirs, CFiles
-from siterlib.tokenizer import CTokenizer
-from siterlib.token import CTokenType, CToken, CTokenCollection
-from siterlib.binding import CVariableBinding, CMacroBinding, CFunctionBinding
-from siterlib.binding import CBindingCollection
 from siterlib.functions import CFunctions
+from siterlib.settings import CSettings
+from siterlib.token import CTokenType, CToken, CTokenCollection
+from siterlib.tokenizer import CTokenizer
+from siterlib.util import CUtil
 
 class CSiter:
     def __init__(self, Argv):
@@ -38,22 +37,13 @@ class CSiter:
         self.dirs = CDirs()
         self.files = CFiles(self.dirs)
 
-        # Set defaults and load user settings from args and config files
-        self.settings = CSettings()
-
         self.md = markdown.Markdown(
                     output_format = 'html5',
                     extensions = [
-                        CodeHiliteExtension(
-                            css_class = self.settings.PygmentsDiv,
-                            linenums = True),
+                        CodeHiliteExtension(css_class = CSettings.PygmentsDiv,
+                                            linenums = True),
                         FencedCodeExtension()
                     ])
-
-        # Token processing utilities
-        self.tokenizer = CTokenizer(self.settings.EvalHint,
-                                    self.settings.TagOpen,
-                                    self.settings.TagClose)
 
         # Copy static files
         if self.dirs.static.exists():
@@ -70,66 +60,66 @@ class CSiter:
             self.__set_file_bindings(self.files.defs, False)
 
     def __set_global_bindings(self):
-        self.bindings.add_function(self.settings.Def,
+        self.bindings.add_function(CSettings.Def,
                                    [1, 2, 3],
                                    CFunctions.declare_binding,
                                    Protected = True,
                                    Lazy = True)
 
-        self.bindings.add_function(self.settings.If,
+        self.bindings.add_function(CSettings.If,
                                    [2, 3],
                                    CFunctions.if_check,
                                    Protected = True,
                                    Lazy = True)
 
-        self.bindings.add_function(self.settings.Generated,
+        self.bindings.add_function(CSettings.Generated,
                                    [1],
                                    CFunctions.gen_time,
                                    Protected = True)
 
-        self.bindings.add_function(self.settings.Datefmt,
+        self.bindings.add_function(CSettings.Datefmt,
                                    [2],
                                    CFunctions.datefmt,
                                    Protected = True)
 
-        self.bindings.add_function(self.settings.Code,
+        self.bindings.add_function(CSettings.Code,
                                    [1, 2, 3],
                                    CFunctions.highlight_code,
                                    Protected = True)
 
-        self.bindings.add_function(self.settings.Markdown,
+        self.bindings.add_function(CSettings.Markdown,
                                    [1],
                                    CFunctions.markdown,
                                    Protected = True)
 
-        self.bindings.add_function(self.settings.Anchor,
+        self.bindings.add_function(CSettings.Anchor,
                                    [1],
                                    CFunctions.anchor,
                                    Protected = True)
 
-        self.bindings.add_function(self.settings.Apply,
+        self.bindings.add_function(CSettings.Apply,
                                    [2, 3],
                                    CFunctions.apply_template,
                                    Protected = True)
 
     def __set_local_bindings(self, ReadFile, ReadDir):
-        self.bindings.add_function(self.settings.Modified,
+        self.bindings.add_function(CSettings.Modified,
                                    [1],
                                    lambda _, args: \
                                        CFunctions.mod_time(
                                         _, [ReadFile] + args))
 
-        self.bindings.add_variable(self.settings.Root,
-                                   self.tokenizer.tokenize(
+        self.bindings.add_variable(CSettings.Root,
+                                   CTokenizer.tokenize(
                                        ReadDir.path_to(self.dirs.pages)))
 
     def __set_file_bindings(self, ReadFile, SetContent):
         content = ReadFile.get_content()
-        content_tokens = self.tokenizer.tokenize(content)
+        content_tokens = CTokenizer.tokenize(content)
         content_tokens = self.__evaluate_collection(content_tokens)
 
         if SetContent:
-            self.bindings.add_variable(self.settings.Content,
+            self.bindings.add_variable(CSettings.Content,
                                        content_tokens,
                                        Protected = True)
 
@@ -223,7 +213,7 @@ class CSiter:
         eval_tokens.trim()
 
         # Run page content through Markdown
-        if binding.protected and name == self.settings.Content:
+        if binding.protected and name == CSettings.Content:
             md_content = self.md.reset().convert(eval_tokens.resolve())
             md_token = CToken(CTokenType.Text, md_content)
             eval_tokens = CTokenCollection([md_token])
@@ -232,10 +222,9 @@ class CSiter:
 
     def __apply_template(self, TemplateFile):
         content = TemplateFile.get_content()
-        tokens = self.tokenizer.tokenize(content)
-        tokens = self.__evaluate_collection(tokens)
+        tokens = CTokenizer.tokenize(content)
 
-        return tokens.resolve()
+        return self.__evaluate_collection(tokens).resolve()
 
     def process_file(self, InFile, ReadDir, TemplateFile, IsStub = False):
         CUtil.message('Process', InFile.get_path())

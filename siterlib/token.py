@@ -19,6 +19,8 @@
 
 import enum
 
+from siterlib.settings import CSettings
+
 class CTokenType(enum.Enum):
     Text = 1
     Whitespace = 3
@@ -39,15 +41,13 @@ class CToken:
         return self.text
 
 class CBlockToken(CToken):
-    def __init__(self, TagOpen, TagClose, Tokens):
+    def __init__(self, Tokens):
         super().__init__(CTokenType.Block, None)
 
-        self.tag_open = TagOpen
-        self.tag_close = TagClose
-        self.tokens = Tokens if Tokens else CTokenCollection()
+        self.tokens = Tokens
 
     def resolve(self):
-        return self.tag_open + self.tokens.resolve() + self.tag_close
+        return CSettings.TagOpen + self.tokens.resolve() + CSettings.TagClose
 
     def capture_call(self):
         # {{!name ...}}
@@ -67,7 +67,7 @@ class CBlockToken(CToken):
         if SingleArg or len(args) == 0:
             # Put all the args in a parent block
             tail.trim()
-            args = [CBlockToken(self.tag_open, self.tag_close, tail)]
+            args = [CBlockToken(tail)]
 
         return args
 

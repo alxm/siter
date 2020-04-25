@@ -24,6 +24,7 @@ import pygments.lexers
 import pygments.formatters
 
 from siterlib.file import CFileMode
+from siterlib.settings import CSettings
 from siterlib.token import CTokenType, CTokenCollection
 from siterlib.util import CUtil
 
@@ -115,7 +116,7 @@ class CFunctions:
             lexer = pygments.lexers.get_lexer_by_name(lang)
             formatter = pygments.formatters.HtmlFormatter(
                             linenos = True,
-                            cssclass = Siter.settings.PygmentsDiv,
+                            cssclass = CSettings.PygmentsDiv,
                             hl_lines=lines)
             code = pygments.highlight(code, lexer, formatter)
 
