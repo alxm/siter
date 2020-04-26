@@ -173,13 +173,12 @@ class CSiter:
             self.bindings.push()
 
             # Bind each parameter to the supplied argument
-            for arg, param in zip(args, binding.params):
-                self.bindings.add_variable(param.resolve(),
-                                           CTokenCollection([arg]))
+            for param, arg in zip(binding.params, args):
+                self.bindings.add_variable(param, self.evaluate_block(arg))
 
             # Fill in missing optional arguments
             for param in binding.params[len(args) :]:
-                self.bindings.add_variable(param.resolve(), CTokenCollection())
+                self.bindings.add_variable(param, CTokenCollection())
 
             # Evaluate macro body's tokens with the set parameters
             eval_binding = self.__evaluate_collection(binding.tokens)

@@ -31,16 +31,17 @@ class CBindingVariable(CBinding):
 class CBindingMacro(CBinding):
     def __init__(self, Siter, Params, Tokens):
         num_required = len(Params)
+        params = [p.resolve() for p in Params]
 
-        for i, p in enumerate(Params):
-            if p.resolve() == CSettings.OptDelimiter:
+        for i, p in enumerate(params):
+            if p == CSettings.OptDelimiter:
                 num_required = i
-                del Params[i]
+                del params[i]
 
                 break
 
-        self.params = Params
-        self.num_params = len(Params)
+        self.params = params
+        self.num_params = len(params)
         self.num_params_req = num_required
         self.tokens = Tokens
 
