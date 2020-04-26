@@ -33,6 +33,9 @@ from .util import *
 
 class CSiter:
     def __init__(self, Argv):
+        # Cached template tokens
+        self.template_tokens = {}
+
         # Declare and optionally create the dirs and files Siter uses
         self.dirs = CDirs()
         self.files = CFiles(self.dirs)
@@ -232,7 +235,12 @@ class CSiter:
         self.__set_file_bindings(InFile, True)
 
         # Load template and replace variables and functions with bindings
-        tokens = CTokenizer.tokenize(TemplateFile.get_content())
+        try:
+            tokens = self.template_tokens[TemplateFile]
+        except KeyError:
+            tokens = CTokenizer.tokenize(TemplateFile.get_content())
+            self.template_tokens[TemplateFile] = tokens
+
         final = self.__evaluate_collection(tokens).resolve()
 
         self.bindings.pop()
