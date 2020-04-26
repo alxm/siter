@@ -24,11 +24,11 @@ class CBinding:
     def __init__(self):
         self.protected = False
 
-class CVariableBinding(CBinding):
+class CBindingVariable(CBinding):
     def __init__(self, Tokens):
         self.tokens = Tokens
 
-class CMacroBinding(CBinding):
+class CBindingMacro(CBinding):
     def __init__(self, Siter, Params, Tokens):
         num_required = len(Params)
 
@@ -44,7 +44,7 @@ class CMacroBinding(CBinding):
         self.num_params_req = num_required
         self.tokens = Tokens
 
-class CFunctionBinding(CBinding):
+class CBindingFunction(CBinding):
     def __init__(self, NumParams, Func, Lazy):
         self.num_params = NumParams
         self.func = Func
@@ -67,16 +67,16 @@ class CBindingCollection:
         self.bindings[Name] = Binding
 
     def add_variable(self, Name, Tokens, Protected = False):
-        binding = CVariableBinding(Tokens)
+        binding = CBindingVariable(Tokens)
         self.__add(Name, binding, Protected)
 
     def add_macro(self, Name, params, Tokens, Protected = False):
-        binding = CMacroBinding(self.siter, params, Tokens)
+        binding = CBindingMacro(self.siter, params, Tokens)
         self.__add(Name, binding, Protected)
 
     def add_function(self, Name, NumParams, Func,
                      Protected = False, Lazy = False):
-        binding = CFunctionBinding(NumParams, Func, Lazy)
+        binding = CBindingFunction(NumParams, Func, Lazy)
         self.__add(Name, binding, Protected)
 
     def get(self, Name):

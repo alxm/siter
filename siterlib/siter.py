@@ -154,10 +154,10 @@ class CSiter:
         binding = self.bindings.get(name)
         eval_tokens = CTokenCollection()
 
-        if type(binding) is CVariableBinding:
+        if type(binding) is CBindingVariable:
             eval_binding = self.__evaluate_collection(binding.tokens)
             eval_tokens.add_collection(eval_binding)
-        elif type(binding) is CMacroBinding:
+        elif type(binding) is CBindingMacro:
             args = Block.capture_args(binding.num_params == 1)
 
             if len(args) < binding.num_params_req or \
@@ -181,11 +181,12 @@ class CSiter:
             for param in binding.params[len(args) :]:
                 self.bindings.add_variable(param.resolve(), CTokenCollection())
 
+            # Evaluate macro body's tokens with the set parameters
             eval_binding = self.__evaluate_collection(binding.tokens)
             eval_tokens.add_collection(eval_binding)
 
             self.bindings.pop()
-        elif type(binding) is CFunctionBinding:
+        elif type(binding) is CBindingFunction:
             args = Block.capture_args(binding.num_params == [1])
 
             if len(args) not in binding.num_params:
@@ -220,12 +221,6 @@ class CSiter:
 
         return eval_tokens
 
-    def __apply_template(self, TemplateFile):
-        content = TemplateFile.get_content()
-        tokens = CTokenizer.tokenize(content)
-
-        return self.__evaluate_collection(tokens).resolve()
-
     def process_file(self, InFile, ReadDir, TemplateFile, IsStub = False):
         CUtil.message('Process', InFile.get_path())
 
@@ -238,7 +233,8 @@ class CSiter:
         self.__set_file_bindings(InFile, True)
 
         # Load template and replace variables and functions with bindings
-        final = self.__apply_template(TemplateFile)
+        tokens = CTokenizer.tokenize(TemplateFile.get_content())
+        final = self.__evaluate_collection(tokens).resolve()
 
         self.bindings.pop()
 

@@ -99,14 +99,14 @@ class CFunctions:
             code = Args[2]
             lines = Args[1].split()
 
-        def clean_code(code):
-            # Replace < and > with HTML entities
-            Code = Code.replace('<', '&lt;')
-            Code = Code.replace('>', '&gt;')
-
-            return Code
-
         if code.find('\n') == -1:
+            def clean_code(Code):
+                # Replace special chars with HTML entities
+                Code = Code.replace('<', '&lt;')
+                Code = Code.replace('>', '&gt;')
+
+                return Code
+
             # This is a one-liner
             code = f'<code>{clean_code(code)}</code>'
         else:
