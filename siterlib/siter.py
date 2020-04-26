@@ -127,7 +127,7 @@ class CSiter:
         eval_tokens = CTokenCollection()
 
         for token in Collection:
-            if token.t_type is CTokenType.Block:
+            if type(token) is CTokenBlock:
                 evaluated = self.evaluate_block(token)
 
                 if evaluated:
@@ -207,7 +207,7 @@ class CSiter:
                 arguments = [self.evaluate_block(a).resolve() for a in args]
 
                 body = binding.func(self, arguments)
-                eval_tokens.add_token(CToken(CTokenType.Text, body))
+                eval_tokens.add_token(CTokenText(body))
 
         # Trim leading and trailing whitespace
         eval_tokens.trim()
@@ -215,7 +215,7 @@ class CSiter:
         # Run page content through Markdown
         if binding.protected and name == CSettings.Content:
             md_content = self.md.reset().convert(eval_tokens.resolve())
-            md_token = CToken(CTokenType.Text, md_content)
+            md_token = CTokenText(md_content)
             eval_tokens = CTokenCollection([md_token])
 
         return eval_tokens

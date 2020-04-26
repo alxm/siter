@@ -30,14 +30,14 @@ class CFunctions:
     @staticmethod
     def declare_binding(Siter, Args):
         if len(Args) == 3:
-            # {name} {arg1 arg2 ...} {body}
+            # `{{name}} {{arg1 arg2 ...}} {{body}}`
             name = Args[0].tokens.get_token(0).resolve()
-            params = Args[1].tokens.filter(CTokenType.Text)
+            params = Args[1].tokens.filter(CTokenText)
             body = [Args[2]]
 
             Siter.bindings.add_macro(name, params, CTokenCollection(body))
         else:
-            # {name} / {name} {body}
+            # `{{name}}` or `{{name}} {{body}}`
             name = Args[0].tokens.get_token(0).resolve()
             body = [Args[1]] if len(Args) == 2 else []
 

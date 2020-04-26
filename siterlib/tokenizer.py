@@ -27,63 +27,57 @@ class CTokenizer:
         current_type = None
         escaped = False
         escaped_index = -1
-        current_token = ''
+        current_text = ''
 
-        special_tokens = {
-            CTokenType.Eval: CSettings.EvalHint,
-            CTokenType.TagOpen: CSettings.TagOpen,
-            CTokenType.TagClose: CSettings.TagClose
-        }
-
-        for c in Text:
-            if c == '\\' and not escaped:
+        for current_char in Text:
+            if current_char == '\\' and not escaped:
                 escaped = True
 
                 continue
 
             previous_type = current_type
 
-            if c in [' ', '\t', '\n']:
-                current_type = CTokenType.Whitespace
+            if current_char.isspace():
+                current_type = CTokenWhitespace
             else:
-                current_type = CTokenType.Text
+                current_type = CTokenText
 
             if current_type is previous_type:
-                current_token += c
+                current_text += current_char
             else:
-                if len(current_token) > 0:
-                    flat_tokens.append(CToken(previous_type, current_token))
+                if len(current_text) > 0:
+                    flat_tokens.append(previous_type(current_text))
 
-                current_token = c
+                current_text = current_char
                 escaped_index = -1
 
             if escaped:
                 escaped = False
-                escaped_index = len(current_token) - 1
+                escaped_index = len(current_text) - 1
 
-            for token_type in special_tokens:
-                token_text = special_tokens[token_type]
+            for token_type in [CTokenTagOpen, CTokenTagClose, CTokenEval]:
+                token_text = token_type.DefaultText
 
-                if len(current_token) - escaped_index <= len(token_text):
+                if len(current_text) - escaped_index <= len(token_text):
                     continue
 
-                if current_token[-len(token_text) :] != token_text:
+                if current_text[-len(token_text) :] != token_text:
                     continue
 
-                if len(current_token) > len(token_text):
-                    text = current_token[: -len(token_text)]
+                if len(current_text) > len(token_text):
+                    text = current_text[: -len(token_text)]
 
-                    flat_tokens.append(CToken(CTokenType.Text, text))
+                    flat_tokens.append(CTokenText(text))
 
-                flat_tokens.append(CToken(token_type,
-                                          current_token[-len(token_text) :]))
-                current_token = ''
+                flat_tokens.append(token_type())
+
+                current_text = ''
                 escaped_index = -1
 
                 break
 
-        if len(current_token) > 0:
-            flat_tokens.append(CToken(current_type, current_token))
+        if len(current_text) > 0:
+            flat_tokens.append(current_type(current_text))
 
         return flat_tokens
 
@@ -92,11 +86,11 @@ class CTokenizer:
         block_tokens = CTokenCollection()
 
         for token in FlatTokens:
-            if token.t_type is CTokenType.TagOpen:
+            if type(token) is CTokenTagOpen:
                 # Subsequent tokens will be added to this new block
-                stack.append(CBlockToken(CTokenCollection()))
+                stack.append(CTokenBlock(CTokenCollection()))
             else:
-                if token.t_type is CTokenType.TagClose:
+                if type(token) is CTokenTagClose:
                     if len(stack) == 0:
                         CUtil.error("Found extra closing tag")
 

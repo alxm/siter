@@ -17,57 +17,61 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import enum
-
 from .settings import *
 
-class CTokenType(enum.Enum):
-    Text = 1
-    Whitespace = 3
-    TagOpen = 4
-    TagClose = 5
-    Block = 6
-    Eval = 7
-
 class CToken:
-    def __init__(self, Type, Text):
-        self.t_type = Type
-        self.text = Text
-
     def __str__(self):
         return self.resolve()
+
+class CTokenText(CToken):
+    def __init__(self, Text):
+        self.text = Text
 
     def resolve(self):
         return self.text
 
-class CBlockToken(CToken):
-    def __init__(self, Tokens):
-        super().__init__(CTokenType.Block, None)
+class CTokenWhitespace(CTokenText):
+    pass
 
+class CTokenMarker(CToken):
+    def resolve(self):
+        return self.__class__.DefaultText
+
+class CTokenTagOpen(CTokenMarker):
+    DefaultText = CSettings.TagOpen
+
+class CTokenTagClose(CTokenMarker):
+    DefaultText = CSettings.TagClose
+
+class CTokenEval(CTokenMarker):
+    DefaultText = CSettings.EvalHint
+
+class CTokenBlock(CToken):
+    def __init__(self, Tokens):
         self.tokens = Tokens
 
     def resolve(self):
         return CSettings.TagOpen + self.tokens.resolve() + CSettings.TagClose
 
     def capture_call(self):
-        # {{!name ...}}
-        head, _ = self.tokens.capture(CTokenType.Eval, CTokenType.Text)
+        # `!name ...`
+        head, _ = self.tokens.capture(CTokenEval, CTokenText)
 
         return head.get_token(1).resolve() if head else None
 
     def capture_args(self, SingleArg):
-        # {{!name {{arg1}} {{arg2}} ...}}
-        _, tail = self.tokens.capture(CTokenType.Eval, CTokenType.Text)
+        # `!name {{arg1}} {{arg2}} ...`
+        _, tail = self.tokens.capture(CTokenEval, CTokenText)
 
         if tail is None or tail.num_tokens() == 0:
             return []
 
-        args = tail.filter(CTokenType.Block)
+        args = tail.filter(CTokenBlock)
 
         if SingleArg or len(args) == 0:
             # Put all the args in a parent block
             tail.trim()
-            args = [CBlockToken(tail)]
+            args = [CTokenBlock(tail)]
 
         return args
 
@@ -97,20 +101,20 @@ class CTokenCollection:
         return ''.join([t.resolve() for t in self.tokens])
 
     def filter(self, Type):
-        return [t for t in self.tokens if t.t_type is Type]
+        return [t for t in self.tokens if type(t) is Type]
 
     def trim(self):
         start = 0
         end = len(self.tokens)
 
         for t in self.tokens:
-            if t.t_type is CTokenType.Whitespace:
+            if type(t) is CTokenWhitespace:
                 start += 1
             else:
                 break
 
         for t in reversed(self.tokens):
-            if t.t_type is CTokenType.Whitespace:
+            if type(t) is CTokenWhitespace:
                 end -= 1
             else:
                 break
@@ -128,12 +132,12 @@ class CTokenCollection:
                 token = self.tokens[i]
                 i += 1
 
-                if token.t_type is arg:
+                if type(token) is arg:
                     found = True
                     head.add_token(token)
 
                     break
-                elif token.t_type is not CTokenType.Whitespace:
+                elif type(token) is not CTokenWhitespace:
                     break
 
             if not found:
