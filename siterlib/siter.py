@@ -215,12 +215,6 @@ class CSiter:
         # Trim leading and trailing whitespace
         eval_tokens.trim()
 
-        # Run page content through Markdown
-        if binding.protected and name == CSettings.Content:
-            md_content = self.md.reset().convert(eval_tokens.resolve())
-            md_token = CTokenText(md_content)
-            eval_tokens = CTokenCollection([md_token])
-
         return eval_tokens
 
     def process_file(self, InFile, ReadDir, TemplateFile, IsStub = False):

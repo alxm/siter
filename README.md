@@ -40,7 +40,7 @@ Combined with the page template `siter-template/page.html`,
     <html>
         <body>
             <h1>{{!title}}</h1>
-            {{!content}}
+            {{!md {{!content}}}}
         </body>
     </html>
 
@@ -90,7 +90,7 @@ These are the built-in definitions.
 
 Name | About
 --- | ---
-`content` | Used by `siter-template/page.html`. Contains the evaluated contents of the page file, ran through Markdown.
+`content` | Contains the evaluated content of the page file, used in `siter-template/page.html`. You can format it with Markdown with `{{!md {{!content}}}}`.
 `root` | Relative path from the current page to the website root, so you can reference static files from nested pages.
 `modified` | The time the source page file was modified. Takes a Python [time format](http://strftime.org/) string as parameter. For example, `{{!modified %B %Y}}` expands to something like `September 2015`.
 `generated` | The time the page file was generated, same argument as `modified`.
