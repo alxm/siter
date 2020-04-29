@@ -85,15 +85,19 @@ These are the built-in definitions.
 
 Variable | About | Example
 --- | --- | ---
-`content` | The evaluated content of the page file, used in `siter-template/page.html`. | `{{!md {{!content}}}}`
+`content` | The evaluated content of the page file, used in `siter-template/page.html`. | `<div>{{!md {{!content}}}}</div>`
 `root` | Relative path from the current page to the website root, so you can reference static files from nested pages. | `<img src="{{!root}}/photos/cloud.jpg">`
 
 Macro | About | Example
 --- | --- | ---
-`modified` | The time the source page file was modified, takes a Python [time format string](http://strftime.org/) as parameter. | `Page last updated {{!modified %B %Y}}`
-`generated` | The time the page file was generated, also takes a time format string. | `Page generated {{!modified %B %Y}}`
-`md` | Runs the supplied argument through Markdown. | `{{!md **Hello world!**}}`
+`anchor` | Makes the text argument suitable to use as an HTML anchor. | `<a href="#{{!anchor Hello World}}">Permalink</a>`
+`apply` | Formats files from a `siter-stubs` subdir with a template file from `siter-template`. | `{{!apply {{news.html}} {{news}} {{5}}}}`
+`datefmt` | Format an ISO date with a Python [time format string](https://strftime.org/). | `This was written on {{!datefmt {{2020-04-29}} {{%B %d, %Y}}}}.`
+`def` | Bind a new macro or variable. | `{{!def {{page-title}} {{Home Page}}}}`
+`generated` | The time the page file was generated. | `<p>Siter ran on {{!generated %B %d, %Y}}</p>`
 `if` | `{{!if {{flag}} {{then}} {{else}}}}` evaluates `{{then}}` if the `flag` variable was previously declared (`{{!def flag}}`), or to `{{else}}` otherwise. The else block is optional. | `{{!if {{show-heading}} {{<h1>Welcome!</h1>}}}}`
+`md` | Runs Markdown on the supplied argument. | `{{!md **Hello world!**}}`
+`modified` | The time the source page file was modified. | `<p>Page last updated {{!modified %B %Y}}</p>`
 
 ## Dependencies
 
