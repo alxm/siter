@@ -22,6 +22,7 @@ import os, time
 import markdown
 from markdown.extensions.codehilite import CodeHiliteExtension
 from markdown.extensions.fenced_code import FencedCodeExtension
+from markdown.extensions.toc import TocExtension
 
 from .binding import *
 from .file import *
@@ -45,7 +46,9 @@ class CSiter:
                     extensions = [
                         CodeHiliteExtension(css_class = CSettings.PygmentsDiv,
                                             linenums = True),
-                        FencedCodeExtension()
+                        FencedCodeExtension(),
+                        TocExtension(title = 'Contents',
+                                     permalink = ' #'),
                     ])
 
         # Copy static files
