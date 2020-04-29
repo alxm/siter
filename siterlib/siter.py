@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import time
+import os, time
 
 import markdown
 from markdown.extensions.codehilite import CodeHiliteExtension
@@ -245,7 +245,15 @@ class CSiter:
         counter = 0
 
         for in_file in ReadDir.get_files():
-            out_file = WriteDir.add_file(in_file.get_name(), CFileMode.Create)
+            name = in_file.get_name()
+            root, ext = os.path.splitext(name)
+
+            if ext != '.md':
+                CUtil.warning(f'Ignoring page file {name}')
+
+                continue
+
+            out_file = WriteDir.add_file(f'{root}.html', CFileMode.Create)
             output = self.process_file(in_file, ReadDir, self.files.page_html)
             out_file.write(output)
             counter += 1

@@ -1,31 +1,26 @@
 # Siter
 
-Siter is a static website generator written in Python 3.
-
-I made it for my own [simple needs](https://www.alxm.org/ "My personal website is made with Siter") and as a way to play with Python. One of the goals was to generate websites that are fully usable locally without needing a web server.
+Siter is a static website generator written in Python 3, "Markdown with macros and variables" for my [own simple needs](https://www.alxm.org/ "My personal website is made with Siter").
 
 ## What does it do?
 
-Siter is called from the project's root directory, where it looks for several files and directories:
+You call `siter` from the project's root directory, which is structured like this:
 
     <project>/
-    ├── siter-config/
-    │   └── defs
-    ├── siter-out/
-    ├── siter-pages/
-    ├── siter-static/
-    ├── siter-stubs/
-    └── siter-template/
+    ├── siter-config/   # Config files
+    ├── siter-out/      # The final generated website
+    ├── siter-pages/    # Markdown source pages to be processed
+    ├── siter-static/   # Static files copied as they are
+    ├── siter-stubs/    # Small Markdown files included by pages
+    └── siter-template/ # HTML templates
 
 * Files and directories from `siter-static/` are copied to `siter-out/` as they are.
-
 * Source pages from `siter-pages/` are evaluated, formatted with Markdown, fitted in `siter-template/page.html`, and finally written to `siter-out/`.
-
-* `siter-config/defs` has global definitions available to every page.
+* `siter-config/defs` file contains global definitions that are available to every page and template to use.
 
 ### Quick Example
 
-A source page `siter-pages/index.html`,
+A source page `siter-pages/index.md`,
 
 ```
 {{!def {{title}} {{Home}}}}
@@ -56,7 +51,7 @@ Are used to make `siter-out/index.html`:
 
 ## Blocks, Variables, Macros, Functions
 
-A block is text enclosed between `{{` and `}}` tags. If the first character in a block is the eval marker `!`, then the block is evaluated as a variable or macro. So `{{!modified %Y}}` might expand to `2011` if you travelled back in time, but `{{modified %Y}}` would just be replaced with `modified %Y`.
+A block is text enclosed between `{{` and `}}`. If the first character in a block is the eval marker `!`, then the block is evaluated as a variable or macro. So `{{!modified %Y}}` might expand to `2011` if you travelled back in time, but `{{modified %Y}}` would just be replaced with the literal `modified %Y`.
 
 ### Macros Example
 
@@ -82,20 +77,23 @@ Becomes
         <img src="images/ufo.jpg" title="A photo">
     </div>
 
-When a macro takes a single argument, like `album` does above, you may ommit block tags around the argument.
+When a macro takes a single argument like `album` does above, you may ommit block tags around the argument.
 
 ## Special Macros and Variables
 
 These are the built-in definitions.
 
-Name | About
---- | ---
-`content` | Contains the evaluated content of the page file, used in `siter-template/page.html`. You can format it with Markdown with `{{!md {{!content}}}}`.
-`root` | Relative path from the current page to the website root, so you can reference static files from nested pages.
-`modified` | The time the source page file was modified. Takes a Python [time format](http://strftime.org/) string as parameter. For example, `{{!modified %B %Y}}` expands to something like `September 2015`.
-`generated` | The time the page file was generated, same argument as `modified`.
-`md` | Runs the supplied argument through Markdown.
-`if` | `{{!if {{flag}} {{then}} {{else}}}}` evaluates `{{then}}` if the `flag` variable has been declared somewhere (like with `{{!def flag}}`), or to `{{else}}` otherwise. The else block is optional.
+Variable | About | Example
+--- | --- | ---
+`content` | The evaluated content of the page file, used in `siter-template/page.html`. | `{{!md {{!content}}}}`
+`root` | Relative path from the current page to the website root, so you can reference static files from nested pages. | `<img src="{{!root}}/photos/cloud.jpg">`
+
+Macro | About | Example
+--- | --- | ---
+`modified` | The time the source page file was modified, takes a Python [time format string](http://strftime.org/) as parameter. | `Page last updated {{!modified %B %Y}}`
+`generated` | The time the page file was generated, also takes a time format string. | `Page generated {{!modified %B %Y}}`
+`md` | Runs the supplied argument through Markdown. | `{{!md **Hello world!**}}`
+`if` | `{{!if {{flag}} {{then}} {{else}}}}` evaluates `{{then}}` if the `flag` variable was previously declared (`{{!def flag}}`), or to `{{else}}` otherwise. The else block is optional. | `{{!if {{show-heading}} {{<h1>Welcome!</h1>}}}}`
 
 ## Dependencies
 
