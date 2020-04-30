@@ -25,10 +25,13 @@ class CFileMode(enum.Enum):
     Optional = 0
     Create = 1
     Required = 2
+    Reset = 3
 
 class CFile:
     def __init__(self, Path, Mode):
         self.path = os.path.abspath(Path)
+        self.shortpath = os.path.relpath(Path, start = os.curdir)
+        self.name = os.path.basename(Path)
         self.mode = Mode
 
         if self.mode is CFileMode.Required and not self.exists():
@@ -36,12 +39,6 @@ class CFile:
 
     def exists(self):
         return os.path.exists(self.path)
-
-    def get_path(self):
-        return self.path
-
-    def get_name(self):
-        return os.path.basename(self.path)
 
     def get_mod_time(self):
         return os.stat(self.path).st_mtime
@@ -55,17 +52,22 @@ class CDir(CFile):
 
         if self.mode is CFileMode.Create:
             os.makedirs(self.path, exist_ok = True)
+        elif self.mode is CFileMode.Reset:
+            if self.exists():
+                shutil.rmtree(self.path)
+
+            os.makedirs(self.path)
 
         if not self.exists() or not ReadContents:
             return
 
-        for Path in [os.path.join(self.path, p) for p in os.listdir(self.path)]:
-            if os.path.isfile(Path):
-                self.files[Path] = CTextFile(Path, CFileMode.Required)
-            elif os.path.isdir(Path):
-                self.dirs[Path] = CDir(Path, CFileMode.Required, True)
+        for path in [os.path.join(self.path, p) for p in os.listdir(self.path)]:
+            if os.path.isfile(path):
+                self.files[path] = CTextFile(path, CFileMode.Required)
+            elif os.path.isdir(path):
+                self.dirs[path] = CDir(path, CFileMode.Required, True)
             else:
-                CUtil.error(f'Invalid file {Path}')
+                CUtil.error(f'Invalid file {path}')
 
     def get_dirs(self):
         return self.dirs.values()
@@ -90,16 +92,23 @@ class CDir(CFile):
         return self.files[path]
 
     def path_to(self, Target):
-        return os.path.relpath(Target.get_path(), start = self.path)
+        return os.path.relpath(Target.path, start = self.path)
 
     def copy_to(self, DstDir):
-        src = self.path
-        dst = DstDir.path
+        CUtil.message('Copy files',
+                      f'From {self.shortpath} to {DstDir.shortpath}')
 
-        CUtil.message('Copy files', f'From {src} to {dst}')
+        shutil.rmtree(DstDir.path)
+        shutil.copytree(self.path, DstDir.path)
 
-        shutil.rmtree(dst)
-        shutil.copytree(src, dst)
+    def replace(self, DstDir):
+        CUtil.message('Move files',
+                      f'From {self.shortpath} to {DstDir.shortpath}')
+
+        if DstDir.exists():
+            shutil.rmtree(DstDir.path)
+
+        os.replace(self.path, DstDir.path)
 
 class CTextFile(CFile):
     def __init__(self, Path, Mode):
@@ -116,45 +125,6 @@ class CTextFile(CFile):
                 if self.mode is not CFileMode.Optional:
                     CUtil.error(f'Required file {self.path} not found')
 
-    def test_line(self, Number, MinLen = None, MaxLen = None):
-        if self.content is None:
-            return False
-
-        error = None
-        line = self.get_line(Number)
-
-        if line is None:
-            error = f'{self.path}:{Number} line not found'
-        else:
-            if MinLen and len(line) < MinLen:
-                error = f'{self.path}:{Number} length must be at least ' \
-                        f'{MinLen}, is {len(line)}: "{line}"'
-            elif MaxLen and len(line) > MaxLen:
-                error = f'{self.path}:{Number} length must not exceed ' \
-                        f'{MaxLen}, is {len(line)}: "{line}"'
-
-        if error:
-            if self.mode is CFileMode.Optional:
-                CUtil.warning(error)
-            else:
-                CUtil.error(error)
-
-            return False
-
-        return True
-
-    def get_line(self, Number):
-        if self.lines is None:
-            self.lines = self.content.splitlines()
-
-        if Number < len(self.lines):
-            return self.lines[Number].strip()
-
-        return None
-
-    def get_content(self):
-        return self.content
-
     def write(self, Text):
         with open(self.path, 'w') as f:
             f.write(Text)
@@ -163,14 +133,15 @@ class CDirs:
     def __init__(self):
         self.pages = CDir('siter-pages', CFileMode.Required, True)
         self.template = CDir('siter-template', CFileMode.Required)
+
         self.config = CDir('siter-config', CFileMode.Optional)
         self.static = CDir('siter-static', CFileMode.Optional)
         self.stubs = CDir('siter-stubs', CFileMode.Optional, True)
+
         self.out = CDir('siter-out', CFileMode.Create)
+        self.staging = CDir('siter-staging', CFileMode.Reset)
 
 class CFiles:
     def __init__(self, Dirs):
         self.defs = Dirs.config.add_file('defs', CFileMode.Optional)
-        self.evalhint = Dirs.config.add_file('eval', CFileMode.Optional)
-        self.tags = Dirs.config.add_file('tags', CFileMode.Optional)
-        self.page_html = Dirs.template.add_file('page.html', CFileMode.Optional)
+        self.page_html = Dirs.template.add_file('page.html', CFileMode.Required)

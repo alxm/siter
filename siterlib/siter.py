@@ -51,10 +51,6 @@ class CSiter:
                                      permalink = ' #'),
                     ])
 
-        # Copy static files
-        if self.dirs.static.exists():
-            self.dirs.static.copy_to(self.dirs.out)
-
         # Variables, macros, and functions
         self.bindings = CBindingCollection(self)
 
@@ -120,8 +116,7 @@ class CSiter:
                                        ReadDir.path_to(self.dirs.pages)))
 
     def __set_file_bindings(self, ReadFile, SetContent):
-        content = ReadFile.get_content()
-        content_tokens = CTokenizer.tokenize(content)
+        content_tokens = CTokenizer.tokenize(ReadFile.content)
         content_tokens = self.__evaluate_collection(content_tokens)
 
         if SetContent:
@@ -221,7 +216,7 @@ class CSiter:
         return eval_tokens
 
     def process_file(self, InFile, ReadDir, TemplateFile, IsStub = False):
-        CUtil.message('Process', InFile.get_path())
+        CUtil.message('Process', InFile.shortpath)
 
         self.bindings.push()
 
@@ -235,7 +230,7 @@ class CSiter:
         try:
             tokens = self.template_tokens[TemplateFile]
         except KeyError:
-            tokens = CTokenizer.tokenize(TemplateFile.get_content())
+            tokens = CTokenizer.tokenize(TemplateFile.content)
             self.template_tokens[TemplateFile] = tokens
 
         final = self.__evaluate_collection(tokens).resolve()
@@ -248,11 +243,10 @@ class CSiter:
         counter = 0
 
         for in_file in ReadDir.get_files():
-            name = in_file.get_name()
-            root, ext = os.path.splitext(name)
+            root, ext = os.path.splitext(in_file.name)
 
             if ext != '.md':
-                CUtil.warning(f'Ignoring page file {name}')
+                CUtil.warning(f'Ignoring page file {in_file.shortpath}')
 
                 continue
 
@@ -262,15 +256,30 @@ class CSiter:
             counter += 1
 
         for read_subdir in ReadDir.get_dirs():
-            write_subdir = WriteDir.add_dir(read_subdir.get_name(),
-                                             CFileMode.Create)
+            write_subdir = WriteDir.add_dir(read_subdir.name, CFileMode.Create)
             counter += self.__work(read_subdir, write_subdir)
 
         return counter
 
     def run(self):
-        start = time.perf_counter()
-        count = self.__work(self.dirs.pages, self.dirs.out)
-        elapsed = round(time.perf_counter() - start + 0.05, 1)
+        if self.dirs.static.exists():
+            start = time.perf_counter()
+            self.dirs.static.copy_to(self.dirs.staging)
+            elapsed_static = round(time.perf_counter() - start, 3)
+        else:
+            elapsed_static = 0
 
-        CUtil.message('Done', f'{count} pages in {elapsed}s')
+        start = time.perf_counter()
+        count = self.__work(self.dirs.pages, self.dirs.staging)
+        elapsed_gen = round(time.perf_counter() - start, 3)
+
+        start = time.perf_counter()
+        self.dirs.staging.replace(self.dirs.out)
+        elapsed_copy = round(time.perf_counter() - start, 3)
+
+        elapsed_total = round(elapsed_static + elapsed_gen + elapsed_copy, 3)
+
+        CUtil.info(f'Copied static files in {elapsed_static}s')
+        CUtil.info(f'Generated {count} pages in {elapsed_gen}s')
+        CUtil.info(f'Moved staging to out in {elapsed_copy}s')
+        CUtil.info(f'Finished in {elapsed_total}s')

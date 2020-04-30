@@ -122,7 +122,7 @@ class CFunctions:
         stubsSubDir = Siter.dirs.stubs.add_dir(Args[1], CFileMode.Required)
 
         stubFiles = sorted(stubsSubDir.get_files(),
-                           key = lambda f: f.get_name(),
+                           key = lambda f: f.name,
                            reverse = True)
 
         if len(Args) == 3:

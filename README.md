@@ -10,6 +10,7 @@ You call `siter` from the project's root directory, which is structured like thi
     ├── siter-config/   # Config files
     ├── siter-out/      # The final generated website
     ├── siter-pages/    # Markdown source pages to be processed
+    ├── siter-staging/  # Working dir before moving to siter-out
     ├── siter-static/   # Static files copied as they are
     ├── siter-stubs/    # Small Markdown files included by pages
     └── siter-template/ # HTML templates
