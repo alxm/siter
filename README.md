@@ -85,23 +85,23 @@ These are the built-in definitions.
 
 Variable | About | Example
 --- | --- | ---
-`content` | The evaluated content of the page file, used in `siter-template/page.html`. | `<div>{{!md {{!content}}}}</div>`
+`content` | The evaluated page file, used by `siter-template/page.html`. | `<html><body>{{!content}}</body></html>`
+`generated` | `YYYY-MM-DD` date when the output file was generated. | `<footer>Page generated on {{!generated}}</footer>`
 `root` | Relative path from the current page to the website root, so you can reference static files from nested pages. | `<img src="{{!root}}/photos/cloud.jpg">`
+`modified` | `YYYY-MM-DD` date when the source file was last modified. | `<footer>Page updated on {{!modified}}</footer>`
 
 Macro | About | Example
 --- | --- | ---
 `anchor` | Makes the text argument suitable to use as an HTML anchor. | `<a href="#{{!anchor Hello World}}">Permalink</a>`
 `apply` | Formats files from a `siter-stubs` subdir with a template file from `siter-template`. | `{{!apply {{news.html}} {{news}} {{5}}}}`
-`datefmt` | Format an ISO date with a Python [time format string](https://strftime.org/). | `This was written on {{!datefmt {{2020-04-29}} {{%B %d, %Y}}}}.`
+`datefmt` | Format a `YYYY-MM-DD` date with a Python [time format string](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes). | `<footer>Last updated {{!datefmt {{!modified}} {{%b %Y}}}}</footer>`
 `def` | Bind a new macro or variable. | `{{!def {{page-title}} {{Home Page}}}}`
-`generated` | The time the page file was generated. | `<p>Siter ran on {{!generated %B %d, %Y}}</p>`
 `if` | `{{!if {{flag}} {{then}} {{else}}}}` evaluates `{{then}}` if the `flag` variable was previously declared (`{{!def flag}}`), or to `{{else}}` otherwise. The else block is optional. | `{{!if {{show-heading}} {{<h1>Welcome!</h1>}}}}`
 `md` | Runs Markdown on the supplied argument. | `{{!md **Hello world!**}}`
-`modified` | The time the source page file was modified. | `<p>Page last updated {{!modified %B %Y}}</p>`
 
 ## Dependencies
 
-Siter uses [Python-Markdown](https://python-markdown.github.io/) (with CodeHiliteExtension and FencedCodeExtension) and [Pygments](https://pygments.org/) for text formatting and code syntax highlighting.
+Siter uses [Python-Markdown](https://python-markdown.github.io/) (with CodeHiliteExtension, FencedCodeExtension, and TocExtension) and [Pygments](https://pygments.org/) for text formatting and code syntax highlighting.
 
     sudo apt install python3 python3-markdown python3-pygments
 

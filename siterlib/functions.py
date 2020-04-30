@@ -57,20 +57,6 @@ class CFunctions:
             return None
 
     @staticmethod
-    def mod_time(_, Args):
-        read_file = Args[0]
-        fmt = Args[1]
-
-        f_time = read_file.get_mod_time()
-        time_obj = time.localtime(f_time)
-
-        return time.strftime(fmt, time_obj)
-
-    @staticmethod
-    def gen_time(_, Args):
-        return time.strftime(Args[0])
-
-    @staticmethod
     def datefmt(_, Args):
         iso_date = Args[0]
         fmt_string = Args[1]

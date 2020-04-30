@@ -66,6 +66,10 @@ class CSiter:
             self.__set_file_bindings(self.files.defs, False)
 
     def __set_global_bindings(self):
+        self.bindings.add_variable(CSettings.Generated,
+                                   CTokenizer.tokenize(
+                                    time.strftime('%Y-%m-%d')))
+
         self.bindings.add_function(CSettings.Def,
                                    [1, 2, 3],
                                    CFunctions.declare_binding,
@@ -77,11 +81,6 @@ class CSiter:
                                    CFunctions.if_check,
                                    Protected = True,
                                    Lazy = True)
-
-        self.bindings.add_function(CSettings.Generated,
-                                   [1],
-                                   CFunctions.gen_time,
-                                   Protected = True)
 
         self.bindings.add_function(CSettings.Datefmt,
                                    [2],
@@ -109,11 +108,12 @@ class CSiter:
                                    Protected = True)
 
     def __set_local_bindings(self, ReadFile, ReadDir):
-        self.bindings.add_function(CSettings.Modified,
-                                   [1],
-                                   lambda _, args: \
-                                       CFunctions.mod_time(
-                                        _, [ReadFile] + args))
+        f_time = ReadFile.get_mod_time()
+        time_obj = time.localtime(f_time)
+
+        self.bindings.add_variable(CSettings.Modified,
+                                   CTokenizer.tokenize(
+                                    time.strftime('%Y-%m-%d', time_obj)))
 
         self.bindings.add_variable(CSettings.Root,
                                    CTokenizer.tokenize(
