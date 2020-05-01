@@ -19,6 +19,7 @@
 
 import enum, os, shutil
 
+from .tokenizer import *
 from .util import *
 
 class CFileMode(enum.Enum):
@@ -103,15 +104,8 @@ class CTextFile(CFile):
     def __init__(self, Path, Mode):
         CFile.__init__(self, Path, Mode)
 
-        self.content = None
-
-        if self.mode is not CFileMode.Create:
-            try:
-                with open(self.path, 'rU') as f:
-                    self.content = f.read()
-            except FileNotFoundError:
-                if self.mode is not CFileMode.Optional:
-                    CUtil.error(f'Required file {self.path} not found')
+        with open(self.path, 'rU') as f:
+            self.tokens = CTokenizer.tokenize(f.read())
 
     def path_to(self, Target):
         return os.path.relpath(Target.path, start = os.path.dirname(self.path))

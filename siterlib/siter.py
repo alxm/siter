@@ -36,10 +36,7 @@ class CSiter:
     def __init__(self, Argv):
         start_total = time.perf_counter()
 
-        # Cached template tokens
-        self.template_tokens = {}
-
-        # Declare and optionally create the dirs and files Siter uses
+        # Declare project dirs and load files
         self.dirs = CDirs()
 
         self.md = markdown.Markdown(
@@ -139,8 +136,7 @@ class CSiter:
                                    CTokenizer.text(rel_root))
 
     def __set_file_bindings(self, ReadFile, SetContent):
-        content_tokens = CTokenizer.tokenize(ReadFile.content)
-        content_tokens = self.__evaluate_collection(content_tokens)
+        content_tokens = self.__evaluate_collection(ReadFile.tokens)
 
         if SetContent:
             self.bindings.add_variable(CSettings.Content,
@@ -250,13 +246,7 @@ class CSiter:
         self.__set_file_bindings(InFile, True)
 
         # Load template and replace variables and functions with bindings
-        try:
-            tokens = self.template_tokens[TemplateFile]
-        except KeyError:
-            tokens = CTokenizer.tokenize(TemplateFile.content)
-            self.template_tokens[TemplateFile] = tokens
-
-        final = self.__evaluate_collection(tokens).resolve()
+        final = self.__evaluate_collection(TemplateFile.tokens).resolve()
 
         self.bindings.pop()
 
