@@ -61,35 +61,24 @@ class CDir(CFile):
         if not self.exists() or not ReadContents:
             return
 
-        for path in [os.path.join(self.path, p) for p in os.listdir(self.path)]:
-            if os.path.isfile(path):
-                self.files[path] = CTextFile(path, CFileMode.Required)
-            elif os.path.isdir(path):
-                self.dirs[path] = CDir(path, CFileMode.Required, True)
-            else:
-                CUtil.error(f'Invalid file {path}')
+        for rootdir, dirs, files in os.walk(self.path):
+            self.dirs[rootdir] = []
 
-    def get_dirs(self):
-        return self.dirs.values()
+            for f in files:
+                full_path = os.path.join(rootdir, f)
+                text_file = CTextFile(full_path, CFileMode.Required)
+
+                self.files[full_path] = text_file
+                self.dirs[rootdir].append(text_file)
+
+    def get_dir_files(self, RelDirPath):
+        return self.dirs[os.path.join(self.path, RelDirPath)]
 
     def get_files(self):
         return self.files.values()
 
-    def add_dir(self, SubDir, Mode):
-        path = os.path.join(self.path, SubDir)
-
-        if path not in self.dirs:
-            self.dirs[path] = CDir(path, Mode)
-
-        return self.dirs[path]
-
-    def add_file(self, Name, Mode):
-        path = os.path.join(self.path, Name)
-
-        if path not in self.files:
-            self.files[path] = CTextFile(path, Mode)
-
-        return self.files[path]
+    def get_file(self, Name):
+        return self.files[os.path.join(self.path, Name)]
 
     def path_to(self, Target):
         return os.path.relpath(Target.path, start = self.path)
@@ -115,7 +104,6 @@ class CTextFile(CFile):
         CFile.__init__(self, Path, Mode)
 
         self.content = None
-        self.lines = None
 
         if self.mode is not CFileMode.Create:
             try:
@@ -125,23 +113,27 @@ class CTextFile(CFile):
                 if self.mode is not CFileMode.Optional:
                     CUtil.error(f'Required file {self.path} not found')
 
-    def write(self, Text):
-        with open(self.path, 'w') as f:
+    def path_to(self, Target):
+        return os.path.relpath(Target.path, start = os.path.dirname(self.path))
+
+    def write(self, Text, WriteRoot, ReadRoot):
+        out_dir = os.path.join(WriteRoot.path,
+                               os.path.dirname(ReadRoot.path_to(self)))
+        no_ext_name, _ = os.path.splitext(self.name)
+
+        os.makedirs(out_dir, exist_ok = True)
+
+        with open(os.path.join(out_dir, f'{no_ext_name}.html'), 'w') as f:
             f.write(Text)
 
 class CDirs:
     def __init__(self):
         self.pages = CDir('siter-pages', CFileMode.Required, True)
-        self.template = CDir('siter-template', CFileMode.Required)
+        self.template = CDir('siter-template', CFileMode.Required, True)
 
-        self.config = CDir('siter-config', CFileMode.Optional)
+        self.config = CDir('siter-config', CFileMode.Optional, True)
         self.static = CDir('siter-static', CFileMode.Optional)
         self.stubs = CDir('siter-stubs', CFileMode.Optional, True)
 
         self.out = CDir('siter-out', CFileMode.Create)
         self.staging = CDir('siter-staging', CFileMode.Reset)
-
-class CFiles:
-    def __init__(self, Dirs):
-        self.defs = Dirs.config.add_file('defs', CFileMode.Optional)
-        self.page_html = Dirs.template.add_file('page.html', CFileMode.Required)

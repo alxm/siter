@@ -118,10 +118,8 @@ class CFunctions:
     def apply_template(Siter, Args):
         out = ''
 
-        templateFile = Siter.dirs.template.add_file(Args[0], CFileMode.Optional)
-        stubsSubDir = Siter.dirs.stubs.add_dir(Args[1], CFileMode.Required)
-
-        stubFiles = sorted(stubsSubDir.get_files(),
+        templateFile = Siter.dirs.template.get_file(Args[0])
+        stubFiles = sorted(Siter.dirs.stubs.get_dir_files(Args[1]),
                            key = lambda f: f.name,
                            reverse = True)
 
@@ -129,6 +127,6 @@ class CFunctions:
             stubFiles = stubFiles[: int(Args[2])]
 
         for f in stubFiles:
-            out += Siter.process_file(f, stubsSubDir, templateFile, True)
+            out += Siter.process_file(f, templateFile, True)
 
         return out

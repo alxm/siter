@@ -1,6 +1,5 @@
 import sys
 
-from .siter import *
+from .siter import CSiter
 
-siter = CSiter(sys.argv)
-siter.run()
+CSiter(sys.argv)

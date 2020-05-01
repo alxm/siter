@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os, time
+import time
 
 import markdown
 from markdown.extensions.codehilite import CodeHiliteExtension
@@ -34,12 +34,13 @@ from .util import *
 
 class CSiter:
     def __init__(self, Argv):
+        start_total = time.perf_counter()
+
         # Cached template tokens
         self.template_tokens = {}
 
         # Declare and optionally create the dirs and files Siter uses
         self.dirs = CDirs()
-        self.files = CFiles(self.dirs)
 
         self.md = markdown.Markdown(
                     output_format = 'html5',
@@ -58,8 +59,30 @@ class CSiter:
         self.__set_global_bindings()
 
         # Get user global bindings, if any
-        if self.files.defs.exists():
-            self.__set_file_bindings(self.files.defs, False)
+        for f in self.dirs.config.get_files():
+            self.__set_file_bindings(f, False)
+
+        if self.dirs.static.exists():
+            start = time.perf_counter()
+            self.dirs.static.copy_to(self.dirs.staging)
+            elapsed_static = round(time.perf_counter() - start, 3)
+        else:
+            elapsed_static = 0
+
+        start = time.perf_counter()
+        count = self.__work()
+        elapsed_gen = round(time.perf_counter() - start, 3)
+
+        start = time.perf_counter()
+        self.dirs.staging.replace(self.dirs.out)
+        elapsed_copy = round(time.perf_counter() - start, 3)
+
+        elapsed_total = round(time.perf_counter() - start_total, 3)
+
+        CUtil.info(f'Copied static files in {elapsed_static}s')
+        CUtil.info(f'Generated {count} pages in {elapsed_gen}s')
+        CUtil.info(f'Moved staging to out in {elapsed_copy}s')
+        CUtil.info(f'Finished in {elapsed_total}s')
 
     def __set_global_bindings(self):
         self.bindings.add_variable(CSettings.Generated,
@@ -103,7 +126,7 @@ class CSiter:
                                    CFunctions.apply_template,
                                    Protected = True)
 
-    def __set_local_bindings(self, ReadFile, ReadDir):
+    def __set_local_bindings(self, ReadFile):
         f_time = ReadFile.get_mod_time()
         time_obj = time.localtime(f_time)
 
@@ -111,9 +134,10 @@ class CSiter:
                                    CTokenizer.tokenize(
                                     time.strftime('%Y-%m-%d', time_obj)))
 
+        rel_root = ReadFile.path_to(self.dirs.pages)
+
         self.bindings.add_variable(CSettings.Root,
-                                   CTokenizer.tokenize(
-                                       ReadDir.path_to(self.dirs.pages)))
+                                   CTokenizer.tokenize(rel_root))
 
     def __set_file_bindings(self, ReadFile, SetContent):
         content_tokens = CTokenizer.tokenize(ReadFile.content)
@@ -215,14 +239,14 @@ class CSiter:
 
         return eval_tokens
 
-    def process_file(self, InFile, ReadDir, TemplateFile, IsStub = False):
+    def process_file(self, InFile, TemplateFile, IsStub = False):
         CUtil.message('Process', InFile.shortpath)
 
         self.bindings.push()
 
         # Keep root path relative to the file that invoked the stub
         if not IsStub:
-            self.__set_local_bindings(InFile, ReadDir)
+            self.__set_local_bindings(InFile)
 
         self.__set_file_bindings(InFile, True)
 
@@ -239,47 +263,19 @@ class CSiter:
 
         return final
 
-    def __work(self, ReadDir, WriteDir):
+    def __work(self):
         counter = 0
+        page_template = self.dirs.template.get_file('page.html')
 
-        for in_file in ReadDir.get_files():
-            root, ext = os.path.splitext(in_file.name)
-
-            if ext != '.md':
+        for in_file in self.dirs.pages.get_files():
+            if not in_file.name.endswith('.md'):
                 CUtil.warning(f'Ignoring page file {in_file.shortpath}')
 
                 continue
 
-            out_file = WriteDir.add_file(f'{root}.html', CFileMode.Create)
-            output = self.process_file(in_file, ReadDir, self.files.page_html)
-            out_file.write(output)
+            output = self.process_file(in_file, page_template)
+            in_file.write(output, self.dirs.staging, self.dirs.pages)
+
             counter += 1
 
-        for read_subdir in ReadDir.get_dirs():
-            write_subdir = WriteDir.add_dir(read_subdir.name, CFileMode.Create)
-            counter += self.__work(read_subdir, write_subdir)
-
         return counter
-
-    def run(self):
-        if self.dirs.static.exists():
-            start = time.perf_counter()
-            self.dirs.static.copy_to(self.dirs.staging)
-            elapsed_static = round(time.perf_counter() - start, 3)
-        else:
-            elapsed_static = 0
-
-        start = time.perf_counter()
-        count = self.__work(self.dirs.pages, self.dirs.staging)
-        elapsed_gen = round(time.perf_counter() - start, 3)
-
-        start = time.perf_counter()
-        self.dirs.staging.replace(self.dirs.out)
-        elapsed_copy = round(time.perf_counter() - start, 3)
-
-        elapsed_total = round(elapsed_static + elapsed_gen + elapsed_copy, 3)
-
-        CUtil.info(f'Copied static files in {elapsed_static}s')
-        CUtil.info(f'Generated {count} pages in {elapsed_gen}s')
-        CUtil.info(f'Moved staging to out in {elapsed_copy}s')
-        CUtil.info(f'Finished in {elapsed_total}s')

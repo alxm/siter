@@ -7,7 +7,7 @@ Siter is a static website generator written in Python 3, "Markdown with macros a
 You call `siter` from the project's root directory, which is structured like this:
 
     <project>/
-    ├── siter-config/   # Config files
+    ├── siter-config/   # Global definitions
     ├── siter-out/      # The final generated website
     ├── siter-pages/    # Markdown source pages to be processed
     ├── siter-staging/  # Working dir before moving to siter-out
@@ -17,7 +17,7 @@ You call `siter` from the project's root directory, which is structured like thi
 
 * Files and directories from `siter-static/` are copied to `siter-out/` as they are.
 * Source pages from `siter-pages/` are evaluated, formatted with Markdown, fitted in `siter-template/page.html`, and finally written to `siter-out/`.
-* `siter-config/defs` file contains global definitions that are available to every page and template to use.
+* Files in `siter-config/` contain global definitions available to every page and template.
 
 ### Quick Example
 
