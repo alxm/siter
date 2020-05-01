@@ -86,8 +86,7 @@ class CSiter:
 
     def __set_global_bindings(self):
         self.bindings.add_variable(CSettings.Generated,
-                                   CTokenizer.tokenize(
-                                    time.strftime('%Y-%m-%d')))
+                                   CTokenizer.text(time.strftime('%Y-%m-%d')))
 
         self.bindings.add_function(CSettings.Def,
                                    [1, 2, 3],
@@ -131,13 +130,13 @@ class CSiter:
         time_obj = time.localtime(f_time)
 
         self.bindings.add_variable(CSettings.Modified,
-                                   CTokenizer.tokenize(
-                                    time.strftime('%Y-%m-%d', time_obj)))
+                                   CTokenizer.text(time.strftime('%Y-%m-%d',
+                                                                 time_obj)))
 
         rel_root = ReadFile.path_to(self.dirs.pages)
 
         self.bindings.add_variable(CSettings.Root,
-                                   CTokenizer.tokenize(rel_root))
+                                   CTokenizer.text(rel_root))
 
     def __set_file_bindings(self, ReadFile, SetContent):
         content_tokens = CTokenizer.tokenize(ReadFile.content)

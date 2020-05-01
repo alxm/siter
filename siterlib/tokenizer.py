@@ -112,3 +112,6 @@ class CTokenizer:
         block_tokens = CTokenizer.__make_block_tokens(flat_tokens)
 
         return block_tokens
+
+    def text(Text):
+        return CTokenCollection([CTokenText(Text)])
