@@ -52,6 +52,9 @@ class CSiter:
         # Variables, macros, and functions
         self.bindings = CBindingCollection(self)
 
+        # Cached processed stub files that may be used by multiple pages
+        self.__stubs_cache = {}
+
         # Set built-in global bindings
         self.__set_global_bindings()
 
@@ -237,6 +240,9 @@ class CSiter:
     def process_file(self, InFile, TemplateFile, IsStub = False):
         CUtil.message('Process', InFile.shortpath)
 
+        if IsStub and InFile.shortpath in self.__stubs_cache:
+            return self.__stubs_cache[InFile.shortpath]
+
         self.bindings.push()
 
         # Keep root path relative to the file that invoked the stub
@@ -249,6 +255,9 @@ class CSiter:
         final = self.__evaluate_collection(TemplateFile.tokens).resolve()
 
         self.bindings.pop()
+
+        if IsStub:
+            self.__stubs_cache[InFile.shortpath] = final
 
         return final
 
