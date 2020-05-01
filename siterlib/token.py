@@ -91,9 +91,6 @@ class CTokenCollection:
     def add_token(self, Token):
         self.tokens.append(Token)
 
-    def add_tokens(self, Tokens):
-        self.tokens += Tokens
-
     def add_collection(self, Collection):
         self.tokens += Collection.tokens
 

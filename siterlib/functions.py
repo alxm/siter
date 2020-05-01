@@ -116,17 +116,13 @@ class CFunctions:
 
     @staticmethod
     def apply_template(Siter, Args):
-        out = ''
-
         templateFile = Siter.dirs.template.get_file(Args[0])
-        stubFiles = sorted(Siter.dirs.stubs.get_dir_files(Args[1]),
-                           key = lambda f: f.name,
-                           reverse = True)
+        stub_files = sorted(Siter.dirs.stubs.get_dir_files(Args[1]),
+                            key = lambda f: f.name,
+                            reverse = True)
 
         if len(Args) == 3:
-            stubFiles = stubFiles[: int(Args[2])]
+            stub_files = stub_files[: int(Args[2])]
 
-        for f in stubFiles:
-            out += Siter.process_file(f, templateFile, True)
-
-        return out
+        return ''.join([Siter.process_file(f, templateFile, True)
+                            for f in stub_files])
