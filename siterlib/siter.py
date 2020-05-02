@@ -36,9 +36,6 @@ class CSiter:
     def __init__(self, Argv):
         start_total = time.perf_counter()
 
-        # Declare project dirs and load files
-        self.dirs = CDirs()
-
         self.md = markdown.Markdown(
                     output_format = 'html5',
                     extensions = [
@@ -49,18 +46,17 @@ class CSiter:
                                      permalink = ' #'),
                     ])
 
-        # Variables, macros, and functions
+        start = time.perf_counter()
+
+        self.dirs = CDirs()
         self.bindings = CBindingCollection(self)
-
-        # Cached processed stub files that may be used by multiple pages
         self.__stubs_cache = {}
-
-        # Set built-in global bindings
         self.__set_global_bindings()
 
-        # Get user global bindings, if any
         for f in self.dirs.config.get_files():
             self.__set_file_bindings(f, False)
+
+        elapsed_load = round(time.perf_counter() - start, 3)
 
         if self.dirs.static.exists():
             start = time.perf_counter()
@@ -79,6 +75,7 @@ class CSiter:
 
         elapsed_total = round(time.perf_counter() - start_total, 3)
 
+        CUtil.info(f'Loaded files in {elapsed_load}s')
         CUtil.info(f'Copied static files in {elapsed_static}s')
         CUtil.info(f'Generated {count} pages in {elapsed_gen}s')
         CUtil.info(f'Moved staging to out in {elapsed_copy}s')

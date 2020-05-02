@@ -103,6 +103,7 @@ class CDir(CFile):
 class CTextFile(CFile):
     def __init__(self, Path, Mode):
         CFile.__init__(self, Path, Mode)
+        CUtil.message('Load', self.shortpath)
 
         with open(self.path, 'rU') as f:
             self.tokens = CTokenizer.tokenize(f.read())
