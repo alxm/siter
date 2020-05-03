@@ -102,7 +102,7 @@ Macro | About | Example
 
 ## Dependencies
 
-Siter uses [Python-Markdown](https://python-markdown.github.io/) (with CodeHiliteExtension, FencedCodeExtension, and TocExtension) and [Pygments](https://pygments.org/) for text formatting and code syntax highlighting.
+Siter uses [Python-Markdown](https://python-markdown.github.io/) (with CodeHiliteExtension, FencedCodeExtension, and TocExtension) and [Pygments](https://pygments.org/) for text formatting and code syntax highlighting, along with *enum, os, shutil, sys, time,* and *traceback* from the standard library.
 
     sudo apt install python3 python3-markdown python3-pygments
 

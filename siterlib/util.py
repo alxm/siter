@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import sys
+import sys, traceback
 
 class CUtil:
     @staticmethod
@@ -31,6 +31,8 @@ class CUtil:
     @staticmethod
     def error(Message):
         CUtil.message('Error', Message, 1)
+        CUtil.message('Call Stack', '', 1)
+        traceback.print_stack()
         sys.exit(1)
 
     @staticmethod
