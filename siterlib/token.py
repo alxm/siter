@@ -46,6 +46,9 @@ class CTokenTagClose(CTokenMarker):
 class CTokenEval(CTokenMarker):
     DefaultText = CSettings.EvalHint
 
+class CTokenEscape(CTokenMarker):
+    DefaultText = '\\'
+
 class CTokenBlock(CToken):
     def __init__(self, Tokens):
         self.tokens = Tokens

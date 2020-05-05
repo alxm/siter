@@ -25,16 +25,22 @@ class CTokenizer:
     def __make_flat_tokens(Text):
         flat_tokens = []
         current_type = None
-        escaped = False
-        escaped_index = -1
         current_text = []
 
+        def add_token(Token):
+            if len(flat_tokens) == 0:
+                flat_tokens.append(Token)
+            else:
+                last_token = flat_tokens[-1]
+
+                if type(last_token) == CTokenEscape \
+                    and isinstance(Token, CTokenMarker):
+
+                    flat_tokens[-1] = CTokenText(Token.DefaultText)
+                else:
+                    flat_tokens.append(Token)
+
         for current_char in Text:
-            if current_char == '\\' and not escaped:
-                escaped = True
-
-                continue
-
             previous_type = current_type
 
             if current_char.isspace():
@@ -46,37 +52,33 @@ class CTokenizer:
                 current_text.append(current_char)
             else:
                 if len(current_text) > 0:
-                    flat_tokens.append(previous_type(''.join(current_text)))
+                    add_token(previous_type(''.join(current_text)))
 
                 current_text = [current_char]
-                escaped_index = -1
 
-            if escaped:
-                escaped = False
-                escaped_index = len(current_text) - 1
+            for token_type in \
+                [CTokenTagOpen, CTokenTagClose, CTokenEval, CTokenEscape]:
 
-            for token_type in [CTokenTagOpen, CTokenTagClose, CTokenEval]:
                 token_text = token_type.DefaultText
 
-                if len(current_text) - escaped_index <= len(token_text):
+                if len(current_text) < len(token_text):
                     continue
 
                 if ''.join(current_text[-len(token_text) :]) != token_text:
                     continue
 
                 if len(current_text) > len(token_text):
-                    flat_tokens.append(
+                    add_token(
                         CTokenText(''.join(current_text[: -len(token_text)])))
 
-                flat_tokens.append(token_type())
+                add_token(token_type())
 
                 current_text = []
-                escaped_index = -1
 
                 break
 
         if len(current_text) > 0:
-            flat_tokens.append(current_type(''.join(current_text)))
+            add_token(current_type(''.join(current_text)))
 
         return flat_tokens
 
