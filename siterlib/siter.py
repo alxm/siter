@@ -34,8 +34,11 @@ from .util import *
 
 class CSiter:
     def __init__(self, Argv):
-        start_total = time.perf_counter()
+        elapsed_total = CUtil.time_step(self.__step_main)
 
+        CUtil.info(f'Finished in {elapsed_total}s')
+
+    def __step_main(self):
         self.md = markdown.Markdown(
                     output_format = 'html5',
                     extensions = [
@@ -46,8 +49,18 @@ class CSiter:
                                      permalink = ' #'),
                     ])
 
-        start = time.perf_counter()
+        elapsed_load = CUtil.time_step(self.__step_load)
+        elapsed_static = CUtil.time_step(self.__step_static)
+        elapsed_gen = CUtil.time_step(self.__step_gen)
+        elapsed_copy = CUtil.time_step(self.__step_copy)
 
+        CUtil.info(f'Loaded page files in {elapsed_load}s')
+        CUtil.info(f'Copied static files in {elapsed_static}s')
+        CUtil.info(f'Generated {len(self.dirs.pages.get_files())} pages '
+                   f'in {elapsed_gen}s')
+        CUtil.info(f'Moved staging to out in {elapsed_copy}s')
+
+    def __step_load(self):
         self.dirs = CDirs()
         self.bindings = CBindingCollection(self)
         self.__stubs_cache = {}
@@ -56,30 +69,19 @@ class CSiter:
         for f in self.dirs.config.get_files():
             self.__set_file_bindings(f, False)
 
-        elapsed_load = round(time.perf_counter() - start, 3)
-
+    def __step_static(self):
         if self.dirs.static.exists():
-            start = time.perf_counter()
             self.dirs.static.copy_to(self.dirs.staging)
-            elapsed_static = round(time.perf_counter() - start, 3)
-        else:
-            elapsed_static = 0
 
-        start = time.perf_counter()
-        count = self.__work()
-        elapsed_gen = round(time.perf_counter() - start, 3)
+    def __step_gen(self):
+        page_template = self.dirs.template.get_file('page.html')
 
-        start = time.perf_counter()
+        for in_file in self.dirs.pages.get_files():
+            output = self.process_file(in_file, page_template)
+            in_file.write(output, self.dirs.staging, self.dirs.pages)
+
+    def __step_copy(self):
         self.dirs.staging.replace(self.dirs.out)
-        elapsed_copy = round(time.perf_counter() - start, 3)
-
-        elapsed_total = round(time.perf_counter() - start_total, 3)
-
-        CUtil.info(f'Loaded files in {elapsed_load}s')
-        CUtil.info(f'Copied static files in {elapsed_static}s')
-        CUtil.info(f'Generated {count} pages in {elapsed_gen}s')
-        CUtil.info(f'Moved staging to out in {elapsed_copy}s')
-        CUtil.info(f'Finished in {elapsed_total}s')
 
     def __set_global_bindings(self):
         self.bindings.add_variable(CSettings.Generated,
@@ -257,20 +259,3 @@ class CSiter:
             self.__stubs_cache[InFile.shortpath] = final
 
         return final
-
-    def __work(self):
-        counter = 0
-        page_template = self.dirs.template.get_file('page.html')
-
-        for in_file in self.dirs.pages.get_files():
-            if not in_file.name.endswith('.md'):
-                CUtil.warning(f'Ignoring page file {in_file.shortpath}')
-
-                continue
-
-            output = self.process_file(in_file, page_template)
-            in_file.write(output, self.dirs.staging, self.dirs.pages)
-
-            counter += 1
-
-        return counter

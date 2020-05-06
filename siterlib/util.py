@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import sys, traceback
+import sys, time, traceback
 
 class CUtil:
     @staticmethod
@@ -42,3 +42,10 @@ class CUtil:
     @staticmethod
     def info(Message):
         CUtil.message('Info', Message, 4)
+
+    @staticmethod
+    def time_step(Function):
+        start = time.perf_counter()
+        Function()
+
+        return round(time.perf_counter() - start, 3)

@@ -45,7 +45,7 @@ class CFile:
         return os.stat(self.path).st_mtime
 
 class CDir(CFile):
-    def __init__(self, Path, Mode, ReadContents = False):
+    def __init__(self, Path, Mode, ReadContents = False, AllowedExtension = ''):
         CFile.__init__(self, Path, Mode)
 
         self.files = {}
@@ -65,7 +65,7 @@ class CDir(CFile):
         for rootdir, dirs, files in os.walk(self.path):
             self.dirs[rootdir] = []
 
-            for f in files:
+            for f in filter(lambda f: f.endswith(AllowedExtension), files):
                 full_path = os.path.join(rootdir, f)
                 text_file = CTextFile(full_path, CFileMode.Required)
 
@@ -123,7 +123,7 @@ class CTextFile(CFile):
 
 class CDirs:
     def __init__(self):
-        self.pages = CDir('siter-pages', CFileMode.Required, True)
+        self.pages = CDir('siter-pages', CFileMode.Required, True, '.md')
         self.template = CDir('siter-template', CFileMode.Required, True)
 
         self.config = CDir('siter-config', CFileMode.Optional, True)
