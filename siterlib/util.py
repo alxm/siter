@@ -18,6 +18,7 @@
 """
 
 import sys, time, traceback
+import http.server, os, socketserver, subprocess, threading
 
 class CUtil:
     @staticmethod
@@ -49,3 +50,35 @@ class CUtil:
         Function()
 
         return round(time.perf_counter() - start, 3)
+
+    @staticmethod
+    def run_server(RootPath):
+        os.chdir(RootPath)
+
+        host = 'localhost'
+        port = 0
+        server = socketserver.TCPServer(
+                    (host, port), http.server.SimpleHTTPRequestHandler)
+
+        with server:
+            host, port = server.server_address
+            url = f'http://{host}:{port}'
+
+            server_thread = threading.Thread(target = server.serve_forever)
+            server_thread.start()
+
+            CUtil.info(f'Web server running at {url}')
+
+            cmd = f'firefox -new-window {url}'
+            status, output = subprocess.getstatusoutput(cmd)
+
+            for line in output.splitlines():
+                CUtil.message('Browser', line)
+
+            if status != 0:
+                sys.exit(status)
+
+            input('\nPress ENTER to exit web server\n\n')
+
+            server.shutdown()
+            server_thread.join()

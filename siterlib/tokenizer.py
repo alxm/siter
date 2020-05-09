@@ -93,7 +93,7 @@ class CTokenizer:
             else:
                 if type(token) is CTokenTagClose:
                     if len(stack) == 0:
-                        CUtil.error("Found extra closing tag")
+                        CUtil.error('Found extra closing tag')
 
                     # Got the closing tag, pop the block from the stack
                     token = stack.pop()
@@ -104,7 +104,7 @@ class CTokenizer:
                     block_tokens.add_token(token)
 
         if len(stack) > 0:
-            CUtil.error("Missing closing tag")
+            CUtil.error('Missing closing tag')
 
         return block_tokens
 

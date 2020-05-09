@@ -4,20 +4,18 @@ Siter is a static website generator written in Python 3, "Markdown with macros a
 
 ## What does it do?
 
-You call `siter` from the project's root directory, which is structured like this:
+You call `siter [gen | run | serve]` from the project's root, which is layed out like this:
 
     <project>/
     ├── siter-config/   # Global definitions
     ├── siter-out/      # The final generated website
     ├── siter-pages/    # Markdown source pages to be processed
-    ├── siter-staging/  # Working dir before moving to siter-out
     ├── siter-static/   # Static files copied as they are
-    ├── siter-stubs/    # Small Markdown files included by pages
     └── siter-template/ # HTML templates
 
 * Files and directories from `siter-static/` are copied to `siter-out/` as they are.
-* Source pages from `siter-pages/` are evaluated, formatted with Markdown, fitted in `siter-template/page.html`, and finally written to `siter-out/`.
-* Files in `siter-config/` contain global definitions available to every page and template.
+* Markdown files from `siter-pages/` are evaluated, formatted, fitted in `siter-template/page.html`, and finally written to `siter-out/` as HTML pages.
+* Files from `siter-config/` contain global definitions that are available during page generation.
 
 ### Quick Example
 
@@ -102,7 +100,7 @@ Macro | About | Example
 
 ## Dependencies
 
-Siter uses [Python-Markdown](https://python-markdown.github.io/) (with CodeHiliteExtension, FencedCodeExtension, and TocExtension) and [Pygments](https://pygments.org/) for text formatting and code syntax highlighting, along with *enum, os, shutil, sys, time,* and *traceback* from the standard library.
+Siter uses [Python-Markdown](https://python-markdown.github.io/) (with CodeHiliteExtension, FencedCodeExtension, and TocExtension) and [Pygments](https://pygments.org/) for text formatting and code syntax highlighting, along with *enum, http.server, os, shutil, socketserver, subprocess, sys, threading, time,* and *traceback* from the standard library.
 
     sudo apt install python3 python3-markdown python3-pygments
 

@@ -34,9 +34,37 @@ from .util import *
 
 class CSiter:
     def __init__(self, Argv):
-        elapsed_total = CUtil.time_step(self.__step_main)
+        do_gen = False
+        do_serve = False
 
-        CUtil.info(f'Finished in {elapsed_total}s')
+        if len(Argv) > 1:
+            command = Argv[1]
+
+            if command == 'gen':
+                do_gen = True
+            elif command == 'run':
+                do_gen = True
+                do_serve = True
+            elif command == 'serve':
+                do_serve = True
+            else:
+                CUtil.error(f'Unknown command "{command}"')
+        else:
+            do_gen = True
+
+        self._log_out = []
+
+        if do_gen:
+            self._log('Total Gen', self.__step_main)
+
+        if do_serve:
+            self._log('Total Serve', self.__step_serve)
+
+        for line in self._log_out:
+            CUtil.info(line)
+
+    def _log(self, Tag, Function):
+        self._log_out.append(f'{Tag}: {CUtil.time_step(Function)}s')
 
     def __step_main(self):
         self.md = markdown.Markdown(
@@ -49,16 +77,14 @@ class CSiter:
                                      permalink = ' #'),
                     ])
 
-        elapsed_load = CUtil.time_step(self.__step_load)
-        elapsed_static = CUtil.time_step(self.__step_static)
-        elapsed_gen = CUtil.time_step(self.__step_gen)
-        elapsed_copy = CUtil.time_step(self.__step_copy)
+        self._log('Load pages', self.__step_load)
+        self._log('Copy static', self.__step_static)
+        self._log('Generate pages', self.__step_gen)
+        self._log('Copy output', self.__step_copy)
 
-        CUtil.info(f'Loaded page files in {elapsed_load}s')
-        CUtil.info(f'Copied static files in {elapsed_static}s')
-        CUtil.info(f'Generated {len(self.dirs.pages.get_files())} pages '
-                   f'in {elapsed_gen}s')
-        CUtil.info(f'Moved staging to out in {elapsed_copy}s')
+    def __step_serve(self):
+        self._log('Load pages', self.__step_load)
+        self._log('Serve output', self.__step_run)
 
     def __step_load(self):
         self.dirs = CDirs()
@@ -68,6 +94,9 @@ class CSiter:
 
         for f in self.dirs.config.get_files():
             self.__set_file_bindings(f, False)
+
+    def __step_run(self):
+        CUtil.run_server(self.dirs.out.path)
 
     def __step_static(self):
         if self.dirs.static.exists():
