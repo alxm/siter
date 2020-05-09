@@ -18,6 +18,15 @@
 """
 
 class CSettings:
+    # Project dirs
+    DirConfig = 'siter-config'
+    DirOut = 'siter-out'
+    DirPages = 'siter-pages'
+    DirStaging = 'siter-staging'
+    DirStatic = 'siter-static'
+    DirStubs = 'siter-stubs'
+    DirTemplate = 'siter-template'
+
     # Blocks that start with this are evaluated; must be exactly 1 char
     EvalHint = '!'
 

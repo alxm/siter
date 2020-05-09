@@ -83,8 +83,7 @@ class CSiter:
         self._log('Copy output', self.__step_copy)
 
     def __step_serve(self):
-        self._log('Load pages', self.__step_load)
-        self._log('Serve output', self.__step_run)
+        CUtil.run_server(CSettings.DirOut)
 
     def __step_load(self):
         self.dirs = CDirs()
@@ -94,9 +93,6 @@ class CSiter:
 
         for f in self.dirs.config.get_files():
             self.__set_file_bindings(f, False)
-
-    def __step_run(self):
-        CUtil.run_server(self.dirs.out.path)
 
     def __step_static(self):
         if self.dirs.static.exists():

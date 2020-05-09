@@ -19,6 +19,7 @@
 
 import enum, os, shutil
 
+from .settings import *
 from .tokenizer import *
 from .util import *
 
@@ -123,12 +124,12 @@ class CTextFile(CFile):
 
 class CDirs:
     def __init__(self):
-        self.pages = CDir('siter-pages', CFileMode.Required, True, '.md')
-        self.template = CDir('siter-template', CFileMode.Required, True)
+        self.pages = CDir(CSettings.DirPages, CFileMode.Required, True, '.md')
+        self.template = CDir(CSettings.DirTemplate, CFileMode.Required, True)
 
-        self.config = CDir('siter-config', CFileMode.Optional, True)
-        self.static = CDir('siter-static', CFileMode.Optional)
-        self.stubs = CDir('siter-stubs', CFileMode.Optional, True)
+        self.config = CDir(CSettings.DirConfig, CFileMode.Optional, True)
+        self.static = CDir(CSettings.DirStatic, CFileMode.Optional)
+        self.stubs = CDir(CSettings.DirStubs, CFileMode.Optional, True)
 
-        self.out = CDir('siter-out', CFileMode.Create)
-        self.staging = CDir('siter-staging', CFileMode.Reset)
+        self.out = CDir(CSettings.DirOut, CFileMode.Create)
+        self.staging = CDir(CSettings.DirStaging, CFileMode.Reset)
