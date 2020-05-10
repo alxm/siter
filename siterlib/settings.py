@@ -26,6 +26,7 @@ class CSettings:
     DirStatic = 'siter-static'
     DirStubs = 'siter-stubs'
     DirTemplate = 'siter-template'
+    TemplatePage = 'page.html'
 
     # Blocks that start with this are evaluated; must be exactly 1 char
     EvalHint = '!'

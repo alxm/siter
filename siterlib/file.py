@@ -46,7 +46,7 @@ class CFile:
         return os.stat(self.path).st_mtime
 
 class CDir(CFile):
-    def __init__(self, Path, Mode, ReadContents = False, AllowedExtension = ''):
+    def __init__(self, Path, Mode, ReadContents, AllowedExtension):
         CFile.__init__(self, Path, Mode)
 
         self.files = {}
@@ -74,13 +74,23 @@ class CDir(CFile):
                 self.dirs[rootdir].append(text_file)
 
     def get_dir_files(self, RelDirPath):
-        return self.dirs[os.path.join(self.path, RelDirPath)]
+        path = os.path.join(self.path, RelDirPath)
+
+        try:
+            return self.dirs[path]
+        except KeyError:
+            CUtil.error(f'Dir {path} not found')
 
     def get_files(self):
         return self.files.values()
 
     def get_file(self, Name):
-        return self.files[os.path.join(self.path, Name)]
+        path = os.path.join(self.path, Name)
+
+        try:
+            return self.files[path]
+        except KeyError:
+            CUtil.error(f'File {path} not found')
 
     def path_to(self, Target):
         return os.path.relpath(Target.path, start = self.path)
@@ -123,13 +133,67 @@ class CTextFile(CFile):
             f.write(Text)
 
 class CDirs:
+    __index = {
+        CSettings.DirPages: (CFileMode.Required, True, '.md'),
+        CSettings.DirTemplate: (CFileMode.Required, True, ''),
+
+        CSettings.DirConfig: (CFileMode.Optional, True, ''),
+        CSettings.DirStatic: (CFileMode.Optional, False, ''),
+        CSettings.DirStubs: (CFileMode.Optional, True, ''),
+
+        CSettings.DirOut: (CFileMode.Create, False, ''),
+        CSettings.DirStaging: (CFileMode.Reset, False, ''),
+    }
+
     def __init__(self):
-        self.pages = CDir(CSettings.DirPages, CFileMode.Required, True, '.md')
-        self.template = CDir(CSettings.DirTemplate, CFileMode.Required, True)
+        self.dirs = {}
 
-        self.config = CDir(CSettings.DirConfig, CFileMode.Optional, True)
-        self.static = CDir(CSettings.DirStatic, CFileMode.Optional)
-        self.stubs = CDir(CSettings.DirStubs, CFileMode.Optional, True)
+        for dir_entry in CDirs.__index:
+            mode, read, allowed_ext = CDirs.__index[dir_entry]
+            self.dirs[dir_entry] = CDir(dir_entry, mode, read, allowed_ext)
 
-        self.out = CDir(CSettings.DirOut, CFileMode.Create)
-        self.staging = CDir(CSettings.DirStaging, CFileMode.Reset)
+        self.config = self.dirs[CSettings.DirConfig]
+        self.out = self.dirs[CSettings.DirOut]
+        self.pages = self.dirs[CSettings.DirPages]
+        self.staging = self.dirs[CSettings.DirStaging]
+        self.static = self.dirs[CSettings.DirStatic]
+        self.stubs = self.dirs[CSettings.DirStubs]
+        self.template = self.dirs[CSettings.DirTemplate]
+
+    @staticmethod
+    def new_project(Path):
+        if os.path.exists(Path):
+            CUtil.error(f'{Path} already exists')
+
+        CUtil.info(f'Creating new project at {Path}')
+
+        os.makedirs(Path)
+        os.chdir(Path)
+
+        for dir_entry in CDirs.__index:
+            mode = CDirs.__index[dir_entry][0]
+
+            if mode is CFileMode.Required:
+                os.makedirs(dir_entry)
+
+        def write(Dir, File, Content):
+            with open(os.path.join(Dir, File), 'w') as f:
+                f.write(Content)
+
+        write(CSettings.DirTemplate, CSettings.TemplatePage, """\
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="generator" content="Siter">
+        <title>Default Siter Template</title>
+    </head>
+    <body>
+        {{!md {{!content}}}}
+    </body>
+</html>
+""")
+
+        write(CSettings.DirPages, 'index.md', """\
+*Hello World!*
+""")

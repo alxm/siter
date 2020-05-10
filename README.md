@@ -2,26 +2,33 @@
 
 Siter is a static website generator written in Python 3, "Markdown with macros and variables" for my [own simple needs](https://www.alxm.org/ "My personal website is made with Siter").
 
-## What does it do?
+## What Does It Do?
 
-You call `siter [gen | run | serve]` from the project's root, which is layed out like this:
+```sh
+$ siter new mywebsite
 
-    <project>/
-    ├── siter-config/   # Global definitions
-    ├── siter-out/      # The final generated website
-    ├── siter-pages/    # Markdown source pages to be processed
-    ├── siter-static/   # Static files copied as they are
-    └── siter-template/ # HTML templates
+$ tree mywebsite/
+mywebsite/
+├── siter-config/   # Global definitions
+├── siter-out/      # The final generated website
+├── siter-pages/    # Markdown source pages to be processed
+│   └── index.md
+├── siter-static/   # Static files copied as they are
+└── siter-template/ # HTML templates
+    └── page.html
+```
 
-* Files and directories from `siter-static/` are copied to `siter-out/` as they are.
-* Markdown files from `siter-pages/` are evaluated, formatted, fitted in `siter-template/page.html`, and finally written to `siter-out/` as HTML pages.
-* Files from `siter-config/` contain global definitions that are available during page generation.
+To build, `cd mywebsite` and call `siter [gen | run | serve]`.
+
+* Files and directories from `siter-static` are copied to `siter-out` as they are.
+* Markdown files from `siter-pages` are evaluated, formatted, fitted in `siter-template/page.html`, and finally written to `siter-out` as HTML pages.
+* Files from `siter-config` contain global definitions that are available during page generation.
 
 ### Quick Example
 
 A source page `siter-pages/index.md`,
 
-```
+```md
 {{!def {{title}} {{Home}}}}
 
 ## Hello world!
@@ -31,22 +38,26 @@ This page is called *{{!title}}*.
 
 Combined with the page template `siter-template/page.html`,
 
-    <html>
-        <body>
-            <h1>{{!title}}</h1>
-            {{!md {{!content}}}}
-        </body>
-    </html>
+```html
+<html>
+    <body>
+        <h1>{{!title}}</h1>
+        {{!md {{!content}}}}
+    </body>
+</html>
+```
 
 Are used to make `siter-out/index.html`:
 
-    <html>
-        <body>
-            <h1>Home</h1>
-            <h2>Hello world!</h2>
-            <p>This page is called <i>Home</i>.</p>
-        </body>
-    </html>
+```html
+<html>
+    <body>
+        <h1>Home</h1>
+        <h2>Hello world!</h2>
+        <p>This page is called <em>Home</em>.</p>
+    </body>
+</html>
+```
 
 ## Blocks, Variables, Macros, Functions
 
@@ -54,27 +65,31 @@ A block is text enclosed between `{{` and `}}`. If the first character in a bloc
 
 ### Macros Example
 
-    {{!def {{image}} {{filename description}} {{
-        <img src="images/{{!filename}}" title="{{!description}}">
-    }}}}
+```md
+{{!def {{image}} {{filename description}} {{
+    <img src="images/{{!filename}}" title="{{!description}}">
+}}}}
 
-    {{!def {{album}} {{images}} {{
-        <div>
-            {{!images}}
-        </div>
-    }}}}
+{{!def {{album}} {{images}} {{
+    <div>
+        {{!images}}
+    </div>
+}}}}
 
-    {{!album
-        {{!image {{landscape.jpg}} {{A painting}}}}
-        {{!image {{ufo.jpg}} {{A photo}}}}
-    }}
+{{!album
+    {{!image {{landscape.jpg}} {{A painting}}}}
+    {{!image {{ufo.jpg}} {{A photo}}}}
+}}
+```
 
 Becomes
 
-    <div>
-        <img src="images/landscape.jpg" title="A painting">
-        <img src="images/ufo.jpg" title="A photo">
-    </div>
+```html
+<div>
+    <img src="images/landscape.jpg" title="A painting">
+    <img src="images/ufo.jpg" title="A photo">
+</div>
+```
 
 When a macro takes a single argument like `album` does above, you may ommit block tags around the argument.
 
@@ -102,7 +117,9 @@ Macro | About | Example
 
 Siter uses [Python-Markdown](https://python-markdown.github.io/) (with CodeHiliteExtension, FencedCodeExtension, and TocExtension) and [Pygments](https://pygments.org/) for text formatting and code syntax highlighting, along with *enum, http.server, os, shutil, socketserver, subprocess, sys, threading, time,* and *traceback* from the standard library.
 
-    sudo apt install python3 python3-markdown python3-pygments
+```sh
+sudo apt install python3 python3-markdown python3-pygments
+```
 
 ## License
 

@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-complete -W "gen run serve" siter
+complete -W "gen new run serve" siter

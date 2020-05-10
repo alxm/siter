@@ -35,6 +35,7 @@ from .util import *
 class CSiter:
     def __init__(self, Argv):
         do_gen = False
+        do_new = False
         do_serve = False
 
         if len(Argv) > 1:
@@ -42,6 +43,11 @@ class CSiter:
 
             if command == 'gen':
                 do_gen = True
+            elif command == 'new':
+                if len(Argv) > 2:
+                    do_new = True
+                else:
+                    CUtil.error('Missing path argument')
             elif command == 'run':
                 do_gen = True
                 do_serve = True
@@ -51,6 +57,11 @@ class CSiter:
                 CUtil.error(f'Unknown command "{command}"')
         else:
             do_gen = True
+
+        if do_new:
+            CDirs.new_project(Argv[2])
+
+            return
 
         self._log_out = []
 
@@ -99,7 +110,7 @@ class CSiter:
             self.dirs.static.copy_to(self.dirs.staging)
 
     def __step_gen(self):
-        page_template = self.dirs.template.get_file('page.html')
+        page_template = self.dirs.template.get_file(CSettings.TemplatePage)
 
         for in_file in self.dirs.pages.get_files():
             output = self.process_file(in_file, page_template)
