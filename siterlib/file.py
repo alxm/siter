@@ -133,7 +133,7 @@ class CTextFile(CFile):
             f.write(Text)
 
 class CDirs:
-    __index = {
+    _index = {
         CSettings.DirPages: (CFileMode.Required, True, '.md'),
         CSettings.DirTemplate: (CFileMode.Required, True, ''),
 
@@ -148,8 +148,8 @@ class CDirs:
     def __init__(self):
         self.dirs = {}
 
-        for dir_entry in CDirs.__index:
-            mode, read, allowed_ext = CDirs.__index[dir_entry]
+        for dir_entry in CDirs._index:
+            mode, read, allowed_ext = CDirs._index[dir_entry]
             self.dirs[dir_entry] = CDir(dir_entry, mode, read, allowed_ext)
 
         self.config = self.dirs[CSettings.DirConfig]
@@ -170,8 +170,8 @@ class CDirs:
         os.makedirs(Path)
         os.chdir(Path)
 
-        for dir_entry in CDirs.__index:
-            mode = CDirs.__index[dir_entry][0]
+        for dir_entry in CDirs._index:
+            mode = CDirs._index[dir_entry][0]
 
             if mode is CFileMode.Required:
                 os.makedirs(dir_entry)

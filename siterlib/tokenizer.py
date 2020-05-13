@@ -22,7 +22,7 @@ from .token import *
 from .util import *
 
 class CTokenizer:
-    def __make_flat_tokens(Text):
+    def _make_flat_tokens(Text):
         flat_tokens = []
         current_type = None
         current_text = []
@@ -82,7 +82,7 @@ class CTokenizer:
 
         return flat_tokens
 
-    def __make_block_tokens(FlatTokens):
+    def _make_block_tokens(FlatTokens):
         stack = []
         block_tokens = CTokenCollection()
 
@@ -109,8 +109,8 @@ class CTokenizer:
         return block_tokens
 
     def tokenize(Text):
-        flat_tokens = CTokenizer.__make_flat_tokens(Text)
-        block_tokens = CTokenizer.__make_block_tokens(flat_tokens)
+        flat_tokens = CTokenizer._make_flat_tokens(Text)
+        block_tokens = CTokenizer._make_block_tokens(flat_tokens)
 
         return block_tokens
 

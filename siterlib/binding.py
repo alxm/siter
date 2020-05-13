@@ -60,7 +60,7 @@ class CBindingCollection:
     def contains(self, Name):
         return Name in self.bindings
 
-    def __add(self, Name, Binding, Protected):
+    def _add(self, Name, Binding, Protected):
         if self.contains(Name) and self.get(Name).protected:
             CUtil.error(f'Cannot overwrite binding {Name}')
 
@@ -69,16 +69,16 @@ class CBindingCollection:
 
     def add_variable(self, Name, Tokens, Protected = False):
         binding = CBindingVariable(Tokens)
-        self.__add(Name, binding, Protected)
+        self._add(Name, binding, Protected)
 
     def add_macro(self, Name, params, Tokens, Protected = False):
         binding = CBindingMacro(self.siter, params, Tokens)
-        self.__add(Name, binding, Protected)
+        self._add(Name, binding, Protected)
 
     def add_function(self, Name, NumParams, Func,
                      Protected = False, Lazy = False):
         binding = CBindingFunction(NumParams, Func, Lazy)
-        self.__add(Name, binding, Protected)
+        self._add(Name, binding, Protected)
 
     def get(self, Name):
         if Name not in self.bindings:

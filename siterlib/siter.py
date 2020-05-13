@@ -67,10 +67,10 @@ class CSiter:
         self._log_out = []
 
         if do_gen:
-            self._log('Total Gen', self.__step_main)
+            self._log('Total Gen', self._step_main)
 
         if do_serve:
-            self._log('Total Serve', self.__step_serve)
+            self._log('Total Serve', self._step_serve)
 
         for line in self._log_out:
             CUtil.info(line)
@@ -78,7 +78,7 @@ class CSiter:
     def _log(self, Tag, Function):
         self._log_out.append(f'{Tag}: {CUtil.time_step(Function)}s')
 
-    def __step_main(self):
+    def _step_main(self):
         self.md = markdown.Markdown(
                     output_format = 'html5',
                     extensions = [
@@ -89,38 +89,38 @@ class CSiter:
                                      permalink = ' #'),
                     ])
 
-        self._log('Load pages', self.__step_load)
-        self._log('Copy static', self.__step_static)
-        self._log('Generate pages', self.__step_gen)
-        self._log('Copy output', self.__step_copy)
+        self._log('Load pages', self._step_load)
+        self._log('Copy static', self._step_static)
+        self._log('Generate pages', self._step_gen)
+        self._log('Copy output', self._step_copy)
 
-    def __step_serve(self):
+    def _step_serve(self):
         CUtil.run_server(CSettings.DirOut)
 
-    def __step_load(self):
+    def _step_load(self):
         self.dirs = CDirs()
         self.bindings = CBindingCollection(self)
-        self.__stubs_cache = {}
-        self.__set_global_bindings()
+        self._stubs_cache = {}
+        self._set_global_bindings()
 
         for f in self.dirs.config.get_files():
-            self.__set_file_bindings(f, False)
+            self._set_file_bindings(f, False)
 
-    def __step_static(self):
+    def _step_static(self):
         if self.dirs.static.exists():
             self.dirs.static.copy_to(self.dirs.staging)
 
-    def __step_gen(self):
+    def _step_gen(self):
         page_template = self.dirs.template.get_file(CSettings.TemplatePage)
 
         for in_file in self.dirs.pages.get_files():
             output = self.process_file(in_file, page_template)
             in_file.write(output, self.dirs.staging, self.dirs.pages)
 
-    def __step_copy(self):
+    def _step_copy(self):
         self.dirs.staging.replace(self.dirs.out)
 
-    def __set_global_bindings(self):
+    def _set_global_bindings(self):
         self.bindings.add_variable(CSettings.Generated,
                                    CTokenizer.text(time.strftime('%Y-%m-%d')))
 
@@ -161,7 +161,7 @@ class CSiter:
                                    CFunctions.apply_template,
                                    Protected = True)
 
-    def __set_local_bindings(self, ReadFile):
+    def _set_local_bindings(self, ReadFile):
         f_time = ReadFile.get_mod_time()
         time_obj = time.localtime(f_time)
 
@@ -174,15 +174,15 @@ class CSiter:
         self.bindings.add_variable(CSettings.Root,
                                    CTokenizer.text(rel_root))
 
-    def __set_file_bindings(self, ReadFile, SetContent):
-        content_tokens = self.__evaluate_collection(ReadFile.tokens)
+    def _set_file_bindings(self, ReadFile, SetContent):
+        content_tokens = self._evaluate_collection(ReadFile.tokens)
 
         if SetContent:
             self.bindings.add_variable(CSettings.Content,
                                        content_tokens,
                                        Protected = True)
 
-    def __evaluate_collection(self, Collection):
+    def _evaluate_collection(self, Collection):
         eval_tokens = CTokenCollection()
 
         for token in Collection:
@@ -202,7 +202,7 @@ class CSiter:
 
         if name is None:
             # This Block does not call a binding
-            return self.__evaluate_collection(Block.tokens)
+            return self._evaluate_collection(Block.tokens)
 
         if not self.bindings.contains(name):
             # Name is unknown, discard Block
@@ -214,7 +214,7 @@ class CSiter:
         eval_tokens = CTokenCollection()
 
         if type(binding) is CBindingVariable:
-            eval_binding = self.__evaluate_collection(binding.tokens)
+            eval_binding = self._evaluate_collection(binding.tokens)
             eval_tokens.add_collection(eval_binding)
         elif type(binding) is CBindingMacro:
             args = Block.capture_args(binding.num_params == 1)
@@ -240,7 +240,7 @@ class CSiter:
                 self.bindings.add_variable(param, CTokenCollection())
 
             # Evaluate macro body's tokens with the set parameters
-            eval_binding = self.__evaluate_collection(binding.tokens)
+            eval_binding = self._evaluate_collection(binding.tokens)
             eval_tokens.add_collection(eval_binding)
 
             self.bindings.pop()
@@ -276,23 +276,23 @@ class CSiter:
     def process_file(self, InFile, TemplateFile, IsStub = False):
         CUtil.message('Process', InFile.shortpath)
 
-        if IsStub and InFile.shortpath in self.__stubs_cache:
-            return self.__stubs_cache[InFile.shortpath]
+        if IsStub and InFile.shortpath in self._stubs_cache:
+            return self._stubs_cache[InFile.shortpath]
 
         self.bindings.push()
 
         # Keep root path relative to the file that invoked the stub
         if not IsStub:
-            self.__set_local_bindings(InFile)
+            self._set_local_bindings(InFile)
 
-        self.__set_file_bindings(InFile, True)
+        self._set_file_bindings(InFile, True)
 
         # Load template and replace variables and functions with bindings
-        final = self.__evaluate_collection(TemplateFile.tokens).resolve()
+        final = self._evaluate_collection(TemplateFile.tokens).resolve()
 
         self.bindings.pop()
 
         if IsStub:
-            self.__stubs_cache[InFile.shortpath] = final
+            self._stubs_cache[InFile.shortpath] = final
 
         return final
