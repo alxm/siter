@@ -103,22 +103,26 @@ class CSiter:
         self._stubs_cache = {}
         self._set_global_bindings()
 
-        for f in self.dirs.config.get_files():
+        for f in self.dirs.get(CSettings.DirConfig).get_files():
             self._set_file_bindings(f, False)
 
     def _step_static(self):
-        if self.dirs.static.exists():
-            self.dirs.static.copy_to(self.dirs.staging)
+        self.dirs.get(CSettings.DirStatic).copy_to(
+            self.dirs.get(CSettings.DirStaging))
 
     def _step_gen(self):
-        page_template = self.dirs.template.get_file(CSettings.TemplatePage)
+        page_template = self.dirs.get(CSettings.DirTemplate).get_file(
+                            CSettings.TemplatePage)
 
-        for in_file in self.dirs.pages.get_files():
+        for in_file in self.dirs.get(CSettings.DirPages).get_files():
             output = self.process_file(in_file, page_template)
-            in_file.write(output, self.dirs.staging, self.dirs.pages)
+            in_file.write(output,
+                          self.dirs.get(CSettings.DirStaging),
+                          self.dirs.get(CSettings.DirPages))
 
     def _step_copy(self):
-        self.dirs.staging.replace(self.dirs.out)
+        self.dirs.get(CSettings.DirStaging).replace(
+            self.dirs.get(CSettings.DirOut))
 
     def _set_global_bindings(self):
         self.bindings.add_variable(CSettings.Generated,
@@ -169,10 +173,9 @@ class CSiter:
                                    CTokenizer.text(time.strftime('%Y-%m-%d',
                                                                  time_obj)))
 
-        rel_root = ReadFile.path_to(self.dirs.pages)
+        rel_root = ReadFile.path_to(self.dirs.get(CSettings.DirPages))
 
-        self.bindings.add_variable(CSettings.Root,
-                                   CTokenizer.text(rel_root))
+        self.bindings.add_variable(CSettings.Root, CTokenizer.text(rel_root))
 
     def _set_file_bindings(self, ReadFile, SetContent):
         content_tokens = self._evaluate_collection(ReadFile.tokens)

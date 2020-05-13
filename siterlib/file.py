@@ -96,11 +96,12 @@ class CDir(CFile):
         return os.path.relpath(Target.path, start = self.path)
 
     def copy_to(self, DstDir):
-        CUtil.message('Copy files',
-                      f'From {self.shortpath} to {DstDir.shortpath}')
+        if self.exists():
+            CUtil.message('Copy files',
+                          f'From {self.shortpath} to {DstDir.shortpath}')
 
-        shutil.rmtree(DstDir.path)
-        shutil.copytree(self.path, DstDir.path)
+            shutil.rmtree(DstDir.path)
+            shutil.copytree(self.path, DstDir.path)
 
     def replace(self, DstDir):
         CUtil.message('Move files',
@@ -152,13 +153,8 @@ class CDirs:
             mode, read, allowed_ext = CDirs._index[dir_entry]
             self.dirs[dir_entry] = CDir(dir_entry, mode, read, allowed_ext)
 
-        self.config = self.dirs[CSettings.DirConfig]
-        self.out = self.dirs[CSettings.DirOut]
-        self.pages = self.dirs[CSettings.DirPages]
-        self.staging = self.dirs[CSettings.DirStaging]
-        self.static = self.dirs[CSettings.DirStatic]
-        self.stubs = self.dirs[CSettings.DirStubs]
-        self.template = self.dirs[CSettings.DirTemplate]
+    def get(self, Id):
+        return self.dirs[Id]
 
     @staticmethod
     def new_project(Path):

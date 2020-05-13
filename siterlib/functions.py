@@ -116,8 +116,9 @@ class CFunctions:
 
     @staticmethod
     def apply_template(Siter, Args):
-        templateFile = Siter.dirs.template.get_file(Args[0])
-        stub_files = sorted(Siter.dirs.stubs.get_dir_files(Args[1]),
+        templateFile = Siter.dirs.get(CSettings.DirTemplate).get_file(Args[0])
+        stub_files = sorted(Siter.dirs.get(CSettings.DirStubs)
+                                .get_dir_files(Args[1]),
                             key = lambda f: f.name,
                             reverse = True)
 
