@@ -61,8 +61,10 @@ class CSiter:
             do_serve = True
         elif command == 'serve':
             do_serve = True
-        else:
+        elif command == '':
             do_gen = True
+        else:
+            CUtil.error(f'Invalid command {command}')
 
         self._log_out = []
 

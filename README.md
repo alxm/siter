@@ -18,8 +18,7 @@ mywebsite/
     └── page.html
 ```
 
-To build, `cd mywebsite` and call `siter [gen | run | serve]`.
-
+* To build, `cd mywebsite` and call `siter [gen | run | serve]`.
 * Files and directories from `siter-static` are copied to `siter-out` as they are.
 * Markdown files from `siter-pages` are evaluated, formatted, fitted in `siter-template/page.html`, and finally written to `siter-out` as HTML pages.
 * Files from `siter-config` contain global definitions that are available during page generation.
@@ -31,7 +30,7 @@ A source page `siter-pages/index.md`,
 ```md
 {{!def {{title}} {{Home}}}}
 
-## Hello world!
+# Hello world!
 
 This page is called *{{!title}}*.
 ```
@@ -40,8 +39,10 @@ Combined with the page template `siter-template/page.html`,
 
 ```html
 <html>
+    <head>
+        <title>{{!title}}</title>
+    </head>
     <body>
-        <h1>{{!title}}</h1>
         {{!md {{!content}}}}
     </body>
 </html>
@@ -51,9 +52,11 @@ Are used to make `siter-out/index.html`:
 
 ```html
 <html>
+    <head>
+        <title>Home</title>
+    </head>
     <body>
-        <h1>Home</h1>
-        <h2>Hello world!</h2>
+        <h1>Hello world!</h1>
         <p>This page is called <em>Home</em>.</p>
     </body>
 </html>
@@ -66,14 +69,14 @@ A block is text enclosed between `{{` and `}}`. If the first character in a bloc
 ### Macros Example
 
 ```md
-{{!def {{image}} {{filename description}} {{
-    <img src="images/{{!filename}}" title="{{!description}}">
+{{!def {{album}} {{image_elements}} {{
+    <div>
+        {{!image_elements}}
+    </div>
 }}}}
 
-{{!def {{album}} {{images}} {{
-    <div>
-        {{!images}}
-    </div>
+{{!def {{image}} {{filename description}} {{
+    <img src="images/{{!filename}}" title="{{!description}}">
 }}}}
 
 {{!album
