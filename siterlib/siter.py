@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import time
+import os, time
 
 import markdown
 from markdown.extensions.codehilite import CodeHiliteExtension
@@ -34,34 +34,35 @@ from .util import *
 
 class CSiter:
     def __init__(self, Argv):
-        do_gen = False
-        do_new = False
-        do_serve = False
-
-        if len(Argv) > 1:
+        try:
             command = Argv[1]
+        except IndexError:
+            command = ''
 
-            if command == 'gen':
-                do_gen = True
-            elif command == 'new':
-                if len(Argv) > 2:
-                    do_new = True
-                else:
-                    CUtil.error('Missing path argument')
-            elif command == 'run':
-                do_gen = True
-                do_serve = True
-            elif command == 'serve':
-                do_serve = True
-            else:
-                CUtil.error(f'Unknown command "{command}"')
-        else:
-            do_gen = True
+        try:
+            path_arg = Argv[2]
+        except IndexError:
+            path_arg = '.'
 
-        if do_new:
-            CDirs.new_project(Argv[2])
+        if command == 'new':
+            CDirs.new_project(path_arg)
 
             return
+
+        os.chdir(path_arg)
+
+        do_gen = False
+        do_serve = False
+
+        if command == 'gen':
+            do_gen = True
+        elif command == 'run':
+            do_gen = True
+            do_serve = True
+        elif command == 'serve':
+            do_serve = True
+        else:
+            do_gen = True
 
         self._log_out = []
 
