@@ -76,7 +76,7 @@ class CUtil:
 
             CUtil.info(f'Web server running at {url}')
 
-            cmd = f'firefox -new-window {url}'
+            cmd = f'xdg-open {url}'
             status, output = subprocess.getstatusoutput(cmd)
 
             for line in output.splitlines():
