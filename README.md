@@ -37,7 +37,7 @@ hello-world/
 └── siter-template/ # HTML templates
 ```
 
-* To build, call `siter [gen | run | serve] hello-world`.
+* To build, call `siter [gen | run | serve] [path]`.
 * Files and directories from `siter-static` are copied to `siter-out` as they are.
 * Markdown files from `siter-pages` are evaluated, formatted, fitted in `siter-template/page.html`, and finally written to `siter-out` as HTML pages.
 * Files from `siter-config` contain global definitions that are available during page generation.

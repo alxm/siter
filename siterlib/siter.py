@@ -47,8 +47,6 @@ class CSiter:
         if command == 'new':
             CDirs.new_project(path_arg)
         else:
-            CUtil.chdir(path_arg)
-
             do_gen = False
             do_serve = False
 
@@ -62,7 +60,10 @@ class CSiter:
             elif command == '':
                 do_gen = True
             else:
-                CUtil.error(f'Invalid command {command}')
+                do_gen = True
+                path_arg = command
+
+            CUtil.chdir(path_arg)
 
             self._log_out = []
 
