@@ -52,6 +52,13 @@ class CUtil:
         return round(time.perf_counter() - start, 3)
 
     @staticmethod
+    def chdir(Path):
+        try:
+            os.chdir(Path)
+        except FileNotFoundError:
+            CUtil.error(f'Invalid path {Path}')
+
+    @staticmethod
     def run_server(RootPath):
         os.chdir(RootPath)
 

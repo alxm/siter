@@ -17,7 +17,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os, time
+import time
 
 import markdown
 from markdown.extensions.codehilite import CodeHiliteExtension
@@ -46,36 +46,34 @@ class CSiter:
 
         if command == 'new':
             CDirs.new_project(path_arg)
-
-            return
-
-        os.chdir(path_arg)
-
-        do_gen = False
-        do_serve = False
-
-        if command == 'gen':
-            do_gen = True
-        elif command == 'run':
-            do_gen = True
-            do_serve = True
-        elif command == 'serve':
-            do_serve = True
-        elif command == '':
-            do_gen = True
         else:
-            CUtil.error(f'Invalid command {command}')
+            CUtil.chdir(path_arg)
 
-        self._log_out = []
+            do_gen = False
+            do_serve = False
 
-        if do_gen:
-            self._log('Total Gen', self._step_main)
+            if command == 'gen':
+                do_gen = True
+            elif command == 'run':
+                do_gen = True
+                do_serve = True
+            elif command == 'serve':
+                do_serve = True
+            elif command == '':
+                do_gen = True
+            else:
+                CUtil.error(f'Invalid command {command}')
 
-        if do_serve:
-            self._log('Total Serve', self._step_serve)
+            self._log_out = []
 
-        for line in self._log_out:
-            CUtil.info(line)
+            if do_gen:
+                self._log('Total Gen', self._step_main)
+
+            if do_serve:
+                self._log('Total Serve', self._step_serve)
+
+            for line in self._log_out:
+                CUtil.info(line)
 
     def _log(self, Tag, Function):
         self._log_out.append(f'{Tag}: {CUtil.time_step(Function)}s')

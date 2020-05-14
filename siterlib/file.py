@@ -36,11 +36,8 @@ class CFile:
         self.name = os.path.basename(Path)
         self.mode = Mode
 
-        if self.mode is CFileMode.Required and not self.exists():
+        if self.mode is CFileMode.Required and not os.path.exists(self.path):
             CUtil.error(f'Required file {self.path} not found')
-
-    def exists(self):
-        return os.path.exists(self.path)
 
     def get_mod_time(self):
         return os.stat(self.path).st_mtime
@@ -55,23 +52,23 @@ class CDir(CFile):
         if self.mode is CFileMode.Create:
             os.makedirs(self.path, exist_ok = True)
         elif self.mode is CFileMode.Reset:
-            if self.exists():
+            try:
                 shutil.rmtree(self.path)
+            except FileNotFoundError:
+                pass
 
             os.makedirs(self.path)
 
-        if not self.exists() or not ReadContents:
-            return
+        if ReadContents:
+            for rootdir, dirs, files in os.walk(self.path):
+                self.dirs[rootdir] = []
 
-        for rootdir, dirs, files in os.walk(self.path):
-            self.dirs[rootdir] = []
+                for f in filter(lambda f: f.endswith(AllowedExtension), files):
+                    full_path = os.path.join(rootdir, f)
+                    text_file = CTextFile(full_path, CFileMode.Required)
 
-            for f in filter(lambda f: f.endswith(AllowedExtension), files):
-                full_path = os.path.join(rootdir, f)
-                text_file = CTextFile(full_path, CFileMode.Required)
-
-                self.files[full_path] = text_file
-                self.dirs[rootdir].append(text_file)
+                    self.files[full_path] = text_file
+                    self.dirs[rootdir].append(text_file)
 
     def get_dir_files(self, RelDirPath):
         path = os.path.join(self.path, RelDirPath)
@@ -96,20 +93,20 @@ class CDir(CFile):
         return os.path.relpath(Target.path, start = self.path)
 
     def copy_to(self, DstDir):
-        if self.exists():
-            CUtil.message('Copy files',
-                          f'From {self.shortpath} to {DstDir.shortpath}')
-
-            shutil.rmtree(DstDir.path)
-            shutil.copytree(self.path, DstDir.path)
-
-    def replace(self, DstDir):
-        CUtil.message('Move files',
+        CUtil.message('Copy files',
                       f'From {self.shortpath} to {DstDir.shortpath}')
 
-        if DstDir.exists():
-            shutil.rmtree(DstDir.path)
+        shutil.rmtree(DstDir.path)
 
+        try:
+            shutil.copytree(self.path, DstDir.path)
+        except FileNotFoundError:
+            pass
+
+    def replace(self, DstDir):
+        CUtil.message('Move', f'From {self.shortpath} to {DstDir.shortpath}')
+
+        shutil.rmtree(DstDir.path)
         os.replace(self.path, DstDir.path)
 
 class CTextFile(CFile):
@@ -158,19 +155,20 @@ class CDirs:
 
     @staticmethod
     def new_project(Path):
-        if os.path.exists(Path):
-            CUtil.error(f'{Path} already exists')
-
         CUtil.info(f'Creating new project at {Path}')
 
-        os.makedirs(Path)
-        os.chdir(Path)
+        try:
+            os.makedirs(Path, exist_ok = True if Path == '.' else False)
+        except FileExistsError:
+            CUtil.error(f'Path {Path} already exists')
+
+        CUtil.chdir(Path)
 
         for dir_entry in CDirs._index:
             mode = CDirs._index[dir_entry][0]
 
             if mode is CFileMode.Required:
-                os.makedirs(dir_entry)
+                os.makedirs(dir_entry, exist_ok = True)
 
         def write(Dir, File, Content):
             with open(os.path.join(Dir, File), 'w') as f:
