@@ -2,23 +2,42 @@
 
 Siter is a static website generator written in Python 3, "Markdown with macros and variables" for my [own simple needs](https://www.alxm.org/ "My personal website is made with Siter").
 
-## What Does It Do?
+## *Hello, World*
 
 ```sh
-$ siter new mywebsite
+$ siter new hello-world
+$ tree hello-world/
+hello-world/
+├── siter-pages
+│   └── index.md
+└── siter-template
+    └── page.html
 
-$ tree mywebsite/
-mywebsite/
+$ siter gen hello-world
+$ tree hello-world/
+hello-world/
+├── siter-out
+│   └── index.html
+├── siter-pages
+│   └── index.md
+└── siter-template
+    └── page.html
+
+$ siter serve hello-world
+```
+
+### Full Project Tree
+
+```sh
+hello-world/
 ├── siter-config/   # Global definitions
 ├── siter-out/      # The final generated website
 ├── siter-pages/    # Markdown source pages to be processed
-│   └── index.md
 ├── siter-static/   # Static files copied as they are
 └── siter-template/ # HTML templates
-    └── page.html
 ```
 
-* To build, `cd mywebsite` and call `siter [gen | run | serve]`.
+* To build, call `siter [gen | run | serve] hello-world`.
 * Files and directories from `siter-static` are copied to `siter-out` as they are.
 * Markdown files from `siter-pages` are evaluated, formatted, fitted in `siter-template/page.html`, and finally written to `siter-out` as HTML pages.
 * Files from `siter-config` contain global definitions that are available during page generation.
