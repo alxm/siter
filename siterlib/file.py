@@ -154,6 +154,14 @@ class CDirs:
         return self.dirs[Id]
 
     @staticmethod
+    def validate():
+        for dir_entry in CDirs._index:
+            if CDirs._index[dir_entry][0] is CFileMode.Required \
+                and not os.path.isdir(dir_entry):
+
+                CUtil.error(f'Required dir {dir_entry} not found')
+
+    @staticmethod
     def new_project(Path):
         CUtil.info(f'Creating new project at {Path}')
 

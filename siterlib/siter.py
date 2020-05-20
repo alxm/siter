@@ -64,6 +64,7 @@ class CSiter:
                 path_arg = command
 
             CUtil.chdir(path_arg)
+            CDirs.validate()
 
             self._log_out = []
 
