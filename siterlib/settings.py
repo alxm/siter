@@ -53,3 +53,9 @@ class CSettings:
 
     # HTML container class for highlighted code
     PygmentsDiv = 'siter_code'
+
+    # TocExtension title text
+    TocTitle = 'Contents'
+
+    # Text content for header permalinks
+    HeaderLink = '#'

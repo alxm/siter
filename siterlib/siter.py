@@ -87,8 +87,8 @@ class CSiter:
                         CodeHiliteExtension(css_class = CSettings.PygmentsDiv,
                                             linenums = True),
                         FencedCodeExtension(),
-                        TocExtension(title = 'Contents',
-                                     permalink = ' #'),
+                        TocExtension(title = CSettings.TocTitle,
+                                     permalink = CSettings.HeaderLink),
                     ])
 
         self._log('Load pages', self._step_load)
