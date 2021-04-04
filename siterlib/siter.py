@@ -1,12 +1,10 @@
 """
     Copyright 2011 Alex Margarit
-
     This file is part of Siter, a static website generator.
 
     This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    it under the terms of the GNU General Public License version 3,
+    as published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -117,8 +115,7 @@ class CSiter:
                             CSettings.TemplatePage)
 
         for in_file in self.dirs.get(CSettings.DirPages).get_files():
-            output = self.process_file(in_file, page_template)
-            in_file.write(output,
+            in_file.write(self.process_file(in_file, page_template),
                           self.dirs.get(CSettings.DirStaging),
                           self.dirs.get(CSettings.DirPages))
 
@@ -163,7 +160,7 @@ class CSiter:
                                    Protected = True)
 
         self.bindings.add_function(CSettings.Apply,
-                                   [2, 3],
+                                   [2, 3, 4],
                                    CFunctions.apply_template,
                                    Protected = True)
 

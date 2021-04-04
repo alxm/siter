@@ -1,12 +1,10 @@
 """
     Copyright 2011 Alex Margarit
-
     This file is part of Siter, a static website generator.
 
     This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    it under the terms of the GNU General Public License version 3,
+    as published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -116,14 +114,33 @@ class CFunctions:
 
     @staticmethod
     def apply_template(Siter, Args):
-        templateFile = Siter.dirs.get(CSettings.DirTemplate).get_file(Args[0])
+        a_stubs_dir = Args[0]
+        a_template_body = Args[1]
+        a_template_split = None
+        a_num_max = 0
+
+        template_file = Siter.dirs.get(CSettings.DirTemplate) \
+                            .get_file(a_template_body)
         stub_files = sorted(Siter.dirs.get(CSettings.DirStubs)
-                                .get_dir_files(Args[1]),
+                                .get_dir_files(a_stubs_dir),
                             key = lambda f: f.name,
                             reverse = True)
 
         if len(Args) == 3:
-            stub_files = stub_files[: int(Args[2])]
+            try:
+                a_num_max = int(Args[2])
+            except ValueError:
+                a_template_split = Args[2]
+        elif len(Args) == 4:
+            a_template_split = Args[2]
+            a_num_max = int(Args[3])
 
-        return ''.join([Siter.process_file(f, templateFile, True)
-                            for f in stub_files])
+        if a_num_max > 0:
+            stub_files = stub_files[: a_num_max]
+
+        split_text = Siter.dirs.get(CSettings.DirTemplate) \
+                        .get_file(a_template_split).tokens.resolve() \
+                            if a_template_split else ''
+
+        return split_text.join([Siter.process_file(f, template_file, True)
+                                    for f in stub_files])
