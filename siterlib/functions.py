@@ -43,7 +43,7 @@ class CFunctions:
 
             Siter.bindings.add_variable(name, CTokenCollection(body))
 
-        return None
+        return CTokenBlock(CTokenCollection())
 
     @staticmethod
     def if_check(Siter, Args):
@@ -54,7 +54,7 @@ class CFunctions:
         elif len(Args) == 3:
             return Args[2]
         else:
-            return None
+            return CTokenBlock(CTokenCollection())
 
     @staticmethod
     def datefmt(_, Args):

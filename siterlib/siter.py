@@ -192,16 +192,15 @@ class CSiter:
 
         for token in Collection:
             if type(token) is CTokenBlock:
-                evaluated = self.evaluate_block(token)
-
-                if evaluated:
-                    eval_tokens.add_collection(evaluated)
+                eval_tokens.add_collection(self.evaluate_block(token))
             else:
                 eval_tokens.add_token(token)
 
         return eval_tokens
 
     def evaluate_block(self, Block):
+        eval_tokens = CTokenCollection()
+
         # Get the binding's name
         name = Block.capture_call()
 
@@ -213,10 +212,9 @@ class CSiter:
             # Name is unknown, discard Block
             CUtil.warning(f'Use of unknown binding {name}:\n{Block}')
 
-            return None
+            return eval_tokens
 
         binding = self.bindings.get(name)
-        eval_tokens = CTokenCollection()
 
         if type(binding) is CBindingVariable:
             eval_binding = self._evaluate_collection(binding.tokens)
@@ -232,7 +230,7 @@ class CSiter:
                     f'{binding.num_params_req}-{binding.num_params} ' \
                     f'args, got {len(args)}:\n{Block}')
 
-                return None
+                return eval_tokens
 
             self.bindings.push()
 
@@ -257,15 +255,12 @@ class CSiter:
                               f'{binding.num_params} args, ' \
                               f'got {len(args)}:\n{Block}')
 
-                return None
+                return eval_tokens
 
             if binding.lazy:
                 # Feed block tokens directly to function
                 result = binding.func(self, args)
-
-                if result:
-                    result = self.evaluate_block(result)
-                    eval_tokens.add_collection(result)
+                eval_tokens.add_collection(self.evaluate_block(result))
             else:
                 # Evaluate and resolve each argument
                 arguments = [self.evaluate_block(a).resolve() for a in args]
