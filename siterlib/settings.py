@@ -47,7 +47,7 @@ class CSettings:
     Code = 'code'
     Markdown = 'md'
     Anchor = 'anchor'
-    Apply = 'apply'
+    Stubs = 'stubs'
 
     # HTML container class for highlighted code
     PygmentsDiv = 'siter_code'

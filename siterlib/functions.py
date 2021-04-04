@@ -113,7 +113,7 @@ class CFunctions:
         return Args[0].lower().replace(' ', '-')
 
     @staticmethod
-    def apply_template(Siter, Args):
+    def stubs(Siter, Args):
         a_stubs_dir = Args[0]
         a_template_body = Args[1]
         a_template_split = None

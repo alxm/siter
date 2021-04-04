@@ -159,9 +159,9 @@ class CSiter:
                                    CFunctions.anchor,
                                    Protected = True)
 
-        self.bindings.add_function(CSettings.Apply,
+        self.bindings.add_function(CSettings.Stubs,
                                    [2, 3, 4],
-                                   CFunctions.apply_template,
+                                   CFunctions.stubs,
                                    Protected = True)
 
     def _set_local_bindings(self, ReadFile):

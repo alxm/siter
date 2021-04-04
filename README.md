@@ -129,11 +129,11 @@ Variable | About | Example
 Macro | About | Example
 --- | --- | ---
 `anchor` | Makes the text argument suitable to use as an HTML anchor. | `<a href="#{{!anchor Hello World}}">Permalink</a>`
-`apply` | Formats and chains files from a `siter-stubs` subdir with template files from `siter-template`. | `{{!apply {{news}} {{news.html}}}}`
 `datefmt` | Format a `YYYY-MM-DD` date with a Python [time format string](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes). | `<footer>Last updated {{!datefmt {{!modified}} {{%b %Y}}}}</footer>`
 `def` | Bind a new macro or variable. | `{{!def {{page-title}} {{Home Page}}}}`
 `if` | `{{!if {{flag}} {{then}} {{else}}}}` evaluates `{{then}}` if the `flag` variable was previously declared (`{{!def flag}}`), or to `{{else}}` otherwise. The else block is optional. | `{{!if {{show-heading}} {{<h1>Welcome!</h1>}}}}`
 `md` | Runs Markdown on the supplied argument. | `{{!md **Hello world!**}}`
+`stubs` | Formats and chains files from a `siter-stubs` subdir with template files from `siter-template`. | `{{!stubs {{news}} {{news.html}}}}`
 
 ## Dependencies
 
