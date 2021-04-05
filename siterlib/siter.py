@@ -144,11 +144,6 @@ class CSiter:
                                    CFunctions.datefmt,
                                    Protected = True)
 
-        self.bindings.add_function(CSettings.Code,
-                                   [1, 2, 3],
-                                   CFunctions.highlight_code,
-                                   Protected = True)
-
         self.bindings.add_function(CSettings.Markdown,
                                    [1],
                                    CFunctions.markdown,

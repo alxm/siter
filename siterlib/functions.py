@@ -17,8 +17,6 @@
 
 import time
 
-import pygments, pygments.lexers, pygments.formatters
-
 from .file import *
 from .settings import *
 from .token import *
@@ -67,42 +65,6 @@ class CFunctions:
             return iso_date
 
         return time.strftime(fmt_string, time_obj)
-
-    @staticmethod
-    def highlight_code(Siter, Args):
-        if len(Args) == 1:
-            lang = 'text'
-            code = Args[0]
-            lines = []
-        elif len(Args) == 2:
-            lang = Args[0].lower()
-            code = Args[1]
-            lines = []
-        elif len(Args) == 3:
-            lang = Args[0].lower()
-            code = Args[2]
-            lines = Args[1].split()
-
-        if code.find('\n') == -1:
-            def clean_code(Code):
-                # Replace special chars with HTML entities
-                Code = Code.replace('<', '&lt;')
-                Code = Code.replace('>', '&gt;')
-
-                return Code
-
-            # This is a one-liner
-            code = f'<code>{clean_code(code)}</code>'
-        else:
-            # This is a code block
-            lexer = pygments.lexers.get_lexer_by_name(lang)
-            formatter = pygments.formatters.HtmlFormatter(
-                            linenos = True,
-                            cssclass = CSettings.PygmentsDiv,
-                            hl_lines=lines)
-            code = pygments.highlight(code, lexer, formatter)
-
-        return code
 
     @staticmethod
     def markdown(Siter, Args):

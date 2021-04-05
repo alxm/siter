@@ -44,7 +44,6 @@ class CSettings:
     Generated = 'generated'
     Datefmt = 'datefmt'
     Root = 'root'
-    Code = 'code'
     Markdown = 'md'
     Anchor = 'anchor'
     Stubs = 'stubs'
