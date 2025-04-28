@@ -37,16 +37,16 @@ class CSettings:
     OptDelimiter = '/'
 
     # Built-in binding names
-    Def = 'def'
-    If = 'if'
-    Content = 'content'
-    Modified = 'modified'
-    Generated = 'generated'
-    Datefmt = 'datefmt'
-    Root = 'root'
-    Markdown = 'md'
-    Anchor = 'anchor'
-    Stubs = 'stubs'
+    Def = 'siter-def'
+    If = 'siter-if'
+    Content = 'siter-content'
+    Modified = 'siter-modified'
+    Generated = 'siter-generated'
+    Datefmt = 'siter-datefmt'
+    Root = 'siter-root'
+    Markdown = 'siter-md'
+    Anchor = 'siter-anchor'
+    Stubs = 'siter-stubs'
 
     # HTML container class for highlighted code
     PygmentsDiv = 'siter_code'

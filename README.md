@@ -47,7 +47,7 @@ hello-world/
 A source page `siter-pages/index.md`,
 
 ```md
-{{!def {{title}} {{Home}}}}
+{{!siter-def {{title}} {{Home}}}}
 
 # Hello world!
 
@@ -62,7 +62,7 @@ Combined with the page template `siter-template/page.html`,
         <title>{{!title}}</title>
     </head>
     <body>
-        {{!md {{!content}}}}
+        {{!siter-md {{!siter-content}}}}
     </body>
 </html>
 ```
@@ -83,18 +83,18 @@ Are used to make `siter-out/index.html`:
 
 ## Blocks, Variables, Macros, Functions
 
-A block is text enclosed between `{{` and `}}`. If the first character in a block is the eval marker `!`, then the block is evaluated as a variable or macro. So `{{!modified %Y}}` might expand to `2011` if you travelled back in time, but `{{modified %Y}}` would just be replaced with the literal `modified %Y`.
+A block is text enclosed between `{{` and `}}`. If the first character in a block is the eval marker `!`, then the block is evaluated as a variable or macro. So `{{!siter-modified %Y}}` might expand to `2011` if you travelled back in time, but `{{siter-modified %Y}}` would just be replaced with the string literal `siter-modified %Y`.
 
 ### Macros Example
 
 ```md
-{{!def {{album}} {{image_elements}} {{
+{{!siter-def {{album}} {{image_elements}} {{
     <div>
         {{!image_elements}}
     </div>
 }}}}
 
-{{!def {{image}} {{filename description}} {{
+{{!siter-def {{image}} {{filename description}} {{
     <img src="images/{{!filename}}" title="{{!description}}">
 }}}}
 
@@ -117,23 +117,23 @@ When a macro takes a single argument like `album` does above, you may ommit bloc
 
 ## Special Macros and Variables
 
-These are the built-in definitions.
+All the built-in definitions start with `siter-`.
 
 Variable | About | Example
 --- | --- | ---
-`content` | The evaluated page file, used by `siter-template/page.html`. | `<html><body>{{!content}}</body></html>`
-`generated` | `YYYY-MM-DD` date when the output file was generated. | `<footer>Page generated on {{!generated}}</footer>`
-`root` | Relative path from the current page to the website root, so you can reference static files from nested pages. | `<img src="{{!root}}/photos/cloud.jpg">`
-`modified` | `YYYY-MM-DD` date when the source file was last modified. | `<footer>Page updated on {{!modified}}</footer>`
+`siter-content` | The evaluated page file, used by `siter-template/page.html`. | `<html><body>{{!siter-content}}</body></html>`
+`siter-generated` | `YYYY-MM-DD` date when the output file was generated. | `<footer>Page generated on {{!siter-generated}}</footer>`
+`siter-root` | Relative path from the current page to the website root, so you can reference static files from nested pages. | `<img src="{{!siter-root}}/photos/cloud.jpg">`
+`siter-modified` | `YYYY-MM-DD` date when the source file was last modified. | `<footer>Page updated on {{!siter-modified}}</footer>`
 
 Macro | About | Example
 --- | --- | ---
-`anchor` | Makes the text argument suitable to use as an HTML anchor. | `<a href="#{{!anchor Hello World}}">Permalink</a>`
-`datefmt` | Format a `YYYY-MM-DD` date with a Python [time format string](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes). | `<footer>Last updated {{!datefmt {{!modified}} {{%b %Y}}}}</footer>`
-`def` | Bind a new macro or variable. | `{{!def {{page-title}} {{Home Page}}}}`
-`if` | `{{!if {{flag}} {{then}} {{else}}}}` evaluates `{{then}}` if the `flag` variable was previously declared (`{{!def flag}}`), or to `{{else}}` otherwise. The else block is optional. | `{{!if {{show-heading}} {{<h1>Welcome!</h1>}}}}`
-`md` | Runs Markdown on the supplied argument. | `{{!md **Hello world!**}}`
-`stubs` | Formats and chains files from a `siter-stubs` subdir with template files from `siter-template`. | `{{!stubs {{news}} {{news.html}}}}`
+`siter-anchor` | Makes the text argument suitable to use as an HTML anchor. | `<a href="#{{!siter-anchor Hello World}}">Permalink</a>`
+`siter-datefmt` | Format a `YYYY-MM-DD` date with a Python [time format string](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes). | `<footer>Last updated {{!siter-datefmt {{!siter-modified}} {{%b %Y}}}}</footer>`
+`siter-def` | Bind a new macro or variable. | `{{!siter-def {{page-title}} {{Home Page}}}}`
+`siter-if` | `{{!siter-if {{flag}} {{then}} {{else}}}}` evaluates `{{then}}` if the `flag` variable was previously declared (`{{!siter-def flag}}`), or to `{{else}}` otherwise. The else block is optional. | `{{!siter-if {{show-heading}} {{<h1>Welcome!</h1>}}}}`
+`siter-md` | Runs Markdown on the supplied argument. | `{{!siter-md **Hello world!**}}`
+`siter-stubs` | Formats and chains files from a `siter-stubs` subdir with template files from `siter-template`. | `{{!siter-stubs {{news}} {{news.html}}}}`
 
 ## Dependencies
 

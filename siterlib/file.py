@@ -189,7 +189,7 @@ class CDirs:
         <title>Default Siter Template</title>
     </head>
     <body>
-        {{!md {{!content}}}}
+        {{!siter-md {{!siter-content}}}}
     </body>
 </html>
 """)
