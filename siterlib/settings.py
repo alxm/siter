@@ -18,11 +18,11 @@
 class CSettings:
     # Project dirs
     DirConfig = 'siter-config'
+    DirForeach = 'siter-foreach'
     DirOut = 'siter-out'
     DirPages = 'siter-pages'
     DirStaging = 'siter-staging'
     DirStatic = 'siter-static'
-    DirStubs = 'siter-stubs'
     DirTemplate = 'siter-template'
     TemplatePage = 'page.html'
 
@@ -48,7 +48,7 @@ class CSettings:
     Root = 'siter-root'
     Markdown = 'siter-md'
     Anchor = 'siter-anchor'
-    Stubs = 'siter-stubs'
+    Foreach = 'siter-foreach'
 
     # HTML container class for highlighted code
     PygmentsDiv = 'siter_code'

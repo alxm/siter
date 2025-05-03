@@ -137,8 +137,8 @@ class CDirs:
         CSettings.DirTemplate: (CFileMode.Required, True, '.html'),
 
         CSettings.DirConfig: (CFileMode.Optional, True, ''),
+        CSettings.DirForeach: (CFileMode.Optional, True, ''),
         CSettings.DirStatic: (CFileMode.Optional, False, ''),
-        CSettings.DirStubs: (CFileMode.Optional, True, ''),
 
         CSettings.DirOut: (CFileMode.Create, False, ''),
         CSettings.DirStaging: (CFileMode.Reset, False, ''),

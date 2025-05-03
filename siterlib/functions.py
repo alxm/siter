@@ -75,14 +75,14 @@ class CFunctions:
         return Args[0].lower().replace(' ', '-')
 
     @staticmethod
-    def stubs(Siter, Args):
+    def foreach(Siter, Args):
         a_stubs_dir = Args[0]
         a_template = Args[1]
         a_num_max = 0
 
         template_file = Siter.dirs.get(CSettings.DirTemplate) \
                             .get_file(a_template)
-        stub_files = sorted(Siter.dirs.get(CSettings.DirStubs)
+        stub_files = sorted(Siter.dirs.get(CSettings.DirForeach)
                                 .get_dir_files(a_stubs_dir),
                             key = lambda f: f.name,
                             reverse = True)
