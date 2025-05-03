@@ -39,6 +39,8 @@ class CSettings:
     # Built-in binding names
     Def = 'siter-def'
     If = 'siter-if'
+    Name = 'siter-name'
+    Path = 'siter-path'
     Content = 'siter-content'
     Modified = 'siter-modified'
     Generated = 'siter-generated'

@@ -121,6 +121,8 @@ All the built-in definitions start with `siter-`.
 
 Variable | About | Example
 --- | --- | ---
+`siter-name` | The current file name without extension. | `<h1>{{!siter-name}}</h1>`
+`siter-path` | The current file path relative to root. | `You are at {{!siter-path}}`
 `siter-content` | The evaluated page file, used by `siter-template/page.html`. | `<html><body>{{!siter-content}}</body></html>`
 `siter-generated` | `YYYY-MM-DD` date when the output file was generated. | `<footer>Page generated on {{!siter-generated}}</footer>`
 `siter-root` | Relative path from the current page to the website root, so you can reference static files from nested pages. | `<img src="{{!siter-root}}/photos/cloud.jpg">`
@@ -145,6 +147,6 @@ sudo apt install python3 python3-markdown python3-pygments
 
 ## License
 
-Copyright 2011-2021 Alex Margarit (alex@alxm.org)
+Copyright 2011-2025 Alex Margarit (alex@alxm.org)
 
 Licensed under [GNU GPL 3.0](https://www.gnu.org/licenses/gpl.html) (see `COPYING`).

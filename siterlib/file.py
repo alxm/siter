@@ -32,6 +32,7 @@ class CFile:
         self.path = os.path.abspath(Path)
         self.shortpath = os.path.relpath(Path, start = os.curdir)
         self.name = os.path.basename(Path)
+        self.name_noext, _ = os.path.splitext(self.name)
         self.mode = Mode
 
         if self.mode is CFileMode.Required and not os.path.exists(self.path):
@@ -58,12 +59,12 @@ class CDir(CFile):
             os.makedirs(self.path)
 
         if ReadContents:
-            for rootdir, dirs, files in os.walk(self.path):
+            for rootdir, _, files in os.walk(self.path):
                 self.dirs[rootdir] = []
 
                 for f in filter(lambda f: f.endswith(AllowedExtension), files):
                     full_path = os.path.join(rootdir, f)
-                    text_file = CTextFile(full_path, CFileMode.Required)
+                    text_file = CTextFile(Path, full_path, CFileMode.Required)
 
                     self.files[full_path] = text_file
                     self.dirs[rootdir].append(text_file)
@@ -108,9 +109,12 @@ class CDir(CFile):
         os.replace(self.path, DstDir.path)
 
 class CTextFile(CFile):
-    def __init__(self, Path, Mode):
+    def __init__(self, Prefix, Path, Mode):
         CFile.__init__(self, Path, Mode)
         CUtil.message('Load', self.shortpath)
+
+        path_public, _ = os.path.splitext(os.path.relpath(Path, start = Prefix))
+        self.path_public = f'{path_public}.html'
 
         with open(self.path, 'rU') as f:
             self.tokens = CTokenizer.tokenize(f.read())
@@ -121,17 +125,16 @@ class CTextFile(CFile):
     def write(self, Text, WriteRoot, ReadRoot):
         out_dir = os.path.join(WriteRoot.path,
                                os.path.dirname(ReadRoot.path_to(self)))
-        no_ext_name, _ = os.path.splitext(self.name)
 
         os.makedirs(out_dir, exist_ok = True)
 
-        with open(os.path.join(out_dir, f'{no_ext_name}.html'), 'w') as f:
+        with open(os.path.join(out_dir, f'{self.name_noext}.html'), 'w') as f:
             f.write(Text)
 
 class CDirs:
     _index = {
         CSettings.DirPages: (CFileMode.Required, True, '.md'),
-        CSettings.DirTemplate: (CFileMode.Required, True, ''),
+        CSettings.DirTemplate: (CFileMode.Required, True, '.html'),
 
         CSettings.DirConfig: (CFileMode.Optional, True, ''),
         CSettings.DirStatic: (CFileMode.Optional, False, ''),

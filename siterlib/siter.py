@@ -101,6 +101,7 @@ class CSiter:
         self.dirs = CDirs()
         self.bindings = CBindingCollection(self)
         self._stubs_cache = {}
+
         self._set_global_bindings()
 
         for f in self.dirs.get(CSettings.DirConfig).get_files():
@@ -159,7 +160,7 @@ class CSiter:
                                    CFunctions.stubs,
                                    Protected = True)
 
-    def _set_local_bindings(self, ReadFile):
+    def _set_local_bindings(self, ReadFile, IsStub):
         f_time = ReadFile.get_mod_time()
         time_obj = time.localtime(f_time)
 
@@ -167,9 +168,18 @@ class CSiter:
                                    CTokenizer.text(time.strftime('%Y-%m-%d',
                                                                  time_obj)))
 
-        rel_root = ReadFile.path_to(self.dirs.get(CSettings.DirPages))
+        if not IsStub:
+            # Stubs inherit the caller page's path to root
+            rel_root = ReadFile.path_to(self.dirs.get(CSettings.DirPages))
 
-        self.bindings.add_variable(CSettings.Root, CTokenizer.text(rel_root))
+            self.bindings.add_variable(CSettings.Root,
+                                       CTokenizer.text(rel_root))
+
+        self.bindings.add_variable(CSettings.Name,
+                                   CTokenizer.text(ReadFile.name_noext))
+
+        self.bindings.add_variable(CSettings.Path,
+                                   CTokenizer.text(ReadFile.path_public))
 
     def _set_file_bindings(self, ReadFile, SetContent):
         content_tokens = self._evaluate_collection(ReadFile.tokens)
@@ -273,10 +283,7 @@ class CSiter:
 
         self.bindings.push()
 
-        # Keep root path relative to the file that invoked the stub
-        if not IsStub:
-            self._set_local_bindings(InFile)
-
+        self._set_local_bindings(InFile, IsStub)
         self._set_file_bindings(InFile, True)
 
         # Load template and replace variables and functions with bindings
