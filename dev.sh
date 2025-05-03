@@ -1,1 +1,1 @@
-geany -i siterlib/* * &
+geany -i * siterlib/* >/dev/null 2>&1 &

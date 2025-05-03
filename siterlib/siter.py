@@ -156,7 +156,7 @@ class CSiter:
                                    Protected = True)
 
         self.bindings.add_function(CSettings.Stubs,
-                                   [2, 3, 4],
+                                   [2, 3],
                                    CFunctions.stubs,
                                    Protected = True)
 

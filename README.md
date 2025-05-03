@@ -135,7 +135,7 @@ Macro | About | Example
 `siter-def` | Bind a new macro or variable. | `{{!siter-def {{page-title}} {{Home Page}}}}`
 `siter-if` | `{{!siter-if {{flag}} {{then}} {{else}}}}` evaluates `{{then}}` if the `flag` variable was previously declared (`{{!siter-def flag}}`), or to `{{else}}` otherwise. The else block is optional. | `{{!siter-if {{show-heading}} {{<h1>Welcome!</h1>}}}}`
 `siter-md` | Runs Markdown on the supplied argument. | `{{!siter-md **Hello world!**}}`
-`siter-stubs` | Formats and chains files from a `siter-stubs` subdir with template files from `siter-template`. | `{{!siter-stubs {{news}} {{news.html}}}}`
+`siter-stubs` | Formats and chains files from a subdir under `siter-stubs` with a template file from `siter-template`. | `{{!siter-stubs {{news}} {{news.html}}}}`
 
 ## Dependencies
 

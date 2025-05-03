@@ -77,12 +77,11 @@ class CFunctions:
     @staticmethod
     def stubs(Siter, Args):
         a_stubs_dir = Args[0]
-        a_template_body = Args[1]
-        a_template_split = None
+        a_template = Args[1]
         a_num_max = 0
 
         template_file = Siter.dirs.get(CSettings.DirTemplate) \
-                            .get_file(a_template_body)
+                            .get_file(a_template)
         stub_files = sorted(Siter.dirs.get(CSettings.DirStubs)
                                 .get_dir_files(a_stubs_dir),
                             key = lambda f: f.name,
@@ -92,17 +91,10 @@ class CFunctions:
             try:
                 a_num_max = int(Args[2])
             except ValueError:
-                a_template_split = Args[2]
-        elif len(Args) == 4:
-            a_template_split = Args[2]
-            a_num_max = int(Args[3])
+                CUtil.error(f'"{Args[2]}" is not an integer')
 
         if a_num_max > 0:
             stub_files = stub_files[: a_num_max]
 
-        split_text = Siter.dirs.get(CSettings.DirTemplate) \
-                        .get_file(a_template_split).tokens.resolve() \
-                            if a_template_split else ''
-
-        return split_text.join([Siter.process_file(f, template_file, True)
-                                    for f in stub_files])
+        return ''.join([Siter.process_file(f, template_file, True)
+                            for f in stub_files])
