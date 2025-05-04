@@ -189,7 +189,7 @@ class CDirs:
     <head>
         <meta charset="utf-8">
         <meta name="generator" content="Siter">
-        <title>Default Siter Template</title>
+        <title>{{!title}}</title>
     </head>
     <body>
         {{!siter-md {{!siter-content}}}}
@@ -198,5 +198,6 @@ class CDirs:
 """)
 
         write(CSettings.DirPages, 'index.md', """\
+{{!siter-def {{title}} {{Home Page}}}}
 *Hello World!*
 """)
