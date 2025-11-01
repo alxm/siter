@@ -116,7 +116,7 @@ class CTextFile(CFile):
         path_public, _ = os.path.splitext(os.path.relpath(Path, start = Prefix))
         self.path_public = f'{path_public}.html'
 
-        with open(self.path, 'rU') as f:
+        with open(self.path, 'r') as f:
             self.tokens = CTokenizer.tokenize(f.read())
 
     def path_to(self, Target):
